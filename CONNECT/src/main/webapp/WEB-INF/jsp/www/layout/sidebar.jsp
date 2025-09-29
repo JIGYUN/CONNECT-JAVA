@@ -10,7 +10,7 @@
     <nav class="navbar navbar-expand-lg nav-elevated">
         <div class="container">
             <!-- 브랜드 -->
-            <a class="navbar-brand brand-wordmark" href="/">CONNECTTT</a>
+            <a class="navbar-brand brand-wordmark" href="/">CONNECTT</a>
 
             <!-- 토글(모바일) -->
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#mainNav"
