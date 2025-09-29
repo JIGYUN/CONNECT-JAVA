@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+	<!-- SqlSessionTemplate 관련 설정 -->
+	<settings>
+		<setting name="jdbcTypeForNull" value="NULL"/>
+		<setting name="mapUnderscoreToCamelCase" value="true"/>
+ 	</settings>
+ 
+
+	<typeAliases>
+		<typeAlias type="www.com.util.CamelHashMap" alias="CamelHashMap"/>
+	</typeAliases>
+	<!--
+	log4jdbc-remix 로 대체 
+	<plugins>
+		<plugin interceptor="www.com.mybatis.wwwQueryInterceptor">
+		</plugin>
+	</plugins>
+	 -->
+</configuration>   	

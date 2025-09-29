@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.mmp.mapGrp.MapGrp">
+
+    <sql id="whereMapGrp">
+        <!-- 
+        동적 검색 조건 템플릿 (필요 시 활성화)
+
+        <choose>
+            <when test='id != null and id != "" '>
+
+            </when>
+            <otherwise>
+
+            </otherwise>
+        </choose>
+
+        <if test="searchField != null and searchText != null and searchField != '' and searchText != ''">
+            <choose>
+                <when test='searchField == "title"'>
+                    AND TITLE LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "content"'>
+                    AND CONTENT LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "writer"'>
+                    AND WRITER LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        -->
+    </sql> 
+
+    <select id="selectMapGrpList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.mmp.mapGrp.MapGrp.selectMapGrpList
+         Description : 목록 Query 
+        */
+        SELECT
+            MAP_GRP_ID
+			,GRP_NM
+			,GRP_CD
+			,DESC_TXT
+			,THUMB_FILE_GRP_ID
+			,USE_AT
+			,CREATED_BY
+			,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+			,UPDATED_BY
+			,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+
+        FROM TB_MAP_GRP
+        <where>
+            <include refid="whereMapGrp" />
+        </where>
+        ORDER BY MAP_GRP_ID DESC
+        <if test="limit != null and offset != null">
+            /*  페이징 하단 시작  */
+            LIMIT #{limit} OFFSET #{offset}
+            /*  페이징 하단 끝  */
+        </if>
+    </select>
+
+    <select id="selectMapGrpListCount" parameterType="hashmap" resultType="int">
+        /*
+         SQL ID: www.api.mmp.mapGrp.MapGrp.selectMapGrpListCount
+         Description : 목록에서 레코드수 Query 
+        */
+        SELECT
+            COUNT(*) CNT
+        FROM TB_MAP_GRP
+        <where>
+            <include refid="whereMapGrp" />
+        </where> 
+    </select>
+
+    <select id="selectMapGrpDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.mmp.mapGrp.MapGrp.selectMapGrpDetail
+         Description : 상세조회 Query 
+        */  
+        SELECT
+            MAP_GRP_ID
+			,GRP_NM
+			,GRP_CD
+			,DESC_TXT
+			,THUMB_FILE_GRP_ID
+			,USE_AT
+			,CREATED_BY
+			,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+			,UPDATED_BY
+			,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+
+        FROM TB_MAP_GRP
+        WHERE MAP_GRP_ID = #{mapGrpId}
+    </select>
+
+    <insert id="insertMapGrp" parameterType="hashmap">
+        /*
+         SQL ID: www.api.mmp.mapGrp.MapGrp.insertMapGrp
+         Description : 등록 Query 
+        */
+        INSERT INTO TB_MAP_GRP
+        (
+            GRP_NM
+            ,GRP_CD
+			,DESC_TXT
+			,THUMB_FILE_GRP_ID
+			,USE_AT
+			,CREATED_BY
+			,CREATED_DT
+			,UPDATED_BY
+			,UPDATED_DT
+
+        )
+        VALUES
+        (
+            #{grpNm}
+            ,#{grpCd}
+			,#{descTxt}
+			,#{thumbFileGrpId}
+			,#{useAt}
+			,#{createdBy}
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+			,#{updatedBy}
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+        )
+    </insert>
+
+    <update id="updateMapGrp" parameterType="hashmap">
+        /*
+         SQL ID: www.api.mmp.mapGrp.MapGrp.updateMapGrp
+         Description : 수정 Query 
+        */
+        UPDATE TB_MAP_GRP
+        <set>
+            <if test='grpNm != null and grpNm != ""'>
+				GRP_NM = #{grpNm},
+			</if>
+            <if test='grpCd != null and grpCd != ""'>
+				GRP_CD = #{grpCd},
+			</if>
+			<if test='descTxt != null and descTxt != ""'>
+				DESC_TXT = #{descTxt},
+			</if>
+			<if test='thumbFileGrpId != null and thumbFileGrpId != ""'>
+				THUMB_FILE_GRP_ID = #{thumbFileGrpId},
+			</if>
+			<if test='useAt != null and useAt != ""'>
+				USE_AT = #{useAt},
+			</if>
+			<if test='createdBy != null and createdBy != ""'>
+				CREATED_BY = #{createdBy},
+			</if>
+			<if test='createdDt != null and createdDt != ""'>
+				CREATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='updatedBy != null and updatedBy != ""'>
+				UPDATED_BY = #{updatedBy},
+			</if>
+			<if test='updatedDt != null and updatedDt != ""'>
+				UPDATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+
+        </set>
+        WHERE MAP_GRP_ID = #{mapGrpId}
+    </update>
+
+    <delete id="deleteMapGrp" parameterType="hashmap">
+        /*
+         SQL ID: www.api.mmp.mapGrp.MapGrp.deleteMapGrp
+         Description : 삭제 Query 
+        */
+        DELETE FROM TB_MAP_GRP
+        WHERE MAP_GRP_ID = #{mapGrpId}
+    </delete>
+
+</mapper>

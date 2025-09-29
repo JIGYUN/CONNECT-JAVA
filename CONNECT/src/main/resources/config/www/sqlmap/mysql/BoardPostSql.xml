@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.brd.boardPost.BoardPost">
+
+    <sql id="whereBoardPost">
+        <!-- 동적 검색 (호환 키 지원) -->
+        <if test="boardId != null and boardId != ''">
+            AND BOARD_ID = #{boardId}
+        </if>
+        <if test="BOARD_ID != null and BOARD_ID != ''">
+            AND BOARD_ID = #{BOARD_ID}
+        </if>
+
+        <if test="postSttsCd != null and postSttsCd != ''">
+            AND POST_STTS_CD = #{postSttsCd} 
+        </if>
+
+        <if test="kw != null and kw != ''">
+            AND (TITLE LIKE CONCAT('%', #{kw}, '%') OR CONTENT_MD LIKE CONCAT('%', #{kw}, '%'))
+        </if>
+        <if test="title != null and title != ''">
+            AND TITLE LIKE CONCAT('%', #{title}, '%')
+        </if>
+        <if test="TITLE != null and TITLE != ''">
+            AND TITLE LIKE CONCAT('%', #{TITLE}, '%')
+        </if>
+    </sql>
+
+    <select id="selectBoardPostList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.brd.boardPost.BoardPost.selectBoardPostList
+         Description : 목록 Query
+        */
+        SELECT
+            POST_ID
+            ,BOARD_ID
+            ,WRITER_ID
+            ,TITLE
+            ,CONTENT_MD
+            ,CONTENT_HTML
+            ,VIEW_CNT
+            ,POST_STTS_CD
+            ,DATE_FORMAT(PINNED_DT, '%Y-%m-%d %H:%i:%s') AS PINNED_DT
+            ,DELETE_AT
+            ,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+            ,CREATED_BY
+            ,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+            ,UPDATED_BY
+        FROM TB_BOARD_POST
+        <where>
+            <include refid="whereBoardPost" />
+        </where>
+        ORDER BY POST_ID DESC
+        <if test="limit != null and offset != null">
+            /*  페이징 하단 시작  */
+            LIMIT #{limit} OFFSET #{offset}
+            /*  페이징 하단 끝  */
+        </if>
+    </select>
+
+    <select id="selectBoardPostListCount" parameterType="hashmap" resultType="int">
+        /*
+         SQL ID: www.api.brd.boardPost.BoardPost.selectBoardPostListCount
+         Description : 목록에서 레코드수 Query
+        */
+        SELECT
+            COUNT(*) CNT
+        FROM TB_BOARD_POST
+        <where>
+            <include refid="whereBoardPost" />
+        </where>
+    </select>
+
+    <select id="selectBoardPostDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.brd.boardPost.BoardPost.selectBoardPostDetail
+         Description : 상세조회 Query
+        */
+        SELECT
+            POST_ID
+            ,BOARD_ID
+            ,WRITER_ID
+            ,TITLE
+            ,CONTENT_MD
+            ,CONTENT_HTML
+            ,VIEW_CNT
+            ,POST_STTS_CD
+            ,FILE_GRP_ID
+            ,DATE_FORMAT(PINNED_DT, '%Y-%m-%d %H:%i:%s') AS PINNED_DT
+            ,DELETE_AT
+            ,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+            ,CREATED_BY
+            ,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+            ,UPDATED_BY
+        FROM TB_BOARD_POST
+        WHERE POST_ID = #{postId}
+    </select>
+
+    <insert id="insertBoardPost" parameterType="hashmap">
+        /*
+         SQL ID: www.api.brd.boardPost.BoardPost.insertBoardPost
+         Description : 등록 Query
+        */
+        INSERT INTO TB_BOARD_POST
+        (
+            BOARD_ID
+            ,WRITER_ID
+            ,TITLE
+            ,CONTENT_MD
+            ,CONTENT_HTML
+            ,VIEW_CNT
+            ,POST_STTS_CD
+            ,FILE_GRP_ID
+            ,PINNED_DT
+            ,DELETE_AT
+            ,CREATED_DT
+            ,CREATED_BY
+            ,UPDATED_DT
+            ,UPDATED_BY
+        )
+        VALUES
+        (
+            #{boardId}
+            ,#{writerId}
+            ,#{title}
+            ,#{contentMd}
+            ,#{contentHtml}
+            ,IFNULL(#{viewCnt}, 0)
+            ,#{postSttsCd}
+            ,#{fileGrpId}
+            ,IFNULL(
+                STR_TO_DATE(
+                    CONCAT(
+                        REPLACE(SUBSTRING_INDEX(REPLACE(#{pinnedDt}, 'T',' '), '.', 1), 'Z',''),
+                        CASE WHEN LENGTH(REPLACE(SUBSTRING_INDEX(REPLACE(#{pinnedDt}, 'T',' '), '.', 1), 'Z',''))=16 THEN ':00' ELSE '' END
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+                NOW()
+            )
+            ,IFNULL(#{deleteAt}, 'N')
+            ,IFNULL(
+                STR_TO_DATE(
+                    CONCAT(
+                        REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1), 'Z',''),
+                        CASE WHEN LENGTH(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1), 'Z',''))=16 THEN ':00' ELSE '' END
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+                NOW()
+            )
+            ,#{createdBy}
+            ,IFNULL(
+                STR_TO_DATE(
+                    CONCAT(
+                        REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1), 'Z',''),
+                        CASE WHEN LENGTH(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1), 'Z',''))=16 THEN ':00' ELSE '' END
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+                NOW()
+            )
+            ,#{updatedBy}
+        )
+    </insert>
+
+    <update id="updateBoardPost" parameterType="hashmap">
+        /*
+         SQL ID: www.api.brd.boardPost.BoardPost.updateBoardPost
+         Description : 수정 Query
+        */
+        UPDATE TB_BOARD_POST
+        <set>
+            <if test='boardId != null and boardId != ""'>
+                BOARD_ID = #{boardId},
+            </if>
+            <if test='writerId != null and writerId != ""'>
+                WRITER_ID = #{writerId},
+            </if>
+            <if test='title != null and title != ""'>
+                TITLE = #{title},
+            </if>
+            <if test='contentMd != null and contentMd != ""'>
+                CONTENT_MD = #{contentMd},
+            </if>
+            <if test='contentHtml != null and contentHtml != ""'>
+                CONTENT_HTML = #{contentHtml},
+            </if>
+            <if test='viewCnt != null and viewCnt != ""'>
+                VIEW_CNT = #{viewCnt},
+            </if>
+            <if test='postSttsCd != null and postSttsCd != ""'>
+                POST_STTS_CD = #{postSttsCd},
+            </if>
+            <if test='fileGrpId != null and fileGrpId != ""'>
+                FILE_GRP_ID = #{fileGrpId},
+            </if>
+            <if test='pinnedDt != null and pinnedDt != ""'>
+                PINNED_DT =
+                STR_TO_DATE(
+                    CONCAT(
+                        REPLACE(SUBSTRING_INDEX(REPLACE(#{pinnedDt}, 'T',' '), '.', 1), 'Z',''),
+                        CASE WHEN LENGTH(REPLACE(SUBSTRING_INDEX(REPLACE(#{pinnedDt}, 'T',' '), '.', 1), 'Z',''))=16 THEN ':00' ELSE '' END
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+            </if>
+            <if test='deleteAt != null and deleteAt != ""'>
+                DELETE_AT = #{deleteAt},
+            </if>
+            <if test='createdDt != null and createdDt != ""'>
+                CREATED_DT =
+                STR_TO_DATE(
+                    CONCAT(
+                        REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1), 'Z',''),
+                        CASE WHEN LENGTH(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1), 'Z',''))=16 THEN ':00' ELSE '' END
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+            </if>
+            <if test='createdBy != null and createdBy != ""'>
+                CREATED_BY = #{createdBy},
+            </if>
+            <if test='updatedDt != null and updatedDt != ""'>
+                UPDATED_DT =
+                STR_TO_DATE(
+                    CONCAT(
+                        REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1), 'Z',''),
+                        CASE WHEN LENGTH(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1), 'Z',''))=16 THEN ':00' ELSE '' END
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+            </if>
+            <if test='updatedBy != null and updatedBy != ""'>
+                UPDATED_BY = #{updatedBy},
+            </if>
+        </set>
+        WHERE POST_ID = #{postId}
+    </update>
+
+    <delete id="deleteBoardPost" parameterType="hashmap">
+        /*
+         SQL ID: www.api.brd.boardPost.BoardPost.deleteBoardPost
+         Description : 삭제 Query
+        */
+        DELETE FROM TB_BOARD_POST
+        WHERE POST_ID = #{postId}
+    </delete>
+
+</mapper>

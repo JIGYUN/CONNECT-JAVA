@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tiles-definitions PUBLIC "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN" "http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
+       
+<tiles-definitions>
+	<!-- main layout -->
+	<definition name="layout-tiles" template="/WEB-INF/jsp/www/layout/layout.jsp">
+		<put-attribute name="header" value="/WEB-INF/jsp/www/layout/header.jsp" />
+		<put-attribute name="left" value="/WEB-INF/jsp/www/layout/sidebar.jsp" />
+		<put-attribute name="body" value="" />
+		<put-attribute name="foot" value="/WEB-INF/jsp/www/layout/footer.jsp" />
+	</definition>
+	
+	<definition name="*/*/*" extends="layout-tiles">
+		<put-attribute name="body" value="/WEB-INF/jsp/www/{1}/{2}/{3}.jsp" />
+		<put-attribute name="title" value="게시판" />
+	</definition> 
+	
+	<!-- adm 레이아웃 -->
+	<definition name="layout-tiles-adm" template="/WEB-INF/jsp/adm/layout/layout.jsp">
+	    <put-attribute name="header" value="/WEB-INF/jsp/adm/layout/header.jsp" />
+	    <put-attribute name="left"   value="/WEB-INF/jsp/adm/layout/sidebar.jsp" />
+	    <put-attribute name="body"   value="" />
+	    <put-attribute name="foot"   value="/WEB-INF/jsp/adm/layout/footer.jsp" />
+	</definition> 
+
+
+    <definition name="adm/*/*/*" extends="layout-tiles-adm">
+    	<put-attribute name="body"  value="/WEB-INF/jsp/adm/{1}/{2}/{3}.jsp" />
+    	<put-attribute name="title" value="게시판" />
+  	</definition> 
+</tiles-definitions>

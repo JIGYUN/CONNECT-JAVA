@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.sys.cmmnCode.CmmnCode">
+
+    <sql id="whereCmmnCode">
+        <!-- 
+        동적 검색 조건 템플릿 (필요 시 활성화)
+
+        <choose>
+            <when test='id != null and id != "" '>
+
+            </when>
+            <otherwise>
+
+            </otherwise>
+        </choose>
+
+        <if test="searchField != null and searchText != null and searchField != '' and searchText != ''">
+            <choose>
+                <when test='searchField == "title"'>
+                    AND TITLE LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "content"'>
+                    AND CONTENT LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "writer"'>
+                    AND WRITER LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        -->
+    </sql> 
+
+    <select id="selectCmmnCodeList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.sys.cmmnCode.CmmnCode.selectCmmnCodeList
+         Description : 목록 Query 
+        */
+        SELECT
+            CODE_ID
+			,CODE_CL_ID
+			,CODE
+			,CODE_NM
+			,SORT_ORDR
+			,USE_AT
+			,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+			,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+
+        FROM TB_CMMN_CODE
+        <where>
+            <include refid="whereCmmnCode" />
+        </where>
+        ORDER BY CODE_ID DESC
+        <if test="limit != null and offset != null">
+            /*  페이징 하단 시작  */
+            LIMIT #{limit} OFFSET #{offset}
+            /*  페이징 하단 끝  */
+        </if>
+    </select>
+
+    <select id="selectCmmnCodeListCount" parameterType="hashmap" resultType="int">
+        /*
+         SQL ID: www.api.sys.cmmnCode.CmmnCode.selectCmmnCodeListCount
+         Description : 목록에서 레코드수 Query 
+        */
+        SELECT
+            COUNT(*) CNT
+        FROM TB_CMMN_CODE
+        <where>
+            <include refid="whereCmmnCode" />
+        </where> 
+    </select>
+
+    <select id="selectCmmnCodeDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.sys.cmmnCode.CmmnCode.selectCmmnCodeDetail
+         Description : 상세조회 Query 
+        */  
+        SELECT
+            CODE_ID
+			,CODE_CL_ID
+			,CODE
+			,CODE_NM
+			,SORT_ORDR
+			,USE_AT
+			,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+			,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+
+        FROM TB_CMMN_CODE
+        WHERE CODE_ID = #{codeId}
+    </select>
+
+    <insert id="insertCmmnCode" parameterType="hashmap">
+        /*
+         SQL ID: www.api.sys.cmmnCode.CmmnCode.insertCmmnCode
+         Description : 등록 Query 
+        */
+        INSERT INTO TB_CMMN_CODE
+        (
+            CODE_CL_ID
+			,CODE
+			,CODE_NM
+			,SORT_ORDR
+			,USE_AT
+			,CREATED_DT
+			,UPDATED_DT
+
+        )
+        VALUES
+        (
+            #{codeClId}
+			,#{code}
+			,#{codeNm}
+			,#{sortOrdr}
+			,#{useAt}
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+
+        )
+    </insert>
+
+    <update id="updateCmmnCode" parameterType="hashmap">
+        /*
+         SQL ID: www.api.sys.cmmnCode.CmmnCode.updateCmmnCode
+         Description : 수정 Query 
+        */
+        UPDATE TB_CMMN_CODE
+        <set>
+            			<if test='codeClId != null and codeClId != ""'>
+				CODE_CL_ID = #{codeClId},
+			</if>
+			<if test='code != null and code != ""'>
+				CODE = #{code},
+			</if>
+			<if test='codeNm != null and codeNm != ""'>
+				CODE_NM = #{codeNm},
+			</if>
+			<if test='sortOrdr != null and sortOrdr != ""'>
+				SORT_ORDR = #{sortOrdr},
+			</if>
+			<if test='useAt != null and useAt != ""'>
+				USE_AT = #{useAt},
+			</if>
+			<if test='createdDt != null and createdDt != ""'>
+				CREATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='updatedDt != null and updatedDt != ""'>
+				UPDATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+
+        </set>
+        WHERE CODE_ID = #{codeId}
+    </update>
+
+    <delete id="deleteCmmnCode" parameterType="hashmap">
+        /*
+         SQL ID: www.api.sys.cmmnCode.CmmnCode.deleteCmmnCode
+         Description : 삭제 Query 
+        */
+        DELETE FROM TB_CMMN_CODE
+        WHERE CODE_ID = #{codeId}
+    </delete>
+
+</mapper>

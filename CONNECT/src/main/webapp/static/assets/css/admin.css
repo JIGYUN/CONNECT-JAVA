@@ -1,0 +1,76 @@
+/* ===== Design Tokens ===== */
+:root{
+  --brand:#2563eb;          /* 포인트 컬러(파랑) */
+  --bg:#f6f7fb;             /* 화면 배경 */
+  --panel:#ffffff;          /* 카드/패널 */
+  --text:#0f172a;           /* 본문 */
+  --muted:#64748b;          /* 보조 텍스트 */
+  --border:rgba(2,6,23,.08);
+  --radius-lg:16px;
+  --radius-md:12px;
+  --shadow-sm:0 1px 2px rgba(2,6,23,.05);
+  --shadow-md:0 12px 28px rgba(2,6,23,.06);
+
+  --space-1:.25rem; --space-2:.5rem; --space-3:.75rem;
+  --space-4:1rem;   --space-6:1.5rem; --space-8:2rem;
+}
+html[data-theme="dark"]{
+  --bg:#0f1115; --panel:#111318; --text:#e5e7eb; --muted:#94a3b8; --border:rgba(148,163,184,.15);
+}
+
+/* ===== Layout: fixed left sidebar (Tiles의 left가 먼저 렌더링됨) ===== */
+body{ background:var(--bg); color:var(--text); }
+#admin-aside{
+  position:fixed; z-index:1030; top:0; left:0; height:100vh;
+  width:260px; background:var(--panel);
+  border-right:1px solid var(--border);
+  box-shadow:var(--shadow-sm);
+  display:flex; flex-direction:column;
+}
+#admin-aside .aside-head{
+  height:64px; display:flex; align-items:center; justify-content:space-between;
+  padding:0 var(--space-4); border-bottom:1px solid var(--border);
+}
+#admin-aside .brand{
+  font-weight:800; letter-spacing:.06em; text-decoration:none; color:inherit;
+}
+#admin-aside .icon-btn{
+  background:transparent; border:0; font-size:1.25rem; color:var(--muted);
+}
+#admin-aside .aside-nav{ padding:var(--space-3); overflow:auto; }
+#admin-aside .nav-link{
+  display:flex; align-items:center; gap:.75rem;
+  padding:.6rem .75rem; margin:.1rem .25rem; border-radius:.6rem; color:inherit;
+}
+#admin-aside .nav-link:hover{ background:rgba(2,6,23,.04); }
+#admin-aside .nav-link.active{ background:var(--brand); color:#fff; }
+#admin-aside .nav-link i{ font-size:1.05rem; }
+
+#admin-aside.collapsed{ width:80px; }
+#admin-aside.collapsed .nav-link span{ display:none; }
+#admin-aside.collapsed .aside-head .brand{ display:none; }
+
+/* Tiles의 sibling 컨테이너 오프셋 */
+#admin-aside ~ .container{
+  margin-left:260px; max-width:calc(100% - 260px);
+}
+#admin-aside.collapsed ~ .container{
+  margin-left:80px; max-width:calc(100% - 80px);
+}
+
+/* ===== Page elements ===== */
+.page-head{
+  display:flex; align-items:center; justify-content:space-between;
+  margin:var(--space-4) 0 var(--space-3);
+}
+.card{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-md);
+}
+.table thead th{ background:rgba(2,6,23,.02); position:sticky; top:0; z-index:1; }
+.badge-soft{ background:rgba(37,99,235,.12); color:#1d4ed8; }
+
+/* 밀도 전환(엔터프라이즈에서 많이 씀) */
+.density-compact .table > :not(caption) > * > * { padding:.45rem .6rem; }

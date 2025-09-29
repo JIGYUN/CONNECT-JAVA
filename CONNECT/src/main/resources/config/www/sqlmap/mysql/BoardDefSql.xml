@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.brd.boardDef.BoardDef">
+
+    <sql id="whereBoardDef">
+        <!-- 
+        동적 검색 조건 템플릿 (필요 시 활성화)
+
+        <choose>
+            <when test='id != null and id != "" '>
+
+            </when>
+            <otherwise>
+
+            </otherwise>
+        </choose>
+
+        <if test="searchField != null and searchText != null and searchField != '' and searchText != ''">
+            <choose>
+                <when test='searchField == "title"'>
+                    AND TITLE LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "content"'>
+                    AND CONTENT LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "writer"'>
+                    AND WRITER LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        -->
+    </sql> 
+
+    <select id="selectBoardDefList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.brd.boardDef.BoardDef.selectBoardDefList
+         Description : 목록 Query 
+        */
+        SELECT
+            BOARD_ID
+			,BOARD_CD
+			,BOARD_NM
+			,SLUG
+			,READ_LVL_CD
+			,WRITE_LVL_CD
+			,USE_COMMENT_AT
+			,USE_ATTACH_AT
+			,SORT_DEFAULT_CD
+			,USE_AT
+			,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+			,CREATED_BY
+			,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+			,UPDATED_BY
+
+        FROM TB_BOARD_DEF
+        <where>
+            <include refid="whereBoardDef" />
+        </where>
+        ORDER BY BOARD_ID DESC
+        <if test="limit != null and offset != null">
+            /*  페이징 하단 시작  */
+            LIMIT #{limit} OFFSET #{offset}
+            /*  페이징 하단 끝  */
+        </if>
+    </select>
+
+    <select id="selectBoardDefListCount" parameterType="hashmap" resultType="int">
+        /*
+         SQL ID: www.api.brd.boardDef.BoardDef.selectBoardDefListCount
+         Description : 목록에서 레코드수 Query 
+        */
+        SELECT
+            COUNT(*) CNT
+        FROM TB_BOARD_DEF
+        <where>
+            <include refid="whereBoardDef" />
+        </where> 
+    </select>
+
+    <select id="selectBoardDefDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.brd.boardDef.BoardDef.selectBoardDefDetail
+         Description : 상세조회 Query 
+        */  
+        SELECT
+            BOARD_ID
+			,BOARD_CD
+			,BOARD_NM
+			,SLUG
+			,READ_LVL_CD
+			,WRITE_LVL_CD
+			,USE_COMMENT_AT
+			,USE_ATTACH_AT
+			,SORT_DEFAULT_CD
+			,USE_AT
+			,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+			,CREATED_BY
+			,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+			,UPDATED_BY
+
+        FROM TB_BOARD_DEF
+        WHERE BOARD_ID = #{boardId}
+    </select>
+
+    <insert id="insertBoardDef" parameterType="hashmap">
+        /*
+         SQL ID: www.api.brd.boardDef.BoardDef.insertBoardDef
+         Description : 등록 Query 
+        */
+        INSERT INTO TB_BOARD_DEF
+        (
+            BOARD_CD
+			,BOARD_NM
+			,SLUG
+			,READ_LVL_CD
+			,WRITE_LVL_CD
+			,USE_COMMENT_AT
+			,USE_ATTACH_AT
+			,SORT_DEFAULT_CD
+			,USE_AT
+			,CREATED_DT
+			,CREATED_BY
+			,UPDATED_DT
+			,UPDATED_BY
+
+        )
+        VALUES
+        (
+            #{boardCd}
+			,#{boardNm}
+			,#{slug}
+			,#{readLvlCd}
+			,#{writeLvlCd}
+			,#{useCommentAt}
+			,#{useAttachAt}
+			,#{sortDefaultCd}
+			,#{useAt}
+			,IFNULL(STR_TO_DATE(#{createdDt}, '%Y-%m-%d %H:%i:%s'), NOW())
+			,#{createdBy}
+			,IFNULL(STR_TO_DATE(#{updatedDt}, '%Y-%m-%d %H:%i:%s'), NOW())
+			,#{updatedBy}
+
+        )
+    </insert>
+
+    <update id="updateBoardDef" parameterType="hashmap">
+        /*
+         SQL ID: www.api.brd.boardDef.BoardDef.updateBoardDef
+         Description : 수정 Query 
+        */
+        UPDATE TB_BOARD_DEF
+        <set>
+            			<if test='boardCd != null and boardCd != ""'>
+				BOARD_CD = #{boardCd},
+			</if>
+			<if test='boardNm != null and boardNm != ""'>
+				BOARD_NM = #{boardNm},
+			</if>
+			<if test='slug != null and slug != ""'>
+				SLUG = #{slug},
+			</if>
+			<if test='readLvlCd != null and readLvlCd != ""'>
+				READ_LVL_CD = #{readLvlCd},
+			</if>
+			<if test='writeLvlCd != null and writeLvlCd != ""'>
+				WRITE_LVL_CD = #{writeLvlCd},
+			</if>
+			<if test='useCommentAt != null and useCommentAt != ""'>
+				USE_COMMENT_AT = #{useCommentAt},
+			</if>
+			<if test='useAttachAt != null and useAttachAt != ""'>
+				USE_ATTACH_AT = #{useAttachAt},
+			</if>
+			<if test='sortDefaultCd != null and sortDefaultCd != ""'>
+				SORT_DEFAULT_CD = #{sortDefaultCd},
+			</if>
+			<if test='useAt != null and useAt != ""'>
+				USE_AT = #{useAt},
+			</if>
+			<if test='createdDt != null and createdDt != ""'>
+				CREATED_DT = STR_TO_DATE(#{createdDt}, '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='createdBy != null and createdBy != ""'>
+				CREATED_BY = #{createdBy},
+			</if>
+			<if test='updatedDt != null and updatedDt != ""'>
+				UPDATED_DT = STR_TO_DATE(#{updatedDt}, '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='updatedBy != null and updatedBy != ""'>
+				UPDATED_BY = #{updatedBy},
+			</if>
+
+        </set>
+        WHERE BOARD_ID = #{boardId}
+    </update>
+
+    <delete id="deleteBoardDef" parameterType="hashmap">
+        /*
+         SQL ID: www.api.brd.boardDef.BoardDef.deleteBoardDef
+         Description : 삭제 Query 
+        */
+        DELETE FROM TB_BOARD_DEF
+        WHERE BOARD_ID = #{boardId}
+    </delete>
+
+</mapper>

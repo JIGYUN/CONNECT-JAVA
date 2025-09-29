@@ -1,0 +1,6 @@
+/* 네비 활성화 가독성 */
+nav a[aria-current="page"] { text-decoration: underline; font-weight: 600; }
+
+/* 본문 폭 살짝 조정하고 카드 그림자 추가하고 싶다면 */
+.container { max-width: 1100px; }
+article { box-shadow: 0 6px 20px rgb(0 0 0 / 6%); border-radius: var(--pico-border-radius); }

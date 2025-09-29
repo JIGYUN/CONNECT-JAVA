@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="www.api.tsk.task.Task">
+
+    <!-- 공통 where 템플릿(필요 시 활성화) -->
+    <sql id="whereTask">
+        <!-- 동적 검색 조건 자리 -->
+        <!-- 예: <if test="grpCd != null and grpCd != ''"> AND GRP_CD = #{grpCd} </if> -->
+    </sql>
+
+    <!-- 목록 -->
+    <select id="selectTaskList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.tsk.task.Task.selectTaskList
+         Description : 목록 Query (PK: TASK_ID, 호환 alias TASK_ID)
+        */
+        SELECT
+            TASK_ID,
+            GRP_CD,
+            TITLE,
+            CONTENT,
+            STATUS_CD,
+            PRIORITY_CD,
+            DATE_FORMAT(START_DT,  '%Y-%m-%d %H:%i:%s') AS START_DT,
+            DATE_FORMAT(DUE_DT,    '%Y-%m-%d %H:%i:%s') AS DUE_DT,
+            DATE_FORMAT(DONE_DT,   '%Y-%m-%d %H:%i:%s') AS DONE_DT,
+            SORT_ORDR,
+            USE_AT,
+            DATE_FORMAT(CREATED_DT,'%Y-%m-%d %H:%i:%s') AS CREATED_DT,
+            DATE_FORMAT(UPDATED_DT,'%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+        FROM TB_TASK
+        <where>
+            <include refid="whereTask" />
+        </where>
+        ORDER BY TASK_ID DESC
+        <if test="limit != null and offset != null">
+            LIMIT #{limit} OFFSET #{offset}
+        </if>
+    </select>
+
+    <!-- 카운트 -->
+    <select id="selectTaskListCount" parameterType="hashmap" resultType="int">
+        SELECT COUNT(*) CNT
+        FROM TB_TASK
+        <where>
+            <include refid="whereTask" />
+        </where>
+    </select>
+
+    <!-- 상세 -->
+    <select id="selectTaskDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.tsk.task.Task.selectTaskDetail
+         Description : 상세조회 Query (taskNo 우선, 없으면 taskId)
+        */
+        SELECT
+            TASK_ID                                                AS TASK_ID,
+            TASK_ID,
+            GRP_CD,
+            TITLE,
+            CONTENT,
+            STATUS_CD,
+            PRIORITY_CD,
+            DATE_FORMAT(START_DT,  '%Y-%m-%d %H:%i:%s') AS START_DT,
+            DATE_FORMAT(DUE_DT,    '%Y-%m-%d %H:%i:%s') AS DUE_DT,
+            DATE_FORMAT(DONE_DT,   '%Y-%m-%d %H:%i:%s') AS DONE_DT,
+            SORT_ORDR,
+            USE_AT,
+            DATE_FORMAT(CREATED_DT,'%Y-%m-%d %H:%i:%s') AS CREATED_DT,
+            DATE_FORMAT(UPDATED_DT,'%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+        FROM TB_TASK
+        <where>
+            <if test="taskNo != null and taskNo != ''">
+                TASK_ID = #{taskId}
+            </if>
+        </where>
+    </select>
+
+    <!-- 등록 -->
+    <insert id="insertTask" parameterType="hashmap">
+        /*
+         SQL ID: www.api.tsk.task.Task.insertTask
+         Description : 등록 Query (NULLIF/문자열 datetime 파싱 유지)
+        */
+        INSERT INTO TB_TASK
+        (
+            GRP_CD, TITLE, CONTENT, STATUS_CD, PRIORITY_CD,
+            START_DT, DUE_DT, DONE_DT,
+            SORT_ORDR, USE_AT, CREATED_DT, UPDATED_DT
+        )
+        VALUES
+        (
+            #{grpCd},
+            #{title},
+            <![CDATA[ #{content} ]]>,
+            COALESCE(NULLIF(#{statusCd}, ''), 'TODO'),
+            NULLIF(#{priorityCd}, ''),
+            /* START_DT */
+            STR_TO_DATE(NULLIF(
+                CONCAT(
+                    REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{startDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                    CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{startDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END
+                ), ''
+            ), '%Y-%m-%d %H:%i:%s'),
+            /* DUE_DT */
+            STR_TO_DATE(NULLIF(
+                CONCAT(
+                    REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{dueDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                    CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{dueDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END
+                ), ''
+            ), '%Y-%m-%d %H:%i:%s'),
+            /* DONE_DT */
+            STR_TO_DATE(NULLIF(
+                CONCAT(
+                    REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{doneDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                    CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{doneDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END
+                ), ''
+            ), '%Y-%m-%d %H:%i:%s'),
+            NULLIF(#{sortOrdr}, ''),
+            COALESCE(NULLIF(#{useAt}, ''), 'Y'),
+            COALESCE(STR_TO_DATE(NULLIF(
+                CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END), ''
+            ), '%Y-%m-%d %H:%i:%s'), NOW()),
+            COALESCE(STR_TO_DATE(NULLIF(
+                CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END), ''
+            ), '%Y-%m-%d %H:%i:%s'), NOW())
+        )
+    </insert>
+
+    <!-- 수정 -->
+    <update id="updateTask" parameterType="hashmap">
+        /*
+         SQL ID: www.api.tsk.task.Task.updateTask
+         Description : 수정 Query (TASK_ID 기준)
+        */
+        UPDATE TB_TASK
+        <set>
+            <if test='grpCd != null and grpCd != ""'>       GRP_CD = #{grpCd}, </if>
+            <if test='title != null and title != ""'>       TITLE = #{title}, </if>
+            <if test='content != null and content != ""'>   CONTENT = <![CDATA[ #{content} ]]>, </if>
+            <if test='statusCd != null and statusCd != ""'> STATUS_CD = #{statusCd}, </if>
+            <if test='priorityCd != null and priorityCd != ""'> PRIORITY_CD = #{priorityCd}, </if>
+
+            <if test='startDt != null and startDt != ""'>
+                START_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{startDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{startDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END), ''), '%Y-%m-%d %H:%i:%s'),
+            </if>
+            <if test='dueDt != null and dueDt != ""'>
+                DUE_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{dueDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{dueDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END), ''), '%Y-%m-%d %H:%i:%s'),
+            </if>
+            <if test='doneDt != null and doneDt != ""'>
+                DONE_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{doneDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{doneDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END), ''), '%Y-%m-%d %H:%i:%s'),
+            </if>
+
+            <if test='sortOrdr != null and sortOrdr != ""'> SORT_ORDR = #{sortOrdr}, </if>
+            <if test='useAt != null and useAt != ""'>       USE_AT = #{useAt}, </if>
+
+            UPDATED_DT = NOW()
+        </set>
+        WHERE TASK_ID = #{taskId}
+    </update>
+
+    <!-- Soft Delete -->
+    <update id="softDeleteTask" parameterType="hashmap">
+        UPDATE TB_TASK
+        SET USE_AT = 'N', UPDATED_DT = NOW()   
+        WHERE TASK_ID = #{taskId}
+    </update>
+
+    <!-- 하드 Delete (옵션) -->
+    <delete id="deleteTask" parameterType="hashmap">
+        DELETE FROM TB_TASK
+        WHERE TASK_ID = #{taskId}
+    </delete>
+
+    <!-- ===== 신규: 날짜별 목록 ===== -->
+    <select id="selectTaskListByDate" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.tsk.task.Task.selectTaskListByDate
+         Description : 선택한 날짜(YYYY-MM-DD)의 Task 목록
+        */
+        SELECT
+            TASK_ID,
+            GRP_CD,
+            TITLE,
+            CONTENT,
+            STATUS_CD,
+            PRIORITY_CD,
+            DATE_FORMAT(START_DT,  '%Y-%m-%d %H:%i:%s') AS START_DT,
+            DATE_FORMAT(DUE_DT,    '%Y-%m-%d %H:%i:%s') AS DUE_DT,
+            DATE_FORMAT(DONE_DT,   '%Y-%m-%d %H:%i:%s') AS DONE_DT,
+            SORT_ORDR,
+            USE_AT,
+            DATE_FORMAT(CREATED_DT,'%Y-%m-%d %H:%i:%s') AS CREATED_DT,
+            DATE_FORMAT(UPDATED_DT,'%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+        FROM TB_TASK
+        WHERE USE_AT = 'Y'
+          <if test="grpCd != null and grpCd != ''">
+            AND GRP_CD = #{grpCd}
+          </if>
+          AND (
+            (#{dueDate} IS NULL AND DATE(DUE_DT) = CURRENT_DATE())
+            OR (#{dueDate} IS NOT NULL AND DATE(DUE_DT) = #{dueDate})
+          )
+        ORDER BY STATUS_CD, DUE_DT, SORT_ORDR, TASK_ID DESC
+    </select>
+
+    <!-- ===== 신규: 상태 토글 ===== -->
+    <update id="toggleTaskStatus" parameterType="hashmap">
+        /*
+         SQL ID: www.api.tsk.task.Task.toggleTaskStatus
+         Description : 체크박스 상태 토글(TODO↔DONE)
+        */
+        UPDATE TB_TASK
+        SET
+            STATUS_CD = #{statusCd},
+            DONE_DT   = (CASE WHEN #{statusCd} = 'DONE' THEN NOW() ELSE NULL END),
+            UPDATED_DT = NOW()
+        WHERE TASK_ID = #{taskId}
+          AND USE_AT = 'Y'
+    </update>
+
+</mapper>

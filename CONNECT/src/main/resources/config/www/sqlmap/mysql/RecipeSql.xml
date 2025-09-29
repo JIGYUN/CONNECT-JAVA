@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.rcp.recipe.Recipe">
+
+    <!-- ===== 공통 where 템플릿 ===== -->
+    <sql id="whereRecipe">
+        <if test="keyword != null and keyword != ''">
+            AND (TITLE LIKE CONCAT('%', #{keyword}, '%')
+                 OR SUBTITLE LIKE CONCAT('%', #{keyword}, '%')
+                 OR TAG_SUMMARY LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="visibilityCd != null and visibilityCd != ''">
+            AND VISIBILITY_CD = #{visibilityCd}
+        </if>
+        <if test="useAt != null and useAt != ''">
+            AND USE_AT = #{useAt}
+        </if>
+    </sql>
+
+    <!-- ===== 목록 ===== -->
+    <select id="selectRecipeList" parameterType="map" resultType="hashmap">
+        SELECT
+            RECIPE_ID,
+            RECIPE_CD,
+            TITLE,
+            SUBTITLE,
+            SERVINGS,
+            PREP_MIN,
+            COOK_MIN,
+            DIFFICULTY_CD,
+            VISIBILITY_CD,
+            USE_AT,
+            DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT,
+            DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+        FROM TB_RECIPE
+        WHERE 1=1
+        <include refid="whereRecipe"/>
+        ORDER BY RECIPE_ID DESC
+        <if test="limit != null and offset != null">
+            LIMIT #{limit} OFFSET #{offset}
+        </if>
+    </select>
+
+    <select id="selectRecipeListCount" parameterType="map" resultType="int">
+        SELECT COUNT(*)
+        FROM TB_RECIPE
+        WHERE 1=1
+        <include refid="whereRecipe"/>
+    </select>
+
+    <!-- ===== 단건(기본) ===== -->
+    <select id="selectRecipeDetail" parameterType="map" resultType="hashmap">
+        SELECT
+            RECIPE_ID,
+            RECIPE_CD,
+            TITLE,
+            SUBTITLE,
+            INTRO_HTML,
+            SERVINGS,
+            PREP_MIN,
+            COOK_MIN,
+            DIFFICULTY_CD,
+            VISIBILITY_CD,
+            FILE_GRP_ID,
+            TAG_SUMMARY,
+            USE_AT,
+            CREATED_BY,
+            DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT,
+            UPDATED_BY,
+            DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+        FROM TB_RECIPE
+        WHERE
+            <choose>
+                <when test="recipeId != null"> RECIPE_ID = #{recipeId} </when>
+                <otherwise> RECIPE_CD = #{recipeCd} </otherwise>
+            </choose>
+    </select>
+
+    <!-- ===== 단건(보조: RECIPE_CD로 ID 얻기) ===== -->
+    <select id="selectRecipeIdByCd" parameterType="map" resultType="long">
+        SELECT RECIPE_ID FROM TB_RECIPE WHERE RECIPE_CD = #{recipeCd}
+    </select>
+
+    <!-- ===== 단계/재료 조회 ===== -->
+    <select id="selectRecipeSteps" parameterType="map" resultType="hashmap">
+        SELECT
+            STEP_ID,
+            RECIPE_ID,
+            STEP_ORDR,
+            INSTR_HTML,
+            TIMER_SEC,
+            FILE_GRP_ID,
+            USE_AT,
+            DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT,
+            DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+        FROM TB_RECIPE_STEP
+        WHERE RECIPE_ID = #{recipeId}
+          AND USE_AT = 'Y'
+        ORDER BY STEP_ORDR ASC, STEP_ID ASC
+    </select>
+
+    <select id="selectRecipeIngs" parameterType="map" resultType="hashmap">
+        SELECT
+            RECIPE_ING_ID,
+            RECIPE_ID,
+            ING_NM_TXT,
+            QTY_NUM,
+            UNIT_CD,
+            NOTE_TXT,
+            GROUP_NM,
+            USE_AT,
+            DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT,
+            DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+        FROM TB_RECIPE_ING
+        WHERE RECIPE_ID = #{recipeId}
+          AND USE_AT = 'Y'
+        ORDER BY RECIPE_ING_ID ASC
+    </select>
+
+    <!-- ===== 등록/수정/삭제 ===== -->
+    <insert id="insertRecipe" parameterType="map" useGeneratedKeys="true" keyProperty="recipeId">
+  INSERT INTO TB_RECIPE
+    (
+        RECIPE_CD, TITLE, SUBTITLE, INTRO_HTML,
+        SERVINGS, PREP_MIN, COOK_MIN,
+        DIFFICULTY_CD, VISIBILITY_CD,
+        FILE_GRP_ID, TAG_SUMMARY,
+        USE_AT, CREATED_BY, CREATED_DT, UPDATED_BY, UPDATED_DT
+    )
+    VALUES
+    (
+        #{recipeCd},
+        #{title},
+        #{subtitle},
+        #{introHtml},
+
+        NULLIF(#{servings}, ''),      <!-- ★ 정수 -->
+        NULLIF(#{prepMin}, ''),       <!-- ★ 정수 -->
+        NULLIF(#{cookMin}, ''),       <!-- ★ 정수 -->
+
+        NULLIF(#{difficultyCd}, ''),  <!-- 코드값: 빈문자면 NULL -->
+        #{visibilityCd},
+
+        NULLIF(#{fileGrpId}, ''),     <!-- ★ 숫자(ID) -->
+        #{tagSummary},
+
+        COALESCE(#{useAt}, 'Y'),
+        #{createdBy},
+        NOW(),
+        #{updatedBy},
+        NOW()
+    )
+    </insert>
+
+    <update id="updateRecipe" parameterType="map">
+        UPDATE TB_RECIPE
+        <set>
+            <if test="recipeCd != null and recipeCd != ''"> RECIPE_CD = #{recipeCd}, </if>
+            <if test="title != null"> TITLE = #{title}, </if>
+            <if test="subtitle != null"> SUBTITLE = #{subtitle}, </if>
+            <if test="introHtml != null"> INTRO_HTML = #{introHtml}, </if>
+            <if test="servings != null"> SERVINGS = #{servings}, </if>
+            <if test="prepMin != null"> PREP_MIN = #{prepMin}, </if>
+            <if test="cookMin != null"> COOK_MIN = #{cookMin}, </if>
+            <if test="difficultyCd != null"> DIFFICULTY_CD = #{difficultyCd}, </if>
+            <if test="visibilityCd != null"> VISIBILITY_CD = #{visibilityCd}, </if>
+            <if test="fileGrpId != null"> FILE_GRP_ID = #{fileGrpId}, </if>
+            <if test="tagSummary != null"> TAG_SUMMARY = #{tagSummary}, </if>
+            <if test="useAt != null and useAt != ''"> USE_AT = #{useAt}, </if>
+            <if test="updatedBy != null"> UPDATED_BY = #{updatedBy}, </if>
+            UPDATED_DT = NOW()
+        </set>
+        WHERE RECIPE_ID = #{recipeId}
+    </update>
+
+    <delete id="deleteRecipe" parameterType="map">
+        DELETE FROM TB_RECIPE WHERE RECIPE_ID = #{recipeId}
+    </delete>
+
+    <!-- 단계/재료 전체 갈아끼우기용 -->
+    <delete id="deleteStepsByRecipe" parameterType="map">
+        DELETE FROM TB_RECIPE_STEP WHERE RECIPE_ID = #{recipeId}
+    </delete>
+
+    <delete id="deleteIngsByRecipe" parameterType="map">
+        DELETE FROM TB_RECIPE_ING WHERE RECIPE_ID = #{recipeId}
+    </delete>
+
+    <insert id="insertRecipeStep" parameterType="map" useGeneratedKeys="true" keyProperty="stepId">
+	    INSERT INTO TB_RECIPE_STEP
+	    (
+	        RECIPE_ID, STEP_ORDR, INSTR_HTML, TIMER_SEC, FILE_GRP_ID, USE_AT, CREATED_DT, UPDATED_DT
+	    )
+	    VALUES
+	    (
+	        #{recipeId},
+	        NULLIF(#{stepOrdr}, ''),      <!-- ★ 정수 -->
+	        #{instrHtml},
+	        NULLIF(#{timerSec}, ''),      <!-- ★ 정수 -->
+	        NULLIF(#{fileGrpId}, ''),     <!-- 숫자 -->
+	        COALESCE(#{useAt}, 'Y'),
+	        NOW(), NOW()
+	    )
+    </insert>
+
+    <insert id="insertRecipeIng" parameterType="map" useGeneratedKeys="true" keyProperty="recipeIngId">
+	    INSERT INTO TB_RECIPE_ING
+	    (
+	        RECIPE_ID, ING_NM_TXT, QTY_NUM, UNIT_CD, NOTE_TXT, GROUP_NM,
+	        USE_AT, CREATED_DT, UPDATED_DT
+	    )
+	    VALUES
+	    (
+	        #{recipeId},
+	        #{ingNmTxt},
+	        NULLIF(#{qtyNum}, ''),        <!-- ★ DECIMAL이나 숫자 -->
+	        #{unitCd},
+	        #{noteTxt},  
+	        #{groupNm},
+	        COALESCE(#{useAt}, 'Y'),
+	        NOW(), NOW()
+	    )
+    </insert>
+
+</mapper>

@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.sys.menuGroup.MenuGroup">
+
+    <sql id="whereMenuGroup">
+        <!-- 
+        동적 검색 조건 템플릿 (필요 시 활성화)
+
+        <choose>
+            <when test='id != null and id != "" '>
+
+            </when>
+            <otherwise>
+
+            </otherwise>
+        </choose>
+
+        <if test="searchField != null and searchText != null and searchField != '' and searchText != ''">
+            <choose>
+                <when test='searchField == "title"'>
+                    AND TITLE LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "content"'>
+                    AND CONTENT LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "writer"'>
+                    AND WRITER LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        -->
+    </sql> 
+
+    <select id="selectMenuGroupList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.sys.menuGroup.MenuGroup.selectMenuGroupList
+         Description : 목록 Query 
+        */
+        SELECT
+            MENU_GROUP_ID
+			,MENU_GROUP_NM
+			,RM
+			,USE_AT
+			,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+			,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+
+        FROM TB_MENU_GROUP
+        <where>
+            <include refid="whereMenuGroup" />
+        </where>
+        ORDER BY MENU_GROUP_ID DESC
+        <if test="limit != null and offset != null">
+            /*  페이징 하단 시작  */
+            LIMIT #{limit} OFFSET #{offset}
+            /*  페이징 하단 끝  */
+        </if>
+    </select>
+
+    <select id="selectMenuGroupListCount" parameterType="hashmap" resultType="int">
+        /*
+         SQL ID: www.api.sys.menuGroup.MenuGroup.selectMenuGroupListCount
+         Description : 목록에서 레코드수 Query 
+        */
+        SELECT
+            COUNT(*) CNT
+        FROM TB_MENU_GROUP
+        <where>
+            <include refid="whereMenuGroup" />
+        </where> 
+    </select>
+
+    <select id="selectMenuGroupDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.sys.menuGroup.MenuGroup.selectMenuGroupDetail
+         Description : 상세조회 Query 
+        */  
+        SELECT
+            MENU_GROUP_ID
+			,MENU_GROUP_NM
+			,RM
+			,USE_AT
+			,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+			,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+
+        FROM TB_MENU_GROUP
+        WHERE MENU_GROUP_ID = #{menuGroupId}
+    </select>
+
+    <insert id="insertMenuGroup" parameterType="hashmap">
+        /*
+         SQL ID: www.api.sys.menuGroup.MenuGroup.insertMenuGroup
+         Description : 등록 Query 
+        */
+        INSERT INTO TB_MENU_GROUP
+        (
+            MENU_GROUP_NM
+			,RM
+			,USE_AT
+			,CREATED_DT
+			,UPDATED_DT
+
+        )
+        VALUES
+        (
+            #{menuGroupNm}
+			,#{rm}
+			,#{useAt}
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+
+        )
+    </insert>
+
+    <update id="updateMenuGroup" parameterType="hashmap">
+        /*
+         SQL ID: www.api.sys.menuGroup.MenuGroup.updateMenuGroup
+         Description : 수정 Query 
+        */
+        UPDATE TB_MENU_GROUP
+        <set>
+            			<if test='menuGroupNm != null and menuGroupNm != ""'>
+				MENU_GROUP_NM = #{menuGroupNm},
+			</if>
+			<if test='rm != null and rm != ""'>
+				RM = #{rm},
+			</if>
+			<if test='useAt != null and useAt != ""'>
+				USE_AT = #{useAt},
+			</if>
+			<if test='createdDt != null and createdDt != ""'>
+				CREATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='updatedDt != null and updatedDt != ""'>
+				UPDATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+
+        </set>
+        WHERE MENU_GROUP_ID = #{menuGroupId}
+    </update>
+
+    <delete id="deleteMenuGroup" parameterType="hashmap">
+        /*
+         SQL ID: www.api.sys.menuGroup.MenuGroup.deleteMenuGroup
+         Description : 삭제 Query 
+        */
+        DELETE FROM TB_MENU_GROUP
+        WHERE MENU_GROUP_ID = #{menuGroupId}
+    </delete>
+
+</mapper>

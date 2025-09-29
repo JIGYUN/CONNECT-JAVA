@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.usr.user.User">
+
+    <sql id="whereUser">
+        <!-- 
+        동적 검색 조건 템플릿 (필요 시 활성화)
+
+        <choose>
+            <when test='id != null and id != "" '>
+
+            </when>
+            <otherwise>
+
+            </otherwise>
+        </choose>
+
+        <if test="searchField != null and searchText != null and searchField != '' and searchText != ''">
+            <choose>
+                <when test='searchField == "title"'>
+                    AND TITLE LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "content"'>
+                    AND CONTENT LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "writer"'>
+                    AND WRITER LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        -->
+    </sql> 
+
+    <select id="selectUserList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.usr.user.User.selectUserList
+         Description : 목록 Query 
+        */
+        SELECT
+            USER_ID
+			,EMAIL
+			,PASSWORD_HASH
+			,USER_NM
+			,TELNO
+			,USER_STTS_CD
+			,EMAIL_VRFCT_AT
+			,PW_FAILR_CNT
+			,DATE_FORMAT(LAST_LOGIN_DT, '%Y-%m-%d %H:%i:%s') AS LAST_LOGIN_DT
+			,USE_AT
+			,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+			,CREATED_BY
+			,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+			,UPDATED_BY
+			,AUTH_TYPE
+
+        FROM TB_USER
+        <where>
+            <include refid="whereUser" />
+        </where>
+        ORDER BY USER_ID DESC
+        <if test="limit != null and offset != null">
+            /*  페이징 하단 시작  */
+            LIMIT #{limit} OFFSET #{offset}
+            /*  페이징 하단 끝  */
+        </if>
+    </select>
+
+    <select id="selectUserListCount" parameterType="hashmap" resultType="int">
+        /*
+         SQL ID: www.api.usr.user.User.selectUserListCount
+         Description : 목록에서 레코드수 Query 
+        */
+        SELECT
+            COUNT(*) CNT
+        FROM TB_USER
+        <where>
+            <include refid="whereUser" />
+        </where> 
+    </select>
+
+    <select id="selectUserDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.usr.user.User.selectUserDetail
+         Description : 상세조회 Query 
+        */  
+        SELECT
+            USER_ID
+			,EMAIL
+			,PASSWORD_HASH
+			,USER_NM
+			,TELNO
+			,USER_STTS_CD
+			,EMAIL_VRFCT_AT
+			,PW_FAILR_CNT
+			,DATE_FORMAT(LAST_LOGIN_DT, '%Y-%m-%d %H:%i:%s') AS LAST_LOGIN_DT
+			,USE_AT
+			,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+			,CREATED_BY
+			,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+			,UPDATED_BY
+			,AUTH_TYPE
+
+        FROM TB_USER
+        WHERE USER_ID = #{userId}
+    </select>
+
+    <insert id="insertUser" parameterType="hashmap">
+        /*
+         SQL ID: www.api.usr.user.User.insertUser
+         Description : 등록 Query 
+        */
+        INSERT INTO TB_USER
+        (
+            EMAIL
+			,PASSWORD_HASH
+			,USER_NM
+			,TELNO
+			,USER_STTS_CD
+			,EMAIL_VRFCT_AT
+			,PW_FAILR_CNT
+			,LAST_LOGIN_DT
+			,USE_AT
+			,CREATED_DT
+			,CREATED_BY
+			,UPDATED_DT
+			,UPDATED_BY
+			,AUTH_TYPE
+
+        )
+        VALUES
+        (
+            #{email}
+			,#{passwordHash}
+			,#{userNm}
+			,#{telno}
+			,#{userSttsCd}
+			,#{emailVrfctAt}
+			,#{pwFailrCnt}
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{lastLoginDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{lastLoginDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+			,#{useAt}
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+			,#{createdBy}
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+			,#{updatedBy}
+			,#{authType}
+
+        )
+    </insert>
+
+    <update id="updateUser" parameterType="hashmap">
+        /*
+         SQL ID: www.api.usr.user.User.updateUser
+         Description : 수정 Query 
+        */
+        UPDATE TB_USER
+        <set>
+            			<if test='email != null and email != ""'>
+				EMAIL = #{email},
+			</if>
+			<if test='passwordHash != null and passwordHash != ""'>
+				PASSWORD_HASH = #{passwordHash},
+			</if>
+			<if test='userNm != null and userNm != ""'>
+				USER_NM = #{userNm},
+			</if>
+			<if test='telno != null and telno != ""'>
+				TELNO = #{telno},
+			</if>
+			<if test='userSttsCd != null and userSttsCd != ""'>
+				USER_STTS_CD = #{userSttsCd},
+			</if>
+			<if test='emailVrfctAt != null and emailVrfctAt != ""'>
+				EMAIL_VRFCT_AT = #{emailVrfctAt},
+			</if>
+			<if test='pwFailrCnt != null and pwFailrCnt != ""'>
+				PW_FAILR_CNT = #{pwFailrCnt},
+			</if>
+			<if test='lastLoginDt != null and lastLoginDt != ""'>
+				LAST_LOGIN_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{lastLoginDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{lastLoginDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='useAt != null and useAt != ""'>
+				USE_AT = #{useAt},
+			</if>
+			<if test='createdDt != null and createdDt != ""'>
+				CREATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='createdBy != null and createdBy != ""'>
+				CREATED_BY = #{createdBy},
+			</if>
+			<if test='updatedDt != null and updatedDt != ""'>
+				UPDATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='updatedBy != null and updatedBy != ""'>
+				UPDATED_BY = #{updatedBy},
+			</if>
+			<if test='authType != null and authType != ""'>
+				AUTH_TYPE = #{authType},
+			</if>
+
+        </set>
+        WHERE USER_ID = #{userId}
+    </update>
+
+    <delete id="deleteUser" parameterType="hashmap">
+        /*
+         SQL ID: www.api.usr.user.User.deleteUser
+         Description : 삭제 Query 
+        */
+        DELETE FROM TB_USER
+        WHERE USER_ID = #{userId}
+    </delete>
+
+</mapper>

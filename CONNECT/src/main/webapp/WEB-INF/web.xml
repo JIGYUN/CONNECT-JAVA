@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app
+    xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:jsp="http://java.sun.com/xml/ns/javaee/jsp"
+    xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
+    version="3.1">
+
+  <display-name>CONNECT</display-name>
+
+  <!-- =======================
+       0) 세션 설정
+       ======================= -->
+  <session-config>
+    <session-timeout>60</session-timeout>
+    <tracking-mode>COOKIE</tracking-mode>
+  </session-config>
+
+  <!-- =======================
+       1) JSP 설정
+       ======================= -->
+  <jsp-config>
+    <jsp-property-group>
+      <url-pattern>*.jsp</url-pattern>
+      <trim-directive-whitespaces>true</trim-directive-whitespaces>
+    </jsp-property-group>
+  </jsp-config>
+
+  <!-- =======================
+       2) 필터 (인코딩 → CORS → XSS → Device)
+       ======================= -->
+  <filter>
+    <filter-name>encodingFilter</filter-name>
+    <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+    <init-param>
+      <param-name>encoding</param-name>
+      <param-value>utf-8</param-value>
+    </init-param>
+    <!-- 응답 강제 인코딩까지 필요하면 아래 주석 해제
+    <init-param>
+      <param-name>forceEncoding</param-name>
+      <param-value>true</param-value>
+    </init-param>
+    -->
+  </filter>
+  <filter-mapping>
+    <filter-name>encodingFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
+  <filter>
+    <filter-name>corsFilter</filter-name>
+    <filter-class>www.com.util.SimpleCorsFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>corsFilter</filter-name>
+    <url-pattern>/api/*</url-pattern>
+  </filter-mapping>
+
+  <filter>
+    <filter-name>xssEscapeServletFilter</filter-name>
+    <filter-class>com.navercorp.lucy.security.xss.servletfilter.XssEscapeServletFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>xssEscapeServletFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
+  <filter>
+    <filter-name>deviceResolverRequestFilter</filter-name>
+    <filter-class>org.springframework.mobile.device.DeviceResolverRequestFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>deviceResolverRequestFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
+  <!-- =======================
+       3) Spring Security 필터
+       ======================= -->
+  <filter>
+    <filter-name>springSecurityFilterChain</filter-name>
+    <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>springSecurityFilterChain</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
+  <!-- =======================
+       4) 스프링 컨텍스트 설정
+       ======================= -->
+  <context-param>
+    <param-name>contextConfigLocation</param-name>
+    <param-value>
+      classpath*:config/www/spring/context-*.xml
+      classpath*:config/www/spring/security/context-*.xml
+    </param-value>
+  </context-param>
+
+  <listener>
+    <listener-class>org.springframework.web.context.request.RequestContextListener</listener-class>
+  </listener>
+  <listener>
+    <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+  </listener>
+
+  <!-- =======================
+       5) DispatcherServlet (스프링 MVC)
+       ======================= -->
+  <servlet>
+    <servlet-name>action</servlet-name>
+    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+    <init-param>
+      <param-name>contextConfigLocation</param-name>
+      <param-value>classpath*:config/www/springmvc/*-servlet.xml</param-value>
+    </init-param>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>action</servlet-name>
+    <!-- '/'로 매핑되어 있어 정적 리소스까지 가로채므로,
+         아래 DefaultServlet 매핑으로 /static/*를 톰캣이 직접 서빙하게 만든다 -->
+    <url-pattern>/</url-pattern>
+  </servlet-mapping>
+
+  <!-- =======================
+       6) DefaultServlet을 /static/* 에 명시 매핑  ★ 핵심
+       ======================= -->
+  <servlet>
+    <servlet-name>default</servlet-name>
+    <servlet-class>org.apache.catalina.servlets.DefaultServlet</servlet-class>
+    <init-param>
+      <param-name>debug</param-name>
+      <param-value>0</param-value>
+    </init-param>
+    <init-param>
+      <param-name>listings</param-name>
+      <param-value>false</param-value>
+    </init-param>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>default</servlet-name>
+    <!-- webapp 루트의 /static/** 를 톰캣이 바로 서빙 -->
+    <url-pattern>/static/*</url-pattern>
+  </servlet-mapping>
+
+  <!-- =======================
+       7) 보안 로그인 설정(기존)
+       ======================= -->
+  <login-config>
+    <auth-method>BASIC</auth-method>
+  </login-config>
+
+  <!-- =======================
+       8) 웰컴 파일
+       ======================= -->
+  <welcome-file-list>
+    <welcome-file>www-index.jsp</welcome-file>
+  </welcome-file-list>
+
+</web-app>

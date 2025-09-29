@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.2.xsd
+		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-3.2.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd">
+	
+	<mvc:default-servlet-handler/>
+	
+    <context:component-scan base-package="www">
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Service"/>
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Repository"/>
+    </context:component-scan>
+    
+    <context:component-scan base-package="adm">
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Service"/>
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Repository"/>
+    </context:component-scan>
+    
+    <mvc:view-controller path="/adm" view-name="redirect:/adm/mai/main/main"/> 
+	<mvc:view-controller path="/adm/" view-name="redirect:/adm/mai/main/main"/>
+    
+    <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver" >
+		<property name="defaultEncoding" value="utf-8"/>
+        <property name="maxUploadSize" value="100000000"/>
+        <!-- 100MB = 100000000 Byte -->
+        <!-- <property name="uploadTempDir" value="uploadTempDir"/>-->
+	</bean>
+    
+    <!-- Controller class안에서 @Value("${conf.value}") 와 같은 문법을 사용2하여 config.xml의 설정값을 읽어오기 위한 세팅  -->
+<!--     <bean id="propertyPlaceholderConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="properties">
+        	<ref bean="commonsConfigurationFactoryBean"/>    
+        </property>
+    </bean>
+     -->
+	<!-- 기본 response header속성 캐쉬 사용안함으로 설정 -->
+	<mvc:interceptors>
+		<bean id="webContentInterceptor" class="org.springframework.web.servlet.mvc.WebContentInterceptor">
+			<property name="cacheSeconds" 			value="0"/>
+			<property name="useExpiresHeader"	 	value="true"/>
+			<property name="useCacheControlHeader" 	value="true"/>
+			<property name="useCacheControlNoStore" value="true"/>
+		</bean>
+		<bean class="www.com.spring.interceptor.OriginalRequestUriSetterInterceptor"/>
+		<!-- 모바일,태블릿 -->
+		<bean class="org.springframework.mobile.device.DeviceResolverHandlerInterceptor" />
+	</mvc:interceptors> 
+
+    <bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter">
+        <!-- http header no-cache set -->
+        <property name="cacheSeconds" value="0"/>
+        
+        <!-- ajax json 한글 처리 -->
+        <property name="messageConverters">
+        	<list>
+				<bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter" >
+	                <property name="supportedMediaTypes" value="application/json" />
+	            </bean>
+        	</list>
+        </property>
+    </bean>
+    <bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping">
+   		<property name="order" value="0"/>
+		<property name="interceptors">
+			<array>
+				<!-- MultipartHttpServletRequest를 RequestContextHolder에서 사용 할 수 있게 하는 interceptor -->
+				<bean class="www.com.spring.interceptor.MultipartRequestContextHolderInterceptor"/>
+			</array>
+		</property>
+    </bean>
+
+	<!-- Tiles viewResolver -->
+	<bean id="tilesViewResolver" class="org.springframework.web.servlet.view.UrlBasedViewResolver">
+	    <property name="viewClass" value="org.springframework.web.servlet.view.tiles3.TilesView" />
+	    <property name="order" value="1" />
+	</bean>
+	
+	<bean id="tilesConfigurer" class="org.springframework.web.servlet.view.tiles3.TilesConfigurer">
+	    <property name="definitions">
+	        <list>
+	             <value>/WEB-INF/tiles/*.xml</value>
+	        </list>
+	    </property>
+	</bean>
+
+
+    <bean class="org.springframework.web.servlet.view.UrlBasedViewResolver" p:order="2"
+	    p:viewClass="org.springframework.web.servlet.view.JstlView"
+	    p:prefix="/WEB-INF/jsp/www/" p:suffix=".jsp"/>
+
+    <!-- ★ 정적 리소스 매핑 (WAR: webapp 밑의 /static 사용) -->
+    <mvc:resources mapping="/static/**" location="/static/"/>
+
+    <!-- ★ DispatcherServlet이 '/'로 매핑되어 있을 때 DefaultServlet로 포워딩 -->
+    <mvc:default-servlet-handler/>
+
+</beans>

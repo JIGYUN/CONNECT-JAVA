@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.txn.ledger.Ledger">
+
+    <sql id="whereLedger">
+	    <if test="txnDt != null and txnDt != ''">
+	        AND TXN_DT <![CDATA[ >= ]]> CONCAT(#{txnDt}, ' 00:00:00')
+	        AND TXN_DT <![CDATA[ <  ]]> DATE_ADD(CONCAT(#{txnDt}, ' 00:00:00'), INTERVAL 1 DAY)
+	    </if> 
+    </sql> 
+
+    <select id="selectLedgerList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.txn.ledger.Ledger.selectLedgerList
+         Description : 목록 Query 
+        */
+        SELECT
+            TXN_ID
+			,GRP_CD
+			,DATE_FORMAT(TXN_DT, '%Y-%m-%d %H:%i:%s') AS TXN_DT
+			,IO_TYPE
+			,AMOUNT
+			,CURRENCY_CD
+			,ACCOUNT_NM
+			,CATEGORY_NM
+			,SUBCATEGORY_NM
+			,MERCHANT_NM
+			,TAGS
+			,MEMO
+			,XFER_GRP_ID
+			,USE_AT
+			,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+			,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+
+        FROM TB_LEDGER
+        <where>
+            <include refid="whereLedger" />
+        </where>
+        ORDER BY TXN_ID DESC
+        <if test="limit != null and offset != null">
+            /*  페이징 하단 시작  */
+            LIMIT #{limit} OFFSET #{offset}
+            /*  페이징 하단 끝  */
+        </if>
+    </select>
+
+    <select id="selectLedgerListCount" parameterType="hashmap" resultType="int">
+        /*
+         SQL ID: www.api.txn.ledger.Ledger.selectLedgerListCount
+         Description : 목록에서 레코드수 Query 
+        */
+        SELECT
+            COUNT(*) CNT
+        FROM TB_LEDGER
+        <where>
+            <include refid="whereLedger" />
+        </where> 
+    </select>
+
+    <select id="selectLedgerDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.txn.ledger.Ledger.selectLedgerDetail
+         Description : 상세조회 Query 
+        */  
+        SELECT
+            TXN_ID
+			,GRP_CD
+			,DATE_FORMAT(TXN_DT, '%Y-%m-%d %H:%i:%s') AS TXN_DT
+			,IO_TYPE
+			,AMOUNT
+			,CURRENCY_CD
+			,ACCOUNT_NM
+			,CATEGORY_NM
+			,SUBCATEGORY_NM
+			,MERCHANT_NM
+			,TAGS
+			,MEMO
+			,XFER_GRP_ID
+			,USE_AT
+			,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+			,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+
+        FROM TB_LEDGER
+        WHERE TXN_ID = #{txnId}
+    </select>
+
+    <insert id="insertLedger" parameterType="hashmap">
+        /*
+         SQL ID: www.api.txn.ledger.Ledger.insertLedger
+         Description : 등록 Query 
+        */
+        INSERT INTO TB_LEDGER
+        (
+            GRP_CD
+			,TXN_DT
+			,IO_TYPE
+			,AMOUNT
+			,CURRENCY_CD
+			,ACCOUNT_NM
+			,CATEGORY_NM
+			,SUBCATEGORY_NM
+			,MERCHANT_NM
+			,TAGS
+			,MEMO
+			,XFER_GRP_ID
+			,USE_AT
+			,CREATED_DT
+			,UPDATED_DT
+
+        )
+        VALUES
+        (
+            #{grpCd}
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{txnDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{txnDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+			,#{ioType}
+			,#{amount}
+			,#{currencyCd}
+			,#{accountNm}
+			,#{categoryNm}
+			,#{subcategoryNm}
+			,#{merchantNm}
+			,#{tags}
+			,#{memo}
+			,#{xferGrpId}
+			,#{useAt}
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+
+        )
+    </insert>
+
+    <update id="updateLedger" parameterType="hashmap">
+        /*
+         SQL ID: www.api.txn.ledger.Ledger.updateLedger
+         Description : 수정 Query 
+        */
+        UPDATE TB_LEDGER
+        <set>
+            			<if test='grpCd != null and grpCd != ""'>
+				GRP_CD = #{grpCd},
+			</if>
+			<if test='txnDt != null and txnDt != ""'>
+				TXN_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{txnDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{txnDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='ioType != null and ioType != ""'>
+				IO_TYPE = #{ioType},
+			</if>
+			<if test='amount != null and amount != ""'>
+				AMOUNT = #{amount},
+			</if>
+			<if test='currencyCd != null and currencyCd != ""'>
+				CURRENCY_CD = #{currencyCd},
+			</if>
+			<if test='accountNm != null and accountNm != ""'>
+				ACCOUNT_NM = #{accountNm},
+			</if>
+			<if test='categoryNm != null and categoryNm != ""'>
+				CATEGORY_NM = #{categoryNm},
+			</if>
+			<if test='subcategoryNm != null and subcategoryNm != ""'>
+				SUBCATEGORY_NM = #{subcategoryNm},
+			</if>
+			<if test='merchantNm != null and merchantNm != ""'>
+				MERCHANT_NM = #{merchantNm},
+			</if>
+			<if test='tags != null and tags != ""'>
+				TAGS = #{tags},
+			</if>
+			<if test='memo != null and memo != ""'>
+				MEMO = #{memo},
+			</if>
+			<if test='xferGrpId != null and xferGrpId != ""'>
+				XFER_GRP_ID = #{xferGrpId},
+			</if>
+			<if test='useAt != null and useAt != ""'>
+				USE_AT = #{useAt},
+			</if>
+			<if test='createdDt != null and createdDt != ""'>
+				CREATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='updatedDt != null and updatedDt != ""'>
+				UPDATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+
+        </set>
+        WHERE TXN_ID = #{txnId}
+    </update>
+
+    <delete id="deleteLedger" parameterType="hashmap">
+        /*
+         SQL ID: www.api.txn.ledger.Ledger.deleteLedger
+         Description : 삭제 Query 
+        */
+        DELETE FROM TB_LEDGER
+        WHERE TXN_ID = #{txnId}
+    </delete>
+
+</mapper>

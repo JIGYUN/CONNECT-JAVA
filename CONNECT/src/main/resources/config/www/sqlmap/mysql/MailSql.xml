@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.com.mail.Mail">
+
+    <!-- 템플릿 단건 조회 -->
+    <select id="selectMailTmplByCd" parameterType="map" resultType="hashmap">
+        SELECT
+            TMPL_ID,
+            TMPL_CD,
+            SUBJECT_TPL AS subjectTpl,
+            BODY_TPL    AS bodyTpl,
+            USE_AT
+        FROM TB_MAIL_TMPL
+        WHERE TMPL_CD = #{tmplCd}
+          AND USE_AT  = 'Y'
+        LIMIT 1
+    </select>
+
+    <!-- 메일 작업 등록 (READY 상태로 적재) -->
+    <insert id="insertMailJob" parameterType="map" useGeneratedKeys="true" keyProperty="jobId">
+        INSERT INTO TB_MAIL_JOB
+        (
+            TMPL_CD,
+            SUBJECT,
+            BODY_HTML,
+            TO_ADDR,
+            CC_ADDR,
+            BCC_ADDR,
+            FILE_GRP_ID,
+            PARAM_JSON,
+            STATUS_CD,
+            SEND_AT,
+            TRY_CNT,
+            CREATED_DT,
+            UPDATED_DT
+        )
+        VALUES
+        (
+            #{tmplCd},
+            #{subject},
+            #{bodyHtml},
+            #{to},
+            #{cc},
+            #{bcc},
+            #{fileGrpId, jdbcType=BIGINT},
+            #{paramJson},
+            'READY',
+            #{sendAt, jdbcType=TIMESTAMP},
+            0,
+            NOW(),
+            NOW()
+        )
+    </insert>
+
+    <!-- 발송 대상(READY) 조회 -->
+    <select id="selectReadyJobs" parameterType="map" resultType="hashmap">
+    	<![CDATA[
+        SELECT
+            JOB_ID,
+            TMPL_CD,
+            SUBJECT,
+            BODY_HTML,
+            TO_ADDR,
+            CC_ADDR,
+            BCC_ADDR,
+            FILE_GRP_ID,
+            PARAM_JSON,
+            STATUS_CD,
+            SEND_AT,
+            TRY_CNT,
+            DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT,
+            DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+        FROM TB_MAIL_JOB
+        WHERE STATUS_CD = 'READY'
+          AND (SEND_AT IS NULL OR SEND_AT <= NOW())
+        ORDER BY JOB_ID ASC
+        LIMIT #{limit}
+        <]]>
+    </select>
+
+    <!-- 작업 단건 조회 -->
+    <select id="selectJobById" parameterType="map" resultType="hashmap">
+        SELECT *
+        FROM TB_MAIL_JOB
+        WHERE JOB_ID = #{jobId}
+        LIMIT 1
+    </select>
+
+    <!-- 작업 상태 변경 -->
+    <update id="updateJobStatus" parameterType="map">
+        UPDATE TB_MAIL_JOB
+        SET STATUS_CD = #{statusCd},
+            UPDATED_DT = NOW()
+        WHERE JOB_ID = #{jobId}
+    </update>
+
+    <!-- 시도횟수 증가 및 오류메시지 기록 -->
+    <update id="increaseJobTry" parameterType="map">
+        UPDATE TB_MAIL_JOB
+        SET TRY_CNT     = TRY_CNT + 1,
+            LAST_ERR_MSG = #{lastErrMsg},
+            UPDATED_DT   = NOW()
+        WHERE JOB_ID = #{jobId}
+    </update>
+
+    <!-- 발송 성공 마킹(선택) -->
+    <update id="markJobSentNow" parameterType="map">
+        UPDATE TB_MAIL_JOB
+        SET STATUS_CD = 'SENT',
+            SENT_DT   = NOW(),
+            UPDATED_DT= NOW()
+        WHERE JOB_ID  = #{jobId}
+    </update>
+
+    <!-- 로그 적재 -->
+    <insert id="insertMailLog" parameterType="map" useGeneratedKeys="true" keyProperty="logId">
+        INSERT INTO TB_MAIL_LOG
+        (
+            JOB_ID,
+            SUBJECT,
+            TO_ADDR,
+            RESULT_CD,
+            ERR_MSG,
+            CREATED_DT
+        )
+        VALUES
+        (
+            #{jobId},
+            #{subject},
+            #{toAddr},
+            #{resultCd},
+            #{errMsg},
+            NOW()
+        )
+    </insert>
+
+    <!-- 작업별 로그 조회 -->
+    <select id="selectMailLogsByJob" parameterType="map" resultType="hashmap">
+        SELECT
+            LOG_ID,
+            JOB_ID,
+            SUBJECT,
+            TO_ADDR,
+            RESULT_CD,
+            ERR_MSG,
+            DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+        FROM TB_MAIL_LOG
+        WHERE JOB_ID = #{jobId}
+        ORDER BY LOG_ID ASC
+    </select>
+
+</mapper>

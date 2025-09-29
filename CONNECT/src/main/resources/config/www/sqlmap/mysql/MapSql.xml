@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.mmp.map.Map">
+
+    <sql id="whereMap">
+        <!-- 선택: grpCd로 필터링 -->
+        <if test="grpCd != null and grpCd != ''">
+            AND MG.GRP_CD = #{grpCd}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (M.MAP_NM LIKE CONCAT('%', #{keyword}, '%') OR M.CONTENT LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <!-- 필요 시 추가 검색조건 작성 -->
+    </sql>
+
+    <!-- 목록 -->
+    <select id="selectMapList" parameterType="map" resultType="CamelHashMap">
+        SELECT
+            M.MAP_ID,
+            M.TITLE,
+            M.MAP_GRP_ID,
+            MG.GRP_CD,
+            MG.GRP_NM,
+            M.MAP_NM,
+            M.CONTENT,
+            M.LAT,
+            M.LNG,
+            M.CREATE_USER,
+            DATE_FORMAT(M.CREATE_DATE, '%Y-%m-%d %H:%i:%s') AS CREATE_DATE,
+            M.UPDATE_USER,
+            DATE_FORMAT(M.UPDATE_DATE, '%Y-%m-%d %H:%i:%s') AS UPDATE_DATE
+        FROM TB_MAP M
+        LEFT JOIN TB_MAP_GRP MG ON MG.MAP_GRP_ID = M.MAP_GRP_ID
+        <where>
+            <include refid="whereMap"/>
+        </where>
+        ORDER BY M.MAP_ID DESC
+        <if test="limit != null and offset != null">
+            LIMIT #{limit} OFFSET #{offset}
+        </if>
+    </select>
+
+    <!-- 목록 카운트 (테이블명 오타 수정) -->
+    <select id="selectMapListCount" parameterType="hashmap" resultType="int">
+        SELECT COUNT(*) CNT
+        FROM TB_MAP M
+        LEFT JOIN TB_MAP_GRP MG ON MG.MAP_GRP_ID = M.MAP_GRP_ID
+        <where>
+            <include refid="whereMap"/>
+        </where>
+    </select>
+
+    <!-- 상세 -->
+    <select id="selectMapDetail" parameterType="map" resultType="CamelHashMap">
+        SELECT
+            M.MAP_ID,
+            M.TITLE,
+            M.MAP_GRP_ID,
+            MG.GRP_CD,
+            M.MAP_NM,
+            M.CONTENT,
+            M.LAT,
+            M.LNG,
+            M.CREATE_USER,
+            DATE_FORMAT(M.CREATE_DATE, '%Y-%m-%d %H:%i:%s') AS CREATE_DATE,
+            M.UPDATE_USER,
+            DATE_FORMAT(M.UPDATE_DATE, '%Y-%m-%d %H:%i:%s') AS UPDATE_DATE
+        FROM TB_MAP M
+        LEFT JOIN TB_MAP_GRP MG ON MG.MAP_GRP_ID = M.MAP_GRP_ID
+        WHERE M.MAP_ID = #{mapId}
+    </select>
+
+    <!-- 등록: grpCd만 넘어와도 MAP_GRP_ID를 해석해 저장 -->
+    <insert id="insertMap" parameterType="hashmap">
+        INSERT INTO TB_MAP
+        (
+            TITLE,
+            MAP_GRP_ID,
+            MAP_NM,
+            CONTENT,
+            LAT,
+            LNG,
+            CREATE_USER,
+            CREATE_DATE,
+            UPDATE_USER,
+            UPDATE_DATE
+        )
+        VALUES
+        (
+            #{title},
+            COALESCE(#{mapGrpId},
+                (SELECT MG.MAP_GRP_ID FROM TB_MAP_GRP MG WHERE MG.GRP_CD = #{grpCd})
+            ),
+            #{mapNm},
+            #{content},
+            #{lat},
+            #{lng},
+            #{createUser},
+            IFNULL(STR_TO_DATE(#{createDate}, '%Y-%m-%d %H:%i:%s'), NOW()),
+            #{updateUser},
+            IFNULL(STR_TO_DATE(#{updateDate}, '%Y-%m-%d %H:%i:%s'), NOW())
+        )
+    </insert>
+
+    <!-- 수정: mapGrpId 또는 grpCd가 오면 그룹 변경 -->
+    <update id="updateMap" parameterType="hashmap">
+        UPDATE TB_MAP
+        <set>
+            <if test='title != null and title != ""'>
+                TITLE = #{title},
+            </if>
+            <if test='mapGrpId != null or (grpCd != null and grpCd != "")'>
+                MAP_GRP_ID = COALESCE(#{mapGrpId},
+                    (SELECT MG.MAP_GRP_ID FROM TB_MAP_GRP MG WHERE MG.GRP_CD = #{grpCd})
+                ),
+            </if>
+            <if test='mapNm != null and mapNm != ""'>
+                MAP_NM = #{mapNm},
+            </if>
+            <if test='content != null and content != ""'>
+                CONTENT = #{content},
+            </if>
+            <if test='lat != null and lat != ""'>
+                LAT = #{lat},
+            </if>
+            <if test='lng != null and lng != ""'>
+                LNG = #{lng},
+            </if>
+            <if test='createUser != null and createUser != ""'>
+                CREATE_USER = #{createUser},
+            </if>
+            <if test='createDate != null and createDate != ""'>
+                CREATE_DATE = STR_TO_DATE(#{createDate}, '%Y-%m-%d %H:%i:%s'),
+            </if>
+            <if test='updateUser != null and updateUser != ""'>
+                UPDATE_USER = #{updateUser},
+            </if>
+            <if test='updateDate != null and updateDate != ""'>
+                UPDATE_DATE = STR_TO_DATE(#{updateDate}, '%Y-%m-%d %H:%i:%s'),
+            </if>
+        </set>
+        WHERE MAP_ID = #{mapId}
+    </update>
+
+    <delete id="deleteMap" parameterType="hashmap">
+        DELETE FROM TB_MAP
+        WHERE MAP_ID = #{mapId}
+    </delete>
+
+</mapper>

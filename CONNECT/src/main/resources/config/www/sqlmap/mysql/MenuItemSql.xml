@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.sys.menuItem.MenuItem">
+
+    <sql id="whereMenuItem">
+        <!-- 
+        동적 검색 조건 템플릿 (필요 시 활성화)
+
+        <choose>
+            <when test='id != null and id != "" '>
+
+            </when>
+            <otherwise>
+
+            </otherwise>
+        </choose>
+
+        <if test="searchField != null and searchText != null and searchField != '' and searchText != ''">
+            <choose>
+                <when test='searchField == "title"'>
+                    AND TITLE LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "content"'>
+                    AND CONTENT LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "writer"'>
+                    AND WRITER LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        -->
+    </sql> 
+
+    <select id="selectMenuItemList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.sys.menuItem.MenuItem.selectMenuItemList
+         Description : 목록 Query 
+        */
+        SELECT
+            MENU_ID
+			,MENU_GROUP_ID
+			,UPPER_MENU_ID
+			,MENU_SE_CD
+			,MENU_NM
+			,PATH_URL
+			,BOARD_ID
+			,VISIBLE_AT
+			,SORT_ORDR
+			,ICON_KEY
+			,REQ_ROLE_CD
+			,USE_AT
+			,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+			,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+
+        FROM TB_MENU_ITEM
+        <where>
+            <include refid="whereMenuItem" />
+        </where>
+        ORDER BY MENU_ID DESC
+        <if test="limit != null and offset != null">
+            /*  페이징 하단 시작  */
+            LIMIT #{limit} OFFSET #{offset}
+            /*  페이징 하단 끝  */
+        </if>
+    </select>
+
+    <select id="selectMenuItemListCount" parameterType="hashmap" resultType="int">
+        /*
+         SQL ID: www.api.sys.menuItem.MenuItem.selectMenuItemListCount
+         Description : 목록에서 레코드수 Query 
+        */
+        SELECT
+            COUNT(*) CNT
+        FROM TB_MENU_ITEM
+        <where>
+            <include refid="whereMenuItem" />
+        </where> 
+    </select>
+
+    <select id="selectMenuItemDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.sys.menuItem.MenuItem.selectMenuItemDetail
+         Description : 상세조회 Query 
+        */  
+        SELECT
+            MENU_ID
+			,MENU_GROUP_ID
+			,UPPER_MENU_ID
+			,MENU_SE_CD
+			,MENU_NM
+			,PATH_URL
+			,BOARD_ID
+			,VISIBLE_AT
+			,SORT_ORDR
+			,ICON_KEY
+			,REQ_ROLE_CD
+			,USE_AT
+			,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+			,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+
+        FROM TB_MENU_ITEM
+        WHERE MENU_ID = #{menuId}
+    </select>
+
+	<!-- 사이드바용: 한 번에 전부 불러와서 서비스에서 트리로 묶음 -->
+	<select id="selectMenuItemForSidebar" parameterType="map" resultType="CamelHashMap">
+	    /*
+	     SQL ID: www.api.sys.menuItem.MenuItem.selectMenuItemForSidebar
+	     Description: 관리자 사이드바 메뉴(가시/사용/권한 필터)
+	    */
+	    SELECT
+	        MENU_ID           AS menuId,
+	        MENU_GROUP_ID     AS menuGroupId,
+	        UPPER_MENU_ID     AS upperMenuId,
+	        MENU_SE_CD        AS menuSeCd,
+	        MENU_NM           AS menuNm,
+	        PATH_URL          AS pathUrl,
+	        ICON_KEY          AS iconKey,
+	        REQ_ROLE_CD       AS reqRoleCd,
+	        VISIBLE_AT        AS visibleAt,
+	        USE_AT            AS useAt,
+	        SORT_ORDR         AS sortOrdr
+	    FROM TB_MENU_ITEM
+	    WHERE 1=1
+	      <if test="menuGroupId != null and menuGroupId != ''">
+	        AND MENU_GROUP_ID = #{menuGroupId}
+	      </if>
+<!-- 	      AND IFNULL(VISIBLE_AT,'Y') = 'Y'
+	      AND IFNULL(USE_AT,'Y')    = 'Y'
+	      권한 필터: REQ_ROLE_CD 비어있거나, 내 역할에 포함
+	      <if test="roleList != null and roleList.size() > 0">
+	        AND (REQ_ROLE_CD IS NULL OR REQ_ROLE_CD = ''
+	             OR REQ_ROLE_CD IN
+	             <foreach collection="roleList" item="r" open="(" separator="," close=")">
+	                 #{r}
+	             </foreach>
+	        ) 
+	      </if> -->
+	    ORDER BY IFNULL(SORT_ORDR, 999999), MENU_ID
+	</select>
+
+    <insert id="insertMenuItem" parameterType="hashmap">
+        /*
+         SQL ID: www.api.sys.menuItem.MenuItem.insertMenuItem
+         Description : 등록 Query 
+        */
+        INSERT INTO TB_MENU_ITEM
+        (
+            MENU_GROUP_ID
+			,UPPER_MENU_ID
+			,MENU_SE_CD
+			,MENU_NM
+			,PATH_URL
+			,BOARD_ID
+			,VISIBLE_AT
+			,SORT_ORDR
+			,ICON_KEY
+			,REQ_ROLE_CD
+			,USE_AT
+			,CREATED_DT
+			,UPDATED_DT
+
+        )
+        VALUES
+        (
+            #{menuGroupId}
+			,#{upperMenuId}
+			,#{menuSeCd}
+			,#{menuNm}
+			,#{pathUrl}
+			,#{boardId}
+			,#{visibleAt}
+			,#{sortOrdr}
+			,#{iconKey}
+			,#{reqRoleCd}
+			,#{useAt}
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+
+        )
+    </insert>
+
+    <update id="updateMenuItem" parameterType="hashmap">
+        /*
+         SQL ID: www.api.sys.menuItem.MenuItem.updateMenuItem
+         Description : 수정 Query 
+        */
+        UPDATE TB_MENU_ITEM
+        <set>
+            			<if test='menuGroupId != null and menuGroupId != ""'>
+				MENU_GROUP_ID = #{menuGroupId},
+			</if>
+			<if test='upperMenuId != null and upperMenuId != ""'>
+				UPPER_MENU_ID = #{upperMenuId},
+			</if>
+			<if test='menuSeCd != null and menuSeCd != ""'>
+				MENU_SE_CD = #{menuSeCd},
+			</if>
+			<if test='menuNm != null and menuNm != ""'>
+				MENU_NM = #{menuNm},
+			</if>
+			<if test='pathUrl != null and pathUrl != ""'>
+				PATH_URL = #{pathUrl},
+			</if>
+			<if test='boardId != null and boardId != ""'>
+				BOARD_ID = #{boardId},
+			</if>
+			<if test='visibleAt != null and visibleAt != ""'>
+				VISIBLE_AT = #{visibleAt},
+			</if>
+			<if test='sortOrdr != null and sortOrdr != ""'>
+				SORT_ORDR = #{sortOrdr},
+			</if>
+			<if test='iconKey != null and iconKey != ""'>
+				ICON_KEY = #{iconKey},
+			</if>
+			<if test='reqRoleCd != null and reqRoleCd != ""'>
+				REQ_ROLE_CD = #{reqRoleCd},
+			</if>
+			<if test='useAt != null and useAt != ""'>
+				USE_AT = #{useAt},
+			</if>
+			<if test='createdDt != null and createdDt != ""'>
+				CREATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='updatedDt != null and updatedDt != ""'>
+				UPDATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+
+        </set>
+        WHERE MENU_ID = #{menuId}
+    </update>
+
+    <delete id="deleteMenuItem" parameterType="hashmap">
+        /*
+         SQL ID: www.api.sys.menuItem.MenuItem.deleteMenuItem
+         Description : 삭제 Query 
+        */
+        DELETE FROM TB_MENU_ITEM
+        WHERE MENU_ID = #{menuId}
+    </delete>
+
+</mapper>

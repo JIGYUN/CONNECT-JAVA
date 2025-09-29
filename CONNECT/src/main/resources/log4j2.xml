@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration monitorInterval="30"><!-- monitorInterval : log4j2.xml 파일 변경 체크 시간(초) -->
+    <Appenders>
+        <Console name="console" target="SYSTEM_OUT">
+            <PatternLayout pattern="[%d] [%5p] [%c Line:%L] %m%n" />
+        </Console>
+		
+		<!-- <JDBC name="databaseAppender" tableName="WWW_SYS_LOG" ignoreExceptions="true">
+			<ConnectionFactory class="egovframework.rte.fdl.logging.db.EgovConnectionFactory" method="getDatabaseConnection" />
+			<Column name="LV" pattern="%level" />
+			<Column name="LOGGER" pattern="%logger" />
+			<Column name="CLASS" pattern="%class" />
+			<Column name="METHOD" pattern="%method" />
+			<Column name="MSG" pattern="%message" />
+			<Column name="EXCEPTION" pattern="%ex{full}" />
+			<Column name="LOG_DATE" isEventTimestamp="true" />
+	    </JDBC> -->
+    </Appenders>
+    <Loggers>
+        <Root level="debug">
+            <AppenderRef ref="console" />
+            <!-- <AppenderRef ref="databaseAppender" /> -->
+        </Root>
+        
+        <Logger name="egovframework" level="info" additivity="false">
+            <AppenderRef ref="console" />
+        </Logger>
+		  <!-- log SQL with timing information, post execution -->
+	    <logger name="jdbc.sqltiming" level="info" additivity="false">
+	        <appender-ref ref="console" />
+	    </logger>
+	    <logger name="org.springframework" level="info" additivity="false">
+	        <appender-ref ref="console" />
+	    </logger>
+	    <logger name="org.apache.commons.digester" level="info" additivity="false">
+	        <appender-ref ref="console" />
+	    </logger>
+	    <logger name="org.apache.commons.validator.ValidatorResources" level="error" additivity="false">
+	        <appender-ref ref="console" />
+	    </logger>	    
+	    
+	    <!-- log4jdbc -->
+	    <logger name="jdbc.sqlonly" level="debug" additivity="false"><!-- 쿼리문 (파라미터값 포함) -->
+			<appender-ref ref="console"/>
+		</logger>
+	    <logger name="jdbc.resultsettable" level="debug" additivity="false"><!-- resultset 전체 결과 테이블 -->
+			<appender-ref ref="console"/>
+		</logger>
+		<logger name="jdbc.sqltiming" level="debug" additivity="false"><!-- db 조회에 걸린시간 -->
+			<appender-ref ref="console"/>
+		</logger>  
+		<logger name="jdbc.resultset" level="error" additivity="false"><!-- resultset 단건 결과 -->
+			<appender-ref ref="console"/>  
+		</logger>  
+		<logger name="jdbc.audit" level="error" additivity="false"><!-- 쿼리문 (파라미터값 제외) -->
+			<appender-ref ref="console"/>
+		</logger>
+		<!-- //log4jdbc -->
+    </Loggers>
+</Configuration>

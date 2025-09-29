@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.mpg.mypage.Mypage">
+ 
+    <!-- 회원조회 -->
+    <select id="selectMember" parameterType="map" resultType="CamelHashMap">
+    /* www.api.mpg.mypage.Mypage.selectMember */
+		SELECT T.MBER_NO             
+			   ,T.MBER_NM             
+			   ,T.TELNO               
+			   ,T.EMAIL               
+			   ,T.FAXNO
+			   ,T.ID
+			   ,T.PASSWORD
+			   ,T.CSTMR_NO
+			   ,T.MBER_SE_CD
+			   ,T.CRYAL_TELNO
+			   ,T.DEPT_CODE
+			   ,T.DEPT_NAME
+			   ,T.DURS_CODE
+			   ,T.DURS_NAME
+			   ,T.BIZRNO_ATCH_ID
+			   ,T.HFFCYN_ATCH_ID
+			   ,T.CRTFC_RESULT        
+			   ,T.CRTFC_MTHD          
+			   ,T.VRSC_ENTRPS_YN      
+			   ,T.MPBZ_YN             
+			   ,T.MPBZ_NUMB           
+			   ,T.RPRSNTV_JOB       
+			   ,T.DI   
+			   ,T.GENDER   
+			   ,T.BIRTHDAY       
+			   ,T.POSITION_NAME  
+			   ,T.POSITION_CODE 
+			   ,T.MANAGER_TELNO
+			   ,T.MANAGER_FAXNO
+			   ,T.INTEREST_FIELD
+			   ,T.INTEREST_FIELD2
+			   ,T.INTEREST_FIELD3
+			   ,T.JOB_CODE
+			   ,T.RECOMMEND_TEAM
+			   ,T.RECOMMEND_NM
+			   ,T.DETAIL_ADRES    
+			   ,T.ZIP
+			   ,T.USE_YN				
+			   ,T.REGISTER_ID         
+			   ,T.REGIST_DT           
+			   ,T.CHANGER_ID          
+			   ,T.CHANGE_DT    
+        FROM OL_CU_TUPR001 T
+        WHERE 1 = 1 
+        AND MBER_NO = #{mberNo}
+    </select>
+    
+   	<update id="modifyMember" parameterType="map">
+	/* www.api.mpg.mypage.Mypage.modifyMember */
+		UPDATE OL_CU_TUPR001
+		<set>  
+			<if test="email != null and email != '' ">
+				EMAIL = #{email},
+			</if>           
+			<if test="detailAdres != null and detailAdres != '' ">
+				DETAIL_ADRES = #{detailAdres},
+			</if>
+			<if test="zip != null and zip != '' ">
+				ZIP = #{zip},
+			</if>
+ 
+			<if test="managerTelno != null and managerTelno != '' ">
+				MANAGER_TELNO = #{managerTelno},
+			</if>    
+			<if test="managerFaxno != null and managerFaxno != '' ">
+				MANAGER_FAXNO = #{managerFaxno},
+			</if>    
+			<if test="status != null and status != '' ">
+				STATUS = #{status},
+			</if>    
+			<if test="deptName != null and deptName != '' ">
+				DEPT_NAME = #{deptName},
+			</if>    
+			<if test="dursName != null and dursName != '' ">
+				DURS_NAME = #{dursName},
+			</if>    
+			<if test="positionName != null and positionName != '' ">
+				POSITION_NAME = #{positionName},
+			</if>
+			<if test="interestField != null and interestField != '' ">
+				INTEREST_FIELD = #{interestField},
+			</if>     
+			<if test="interestField2 != null and interestField2 != '' ">
+				INTEREST_FIELD2 = #{interestField2},
+			</if>
+			<if test="interestField3 != null and interestField3 != '' ">
+				INTEREST_FIELD3 = #{interestField3},
+			</if>
+			<if test="jobCode != null and jobCode != '' ">
+				JOB_CODE = #{jobCode},
+			</if>
+			<if test="recommendTeam != null and recommendTeam != '' ">
+				RECOMMEND_TEAM = #{recommendTeam},
+			</if>
+			<if test="recommendNm != null and recommendNm != '' ">
+				RECOMMEND_NM = #{recommendNm},
+			</if>
+			CHANGER_ID = #{mberId},        
+			CHANGE_DT = SYSDATE
+		</set>
+		WHERE MBER_NO = #{mberNo}
+	</update> 
+	
+	
+	<!-- 승인 회원 목록 조회 -->
+    <select id="selectManagerList" parameterType="map" resultType="CamelHashMap">
+    /* www.api.mpg.mypage.Mypage.selectMember */
+		SELECT T.MBER_NO             
+			   ,T.MBER_NM             
+			   ,T.TELNO               
+			   ,T.EMAIL               
+			   ,T.FAXNO
+			   ,T.ID
+			   ,T.PASSWORD
+			   ,T.CSTMR_NO
+			   ,T.MBER_SE_CD
+			   ,T.CRYAL_TELNO
+			   ,T.DEPT_CODE
+			   ,T.DEPT_NAME
+			   ,T.DURS_CODE
+			   ,T.DURS_NAME
+			   ,T.BIZRNO_ATCH_ID
+			   ,T.HFFCYN_ATCH_ID
+			   ,T.CRTFC_RESULT        
+			   ,T.CRTFC_MTHD          
+			   ,T.VRSC_ENTRPS_YN      
+			   ,T.MPBZ_YN             
+			   ,T.MPBZ_NUMB           
+			   ,T.RPRSNTV_JOB       
+			   ,T.DI   
+			   ,T.GENDER   
+			   ,T.BIRTHDAY       
+			   ,T.POSITION_NAME  
+			   ,T.POSITION_CODE 
+			   ,T.MANAGER_TELNO
+			   ,T.MANAGER_FAXNO
+			   ,T.INTEREST_FIELD
+			   ,T.DETAIL_ADRES  
+			   ,T.ZIP
+			   ,T.APPROVE_CODE
+			   ,TO_CHAR(T.APPROVE_DT, 'YYYY.MM.DD') AS APPROVE_DT
+			   ,T.USE_YN			
+			   ,T.STATUS	
+			   ,T.ROLE	
+			   ,T.REGISTER_ID      
+			   ,TO_CHAR(T.REGIST_DT, 'YYYY.MM.DD') AS REGIST_DT    
+			   ,T.CHANGER_ID          
+			   ,TO_CHAR(T.CHANGE_DT, 'YYYY.MM.DD') AS CHANGE_DT
+        FROM OL_CU_TUPR001 T
+        WHERE 1 = 1 
+        AND T.CSTMR_NO = #{cstmrNo}
+        AND T.ROLE != '1'
+    </select>
+    
+    
+    <!-- 승인 회원 목록 조회 -->  
+    <select id="selectSpecifyManagerList" parameterType="map" resultType="CamelHashMap">
+    /* www.api.mpg.mypage.Mypage.selectSpecifyManagerList */ 
+		SELECT T.MBER_NO             
+			   ,T.MBER_NM             
+			   ,T.TELNO               
+			   ,T.EMAIL               
+			   ,T.FAXNO
+			   ,T.ID
+			   ,T.PASSWORD
+			   ,T.CSTMR_NO
+			   ,T.MBER_SE_CD
+			   ,T.CRYAL_TELNO
+			   ,T.DEPT_CODE
+			   ,T.DEPT_NAME
+			   ,T.DURS_CODE
+			   ,T.DURS_NAME
+			   ,T.BIZRNO_ATCH_ID
+			   ,T.HFFCYN_ATCH_ID
+			   ,T.CRTFC_RESULT        
+			   ,T.CRTFC_MTHD          
+			   ,T.VRSC_ENTRPS_YN      
+			   ,T.MPBZ_YN
+			   ,T.MPBZ_NUMB
+			   ,T.RPRSNTV_JOB
+			   ,T.DI
+			   ,T.GENDER
+			   ,T.BIRTHDAY
+			   ,T.POSITION_NAME
+			   ,T.POSITION_CODE
+			   ,T.MANAGER_TELNO
+			   ,T.MANAGER_FAXNO
+			   ,T.INTEREST_FIELD
+			   ,T.DETAIL_ADRES
+			   ,T.ZIP
+			   ,T.APPROVE_CODE
+			   ,TO_CHAR(T.APPROVE_DT, 'YYYY.MM.DD') AS APPROVE_DT
+			   ,T.USE_YN
+			   ,T.STATUS
+			   ,T.ROLE
+			   ,T.REGISTER_ID         
+			   ,TO_CHAR(T.REGIST_DT, 'YYYY.MM.DD') AS REGIST_DT    
+			   ,T.CHANGER_ID          
+			   ,TO_CHAR(T.CHANGE_DT, 'YYYY.MM.DD') AS CHANGE_DT
+        FROM OL_CU_TUPR001 T
+        WHERE 1 = 1 
+        AND T.CSTMR_NO = #{cstmrNo}
+        AND T.ROLE != '1'
+        AND T.APPROVE_CODE = '1'
+    </select>
+    
+    <update id="approveMember" parameterType="map">
+	/* www.api.mpg.mypage.Mypage.approveMember */
+		UPDATE OL_CU_TUPR001
+		<set>  
+			APPROVE_CODE = #{approveCode},        
+			APPROVE_DT = SYSDATE
+		</set>
+		WHERE MBER_NO = #{mberNo} 
+	</update> 
+	
+    <update id="specifyMember" parameterType="map">
+	/* www.api.mpg.mypage.Mypage.specifyMember */
+		UPDATE OL_CU_TUPR001
+		<set>  
+			ROLE = #{role}
+		</set>
+		WHERE MBER_NO = #{mberNo} 
+	</update> 
+</mapper>

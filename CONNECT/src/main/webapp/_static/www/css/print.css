@@ -1,0 +1,19 @@
+@charset "UTF-8";
+
+@media print {
+	@page {size: A4; page-break-after: always;}
+	body {color : #000000; background : #FFFFFF;  font-size : 12pt;} 
+	body > a{text-decoration : underline;}
+	.headerWrap {display: none;}
+	.quick_typeB {display: none;}
+	.quick_wrap {display: none;}
+	.footerWrap {display: none;}
+	.footer_btm_area {display: none;}
+}
+
+@media print and (color) {
+   * {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+   }
+}

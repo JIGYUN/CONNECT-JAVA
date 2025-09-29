@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:beans="http://www.springframework.org/schema/beans"
+             xsi:schemaLocation="
+               http://www.springframework.org/schema/beans  http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+               http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd">
+
+    <!-- 정적 리소스 -->
+    <!-- 정적 리소스 (시큐리티 필터 완전 우회) -->
+    <http pattern="/static/**"    security="none"/>
+    <http pattern="/webjars/**"   security="none"/>
+
+    <!-- 파일 확장자별 백업 우회(경로가 바뀌어도 안전) -->
+    <http pattern="/**/*.css"     security="none"/>
+    <http pattern="/**/*.js"      security="none"/>
+    <http pattern="/**/*.map"     security="none"/>
+    <http pattern="/**/*.png"     security="none"/>
+    <http pattern="/**/*.jpg"     security="none"/>
+    <http pattern="/**/*.jpeg"    security="none"/>
+    <http pattern="/**/*.gif"     security="none"/>
+    <http pattern="/**/*.svg"     security="none"/>
+    <http pattern="/**/*.woff"    security="none"/>
+    <http pattern="/**/*.woff2"   security="none"/>
+    <http pattern="/**/*.ttf"     security="none"/>
+
+    <!-- =======================
+         ADMIN 전용 체인 (먼저!)
+         ======================= -->
+    <http pattern="/adm/**"
+          auto-config="true"
+          access-decision-manager-ref="accessDecisionManager"
+          authentication-manager-ref="authenticationManager"
+          entry-point-ref="adminEntryPoint">
+
+        <!-- 로그인/로그아웃 화면 -->
+        <form-login login-page="/adm/mba/auth/login"/>
+        <logout invalidate-session="true"
+                logout-url="/adm/mba/auth/logout"
+                success-handler-ref="logoutSuccessHandlerAdmin"/>
+
+        <!-- Admin 전용 로그인 처리 필터 (처리 URL 분리, POST 전용) -->
+        <custom-filter ref="usernamePasswordAuthenticationFilterAdmin" before="FORM_LOGIN_FILTER"/>
+
+        <!-- Admin URL 권한 매핑 -->
+        <custom-filter ref="filterSecurityInterceptorAdmin" before="FILTER_SECURITY_INTERCEPTOR"/>
+    </http>
+
+    <!-- =======================
+         일반 사용자 체인
+         ======================= -->
+    <http auto-config="true"
+          access-decision-manager-ref="accessDecisionManager"
+          authentication-manager-ref="authenticationManager"
+          entry-point-ref="frontEntryPoint">
+
+        <form-login login-page="/mba/auth/login"/>
+        <logout invalidate-session="true"
+                logout-url="/mba/auth/logout"
+                success-handler-ref="logoutSuccessHandler"/>
+
+        <!-- 일반 로그인 처리 필터 (처리 URL 분리, POST 전용) -->
+        <custom-filter ref="usernamePasswordAuthenticationFilter" before="FORM_LOGIN_FILTER"/>
+
+        <custom-filter ref="filterSecurityInterceptor" before="FILTER_SECURITY_INTERCEPTOR"/>
+    </http>
+
+    <!-- ===== Admin 권한 메타데이터 (로그인/처리/로그아웃은 허용, 나머지는 ADMIN) -->
+    <filter-security-metadata-source id="filterSecurityMetadataSourceAdmin" use-expressions="true">
+        <intercept-url pattern="/adm/mba/auth/login"      access="permitAll"/>
+        <intercept-url pattern="/adm/mba/auth/loginProc"  access="permitAll"/>
+        <intercept-url pattern="/adm/mba/auth/logout"     access="permitAll"/>
+        <intercept-url pattern="/adm/**"                  access="hasAuthority('ADMIN')"/>
+    </filter-security-metadata-source>
+
+    <beans:bean id="filterSecurityInterceptorAdmin" class="org.springframework.security.web.access.intercept.FilterSecurityInterceptor">
+        <beans:property name="accessDecisionManager" ref="accessDecisionManager"/>
+        <beans:property name="authenticationManager" ref="authenticationManager"/>
+        <beans:property name="securityMetadataSource" ref="filterSecurityMetadataSourceAdmin"/>
+    </beans:bean>
+
+    <!-- ===== 일반 권한 메타데이터 (예시 – 기존 룰 유지) -->
+    <filter-security-metadata-source id="filterSecurityMetadataSource" use-expressions="true">
+        <intercept-url pattern="/mpg/**/*" access="hasRole('EXTERNAL_AUTH')"/>
+    </filter-security-metadata-source>
+
+    <beans:bean id="filterSecurityInterceptor" class="org.springframework.security.web.access.intercept.FilterSecurityInterceptor">
+        <beans:property name="accessDecisionManager" ref="accessDecisionManager"/>
+        <beans:property name="authenticationManager" ref="authenticationManager"/>
+        <beans:property name="securityMetadataSource" ref="filterSecurityMetadataSource"/>
+    </beans:bean>
+
+    <!-- 권한 계층/결정 로직(기존) -->
+    <beans:bean id="roleHierarchy" class="org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl">
+        <beans:property name="hierarchy">
+            <beans:value>
+                MEMBER > NAMECHECK
+                MEMBER > IPIN
+                MEMBER > SNS
+                SNS > EXTERNAL_AUTH
+                NAMECHECK > EXTERNAL_AUTH
+                IPIN > EXTERNAL_AUTH
+            </beans:value>
+        </beans:property>
+    </beans:bean>
+
+    <beans:bean id="accessDecisionManager" class="org.springframework.security.access.vote.AffirmativeBased">
+        <beans:constructor-arg>
+            <beans:list>
+                <beans:bean class="org.springframework.security.web.access.expression.WebExpressionVoter">
+                    <beans:property name="expressionHandler">
+                        <beans:bean class="org.springframework.security.web.access.expression.DefaultWebSecurityExpressionHandler">
+                            <beans:property name="roleHierarchy" ref="roleHierarchy"/>
+                        </beans:bean>
+                    </beans:property>
+                </beans:bean>
+                <beans:bean class="org.springframework.security.access.vote.RoleHierarchyVoter">
+                    <beans:constructor-arg ref="roleHierarchy"/>
+                    <beans:property name="rolePrefix" value=""/>
+                </beans:bean>
+                <beans:bean class="org.springframework.security.access.vote.AuthenticatedVoter"/>
+            </beans:list>
+        </beans:constructor-arg>
+    </beans:bean>
+
+    <!-- 인증 Provider -->
+    <beans:bean id="webAuthenticationProvider" class="www.com.security.provider.WebAuthenticationProvider"/>
+    <authentication-manager id="authenticationManager">
+        <authentication-provider ref="webAuthenticationProvider"/>
+    </authentication-manager>
+
+    <!-- ====== 로그인 처리 필터 (일반/관리자) -->
+    <beans:bean id="usernamePasswordAuthenticationFilter" class="org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter">
+        <!-- ★ 프론트 처리 URL을 화면 URL과 분리 -->
+        <beans:property name="filterProcessesUrl" value="/com/auth/loginProc"/>
+        <beans:property name="usernameParameter" value="mberId"/>
+        <beans:property name="passwordParameter" value="mberPw"/>
+        <beans:property name="postOnly" value="true"/>
+        <beans:property name="authenticationManager" ref="authenticationManager"/>
+        <beans:property name="authenticationSuccessHandler" ref="loginSuccessHandler"/>
+        <beans:property name="authenticationFailureHandler" ref="loginFailureHandler"/>
+    </beans:bean>
+
+    <beans:bean id="usernamePasswordAuthenticationFilterAdmin" class="org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter">
+        <!-- ★ 관리자 처리 URL을 화면 URL과 분리 -->
+        <beans:property name="filterProcessesUrl" value="/adm/mba/auth/loginProc"/>
+        <beans:property name="usernameParameter" value="mberId"/>
+        <beans:property name="passwordParameter" value="mberPw"/>
+        <beans:property name="postOnly" value="true"/>
+        <beans:property name="authenticationManager" ref="authenticationManager"/>
+        <beans:property name="authenticationSuccessHandler" ref="loginSuccessHandlerAdmin"/>
+        <beans:property name="authenticationFailureHandler" ref="loginFailureHandlerAdmin"/>
+    </beans:bean>
+
+    <!-- ===== 엔트리포인트 분리 (체인별 로그인 페이지 고정) -->
+    <beans:bean id="adminEntryPoint" class="org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint">
+        <beans:property name="loginFormUrl" value="/adm/mba/auth/login"/>
+    </beans:bean>
+    <beans:bean id="frontEntryPoint" class="org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint">
+        <beans:property name="loginFormUrl" value="/mba/auth/login"/>
+    </beans:bean>
+
+    <!-- ===== 성공/실패/로그아웃 핸들러들 -->
+    <beans:bean id="loginSuccessHandler" class="www.com.security.handler.LoginSuccessHandler">
+        <beans:property name="defaultTargetUrl" value="/"/>
+    </beans:bean>
+    <beans:bean id="loginSuccessHandlerAdmin" class="www.com.security.handler.LoginSuccessHandler">
+        <beans:property name="defaultTargetUrl" value="/adm"/>
+    </beans:bean>
+
+    <!-- 실패 핸들러는 기본 클래스로 (setDefaultFailureUrl 제공) -->
+    <beans:bean id="loginFailureHandler"
+                class="org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler">
+        <beans:property name="defaultFailureUrl" value="/mba/auth/login?failYn=Y"/>
+    </beans:bean>
+    <beans:bean id="loginFailureHandlerAdmin"
+                class="org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler">
+        <beans:property name="defaultFailureUrl" value="/adm/mba/auth/login?failYn=Y"/>
+    </beans:bean>
+
+    <beans:bean id="logoutSuccessHandler"
+                class="org.springframework.security.web.authentication.logout.SimpleUrlLogoutSuccessHandler">
+        <beans:property name="targetUrlParameter" value="retUrl"/>
+        <beans:property name="defaultTargetUrl" value="/"/>
+    </beans:bean>
+    <beans:bean id="logoutSuccessHandlerAdmin"
+                class="org.springframework.security.web.authentication.logout.SimpleUrlLogoutSuccessHandler">
+        <beans:property name="targetUrlParameter" value="retUrl"/>
+        <beans:property name="defaultTargetUrl" value="/adm"/>
+    </beans:bean>
+</beans:beans>

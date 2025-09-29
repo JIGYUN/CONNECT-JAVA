@@ -1,0 +1,40 @@
+package adm.mmp.web;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import www.com.user.service.UserSessionManager;
+
+import java.util.HashMap;
+
+/**
+ * @ClassName   : WebMapController.java
+ * @Description : 지도 화면(Web) : 지도 위한 클래스로 CRUD에 대한 컨트롤을 관리한다.
+ * @author      : 정지균
+ * @since       : 2025. 09. 02.
+ */
+@Controller
+@RequestMapping("/adm/mmp") // 예) /bbs
+public class AdmMapController {
+
+    /** 목록 페이지 */
+    @RequestMapping("/map/mapList")
+    public String list(ModelMap model, @RequestParam HashMap<String,Object> map) throws Exception {
+        if (UserSessionManager.isUserLogined()) {
+            model.put("userVO", UserSessionManager.getLoginUserVO());
+        }
+        model.put("map", map);
+        return "adm/mmp/map/mapList"; // 예) bbs/board/boardList.jsp
+    }
+
+    /** 등록/수정 페이지 */
+    @RequestMapping("/map/mapModify")
+    public String modify(ModelMap model, @RequestParam HashMap<String,Object> map) throws Exception {
+        if (UserSessionManager.isUserLogined()) {
+            model.put("userVO", UserSessionManager.getLoginUserVO());
+        }
+        model.put("map", map);
+        return "adm/mmp/map/mapModify"; // 예) bbs/board/boardModify.jsp
+    }
+}

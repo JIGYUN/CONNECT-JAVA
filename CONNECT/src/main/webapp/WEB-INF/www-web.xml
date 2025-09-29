@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_1.xsd" id="WebApp_ID" version="3.1">
+  	<display-name>www_ktr_3.9</display-name>
+  	
+  	<!-- 세션 만료시간 단위 : 분 -->
+  	<session-config>
+  		<session-timeout>60</session-timeout>
+  		<tracking-mode>COOKIE</tracking-mode>
+  	</session-config>
+  	
+  	<!-- jsp 공백 제거 -->
+  	<jsp-config>
+  		<jsp-property-group>
+  			<url-pattern>*.jsp</url-pattern>
+  			<trim-directive-whitespaces>true</trim-directive-whitespaces>
+  		</jsp-property-group>
+  	</jsp-config>
+  	
+	<filter>
+		<filter-name>encodingFilter</filter-name>
+		<filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+		<init-param>
+			<param-name>encoding</param-name>
+			<param-value>utf-8</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>encodingFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	
+	<filter>
+		<filter-name>xssEscapeServletFilter</filter-name>
+		<filter-class>com.navercorp.lucy.security.xss.servletfilter.XssEscapeServletFilter</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>xssEscapeServletFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	
+	<!-- 모바일,태블릿 필터 -->
+	<filter>
+		<filter-name>deviceResolverRequestFilter</filter-name>
+		<filter-class>org.springframework.mobile.device.DeviceResolverRequestFilter</filter-class>
+	</filter>
+	
+	<!-- <filter>
+		<filter-name>HTMLTagFilter</filter-name>
+		<filter-class>egovframework.rte.ptl.mvc.filter.HTMLTagFilter</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>HTMLTagFilter</filter-name>
+		<url-pattern>*.do</url-pattern>
+	</filter-mapping> -->
+	<context-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>
+			classpath*:config/www/spring/context-*.xml
+			classpath*:config/www/spring/security/context-*.xml
+		</param-value>
+	</context-param>
+	<listener>
+		<!-- 
+			현재 요청되어진 HttpServletRequest 객체의 
+			레퍼런스정보를 저장하는 기능을 제공한다. 
+			
+			자바 소스 사용 예) : 
+				ServletRequestAttributes attr = 
+					(ServletRequestAttributes)RequestContextHolder.currentRequestAttributes();
+					
+				HttpServletRequest = attr.getRequest();
+		-->
+    	<listener-class>org.springframework.web.context.request.RequestContextListener</listener-class>
+  	</listener>
+	<listener>
+		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+	</listener>
+	<servlet>
+		<servlet-name>action</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<init-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>
+				classpath*:config/www/springmvc/*-servlet.xml
+			</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>action</servlet-name>
+		<url-pattern>/</url-pattern>
+	</servlet-mapping>
+	
+	<!-- spring security -->
+	<filter>
+		<filter-name>springSecurityFilterChain</filter-name>
+		<filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>springSecurityFilterChain</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	
+	<login-config>
+		<auth-method>BASIC</auth-method>
+	</login-config>
+	<error-page>
+		<exception-type>java.lang.Throwable</exception-type>
+		<location>/www/jsp/error.jsp</location>
+	</error-page>
+	<error-page>
+		<error-code>400</error-code>
+		<location>/www/jsp/error.jsp</location>
+	</error-page>
+	<error-page>
+		<error-code>403</error-code>
+		<location>/www/jsp/error.jsp</location>
+	</error-page>
+	<error-page>
+		<error-code>404</error-code>
+		<location>/www/jsp/error.jsp</location>
+	</error-page>
+	<error-page>
+		<error-code>500</error-code>
+		<location>/www/jsp/error.jsp</location>
+	</error-page>
+	<welcome-file-list>
+	    <welcome-file>www-index.jsp</welcome-file>
+	</welcome-file-list>
+</web-app>

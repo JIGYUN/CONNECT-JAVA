@@ -1,0 +1,496 @@
+<?xml version="1.0" encoding="UTF-8"?><site code1="" code2="" code3="" code4="" explain="샘플사이트" flag1="" flag2="" flag3="" idx="100" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="한국과학창의재단" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="S" url="" viewType="">
+  <menu code1="" code2="" code3="" code4="" explain="재단 소개" flag1="" flag2="" flag3="" idx="202" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="재단 소개" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+    <menu code1="" code2="" code3="" code4="" explain="인사말" flag1="" flag2="" flag3="" idx="203" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="인사말" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/203" viewType=""/>
+    <menu code1="" code2="" code3="" code4="" explain="이사장 소개" flag1="" flag2="" flag3="" idx="204" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="이사장 소개" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+      <menu code1="" code2="" code3="" code4="" explain="이사장 인사말" flag1="" flag2="" flag3="" idx="205" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="이사장 인사말" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/205" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="역대 이사장" flag1="" flag2="" flag3="" idx="206" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="역대 이사장" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/357/L/menu/206" viewType=""/>
+    </menu>
+    <menu code1="" code2="" code3="" code4="" explain="재단안내" flag1="" flag2="" flag3="" idx="207" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="재단안내" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+      <menu code1="" code2="" code3="" code4="" explain="비전 및 경영목표" flag1="" flag2="" flag3="" idx="208" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="비전 및 경영목표" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/208" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="재단 연혁" flag1="" flag2="" flag3="" idx="209" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="재단 연혁" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/209" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="이사회" flag1="" flag2="" flag3="" idx="210" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="이사회" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/358/L/menu/210" viewType="">
+        <bodyTop><![CDATA[<p><br /></p>]]></bodyTop>
+        <bodyBottom><![CDATA[<div class="list_area"> 
+<div class="sub_tit">임기 및 선임절차</div> 
+<table class="brd_fixed_col tC"> 
+<caption>임기 및 선임절차 구분, 임기, 선임절차 정보를 제공하는 표</caption> 
+<colgroup> 
+<col width="15%" /> 
+<col width="15%" /> 
+<col width="*%" /> 
+</colgroup> 
+<tbody> 
+<tr> 
+<th scope="col" class="NamoSE_border_show">구분</th> 
+<th scope="col" class="NamoSE_border_show">임기</th> 
+<th scope="col" class="NamoSE_border_show">선임절차</th> 
+</tr> 
+<tr> 
+<td>이사장</td> 
+<td>3년</td> 
+<td class="tL">상근직으로 임원추천위원회의 추천을 통해 과학기술정보통신부 장관이 임명</td> 
+</tr> 
+<tr> 
+<td>당연직 이사</td> 
+<td>해당직위<br /> 재임기간</td> 
+<td class="tL">과학기술정보통신부 미래인재정책국장, 교육부 교육과정정책관</td> 
+</tr> 
+<tr> 
+<td>선임직 이사</td> 
+<td>2년</td> 
+<td class="tL">비상근직으로 산･학･연 등을 종합적으로 고려하여 이사회 추천을 통해 과학기술정보통신부 장관이 임명</td> 
+</tr> 
+<tr> 
+<td>감사</td> 
+<td>2년</td> 
+<td class="tL">비상근직으로 임원추천위원회의 추천을 통해 공공기관운영위원회 심의･의결을 거쳐 기획재정부 장관이 임명</td> 
+</tr> 
+</tbody> 
+</table></div>
+<div class="list_area"> 
+<div class="sub_tit">이사회 기능</div> 
+<div class="cont_p"> 
+<p>한국과학창의재단의 최고의사결정기구로서 주요 경영사항을 심의･의결</p></div> 
+<table class="brd_fixed_col mt10"> 
+<caption>이사회 기능 구분, 주요내용 정보를 제공하는 표</caption> 
+<colgroup> 
+<col width="15%" /> 
+<col width="*%" /> 
+</colgroup> 
+<tbody> 
+<tr> 
+<th scope="col" class="NamoSE_border_show">구분</th> 
+<th scope="col" class="NamoSE_border_show">주요내용</th> 
+</tr> 
+<tr> 
+<td class="tC">의결사항</td> 
+<td> 
+<ul class="list_blt"> 
+<li>기구 및 직원의 정원</li> 
+<li>재단 운영계획, 예산, 결산, 장기차입금 및 기본재산의 취득･처분과 관리</li> 
+<li>경영목표 및 이사장 경영계약에 관한 사항</li> 
+<li>정관의 변경에 관한 사항</li> 
+<li>임원추천위원회의 구성 및 운영에 관한 사항</li> 
+<li>임원의 보수에 관한 사항</li> 
+<li>중요 규정의 제정 또는 개정에 관한 사항</li> 
+<li>잉여금 처분 및 손실금의 보전에 관한 사항</li> 
+<li>법령 또는 정관으로 이사회의 의결을 요구하는 사항</li> 
+<li>예비비의 사용과 예산의 이월에 관한 사항</li> 
+<li>기타 본 재단의 운영상 중요하다고 이사회가 인정하는 사항</li> 
+</ul></td> 
+</tr> 
+<tr> 
+<td class="tC">보고사항</td> 
+<td> 
+<ul class="list_blt"> 
+<li>국정감사, 회계감사, 감사원감사에서 지적된 사항과 그에 대한 조치 계획 및 실적</li> 
+<li>단체협약 결과와 그에 따른 예산소요 추계</li> 
+<li>그 밖에 이사장이 필요하다고 인정한 사항 또는 이사회가 요구한 사항</li> 
+</ul></td> 
+</tr> 
+</tbody> 
+</table> </div>
+<div class="list_area"> 
+<div class="sub_tit">이사회 운영</div> 
+<table class="brd_fixed_col mt10"> 
+<caption>이사회 운영 구분, 주요내용 정보를 제공하는 표</caption> 
+<colgroup> 
+<col width="15%" /> 
+<col width="*%" /> 
+</colgroup> 
+<tbody> 
+<tr> 
+<th scope="col" class="NamoSE_border_show">구분</th> 
+<th scope="col" class="NamoSE_border_show">주요내용</th> 
+</tr> 
+<tr> 
+<td class="tC">정기회</td> 
+<td> 
+<ul class="list_blt"> 
+<li>당해 연도 결산(안) 및 차년도 예산(안) 심의･의결을 위해 매년 2월과 12월에 개최</li> 
+</ul></td> 
+</tr> 
+<tr> 
+<td class="tC">임시회</td> 
+<td> 
+<ul class="list_blt"> 
+<li>주요 경영 현안을 공유하고, 경영방향 설정을 위해 수시 개최</li> 
+</ul></td> 
+</tr> 
+</tbody> 
+</table> </div>]]></bodyBottom>
+      </menu>
+    </menu>
+    <menu code1="" code2="" code3="" code4="" explain="조직 안내" flag1="" flag2="" flag3="" idx="211" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="조직 안내" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+      <menu code1="" code2="" code3="" code4="" explain="조직도" flag1="" flag2="" flag3="" idx="212" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="조직도" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="P" url="/org/view/menu/212" viewType="">
+        <bodyTop><![CDATA[<div class="o_chart"> 
+<div class="top_chart"> 
+<div class="top_left clearfix"><a href="/brd/board/358/L/menu/210"><span>이사회</span></a></div><a href="javascript:void(0)" onclick="javascript:procOrg('738');"><span>이사장실</span> </a> 
+<div class="right_wrap clearfix"><a href="javascript:procOrg('740');"><span>감사</span></a><a href="javascript:procOrg('741');"><span>청렴감사팀</span></a></div></div> 
+<div class="btm_wrap clearfix"> 
+<div class="mid_left"><a href="javascript:procOrg('762');"><span>종합&middot;원격교육연수원</span></a> 
+<p><a href="javascript:procOrg('763');">교과서검인정</a></p></div></div> 
+<div class="sec_wrap clearfix"> 
+<div class="sec_chart"><dl> <dt><a href="javascript:procOrg('747');">정책기획부</a></dt> <dd> 
+<p><a href="javascript:procOrg('748');">미래전략</a> <a href="javascript:procOrg('749');">성과확산</a> <a href="javascript:procOrg('750');">IT&middot;정보화</a></p> </dd> </dl><dl> <dt><a href="javascript:procOrg('742');">과학기술문화본부</a></dt> <dd> 
+<p><a href="javascript:procOrg('743');">과학문화협력</a> <a href="javascript:procOrg('744');">지역과학문화</a> <a href="javascript:procOrg('745');">과학콘텐츠</a> <a href="javascript:procOrg('746');">과학기술소통</a></p> </dd> </dl><dl> <dt><a href="javascript:procOrg('751');">과기인재양성부</a></dt> <dd> 
+<p><a href="javascript:procOrg('752');">미래인재양성지원</a> <a href="javascript:procOrg('753');">SWㆍAI인재양성</a></p> </dd> </dl><dl> <dt><a href="javascript:procOrg('754');">과학ㆍ수학교육부</a></dt> <dd> 
+<p><a href="javascript:procOrg('755');">과학교육</a> <a href="javascript:procOrg('756');">수학ㆍ융합교육</a> <a href="javascript:procOrg('757');">미래교육지원</a></p> </dd> </dl><dl> <dt><a href="javascript:procOrg('758');">경영지원부</a></dt> <dd> 
+<p><a href="javascript:procOrg('759');">경영혁신</a> <a href="javascript:procOrg('760');">인재경영</a> <a href="javascript:procOrg('761');">안전ㆍ총무</a></p> </dd> </dl></div></div></div>]]></bodyTop>
+        <bodyBottom><![CDATA[<p><br /></p>]]></bodyBottom>
+      </menu>
+      <menu code1="" code2="" code3="" code4="" explain="직원 검색" flag1="" flag2="" flag3="" idx="213" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="직원 검색" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="P" url="/org/list/menu/213" viewType=""/>
+    </menu>
+    <menu code1="1" code2="" code3="" code4="" explain="재단 CI" flag1="" flag2="" flag3="" idx="214" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="재단 CI" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+      <menu code1="" code2="" code3="" code4="" explain="기관 아이덴티티" flag1="" flag2="" flag3="" idx="215" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="기관 아이덴티티" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/215" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="50주년 기념 심볼" flag1="" flag2="" flag3="" idx="216" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="50주년 기념 심볼" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/216" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="과학문화 캐릭터" flag1="" flag2="" flag3="" idx="217" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="과학문화 캐릭터" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/217" viewType=""/>
+    </menu>
+    <menu code1="" code2="" code3="" code4="" explain="찾아오시는 길" flag1="" flag2="" flag3="" idx="218" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="찾아오시는 길" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/218" viewType=""/>
+  </menu>
+  <menu code1="" code2="" code3="" code4="" explain="사업 안내" flag1="" flag2="" flag3="" idx="219" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="사업 안내" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+    <menu code1="" code2="" code3="" code4="" explain="과학기술문화" flag1="" flag2="" flag3="" idx="221" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="과학기술문화" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+      <menu code1="" code2="" code3="" code4="" explain="과학기술문화 콘텐츠" flag1="" flag2="" flag3="" idx="222" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="과학기술문화 콘텐츠" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/539/L/CATEGORY/425/menu/222?brdCodeField=CATEGORY&amp;brdCodeValue=425" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="과학기술문화 포용성 강화" flag1="" flag2="" flag3="" idx="223" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="과학기술문화 포용성 강화" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/539/L/CATEGORY/426/menu/223?brdCodeField=CATEGORY&amp;brdCodeValue=426" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="과학기술문화 기반 조성" flag1="" flag2="" flag3="" idx="224" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="과학기술문화 기반 조성" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/539/L/CATEGORY/428/menu/224?brdCodeField=CATEGORY&amp;brdCodeValue=428" viewType=""/>
+    </menu>
+    <menu code1="" code2="" code3="" code4="" explain="과학기술인재양성" flag1="" flag2="" flag3="" idx="225" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="과학기술인재양성" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+      <menu code1="" code2="" code3="" code4="" explain="과학영재양성" flag1="" flag2="" flag3="" idx="226" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="과학영재양성" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/539/L/CATEGORY/416/menu/226?brdCodeField=CATEGORY&amp;brdCodeValue=416" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="수학·과학 역량강화" flag1="" flag2="" flag3="" idx="227" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="수학·과학 역량강화" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/539/L/CATEGORY/540/menu/227?brdCodeField=CATEGORY&amp;brdCodeValue=540" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="SW·AI인재양성" flag1="" flag2="" flag3="" idx="228" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="SW·AI인재양성" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/539/L/CATEGORY/541/menu/228?brdCodeField=CATEGORY&amp;brdCodeValue=541" viewType=""/>
+    </menu>
+    <menu code1="" code2="" code3="" code4="" explain="과학·수학·융합교육" flag1="" flag2="" flag3="" idx="229" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="과학·수학·융합교육" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+      <menu code1="" code2="" code3="" code4="" explain="과학교육" flag1="" flag2="" flag3="" idx="230" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="과학교육" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/539/L/CATEGORY/542/menu/230?brdCodeField=CATEGORY&amp;brdCodeValue=542" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="수학교육" flag1="" flag2="" flag3="" idx="231" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="수학교육" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/539/L/CATEGORY/543/menu/231?brdCodeField=CATEGORY&amp;brdCodeValue=543" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="융합교육(STEAM)" flag1="" flag2="" flag3="" idx="232" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="융합교육(STEAM)" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/539/L/CATEGORY/544/menu/232?brdCodeField=CATEGORY&amp;brdCodeValue=544" viewType="">
+        <bodyTop><![CDATA[<p><br></p>]]></bodyTop>
+        <bodyBottom><![CDATA[<p><br></p>]]></bodyBottom>
+      </menu>
+      <menu code1="" code2="" code3="" code4="" explain="" flag1="" flag2="" flag3="" idx="490" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="창의교육·교육기부" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/539/L/CATEGORY/545/menu/490?brdCodeField=CATEGORY&amp;brdCodeValue=545" viewType=""/>
+    </menu>
+    <menu code1="" code2="" code3="" code4="" explain="종합·원격교육연수" flag1="" flag2="" flag3="" idx="233" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="종합·원격교육연수" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+      <menu code1="" code2="" code3="" code4="" explain="종합교육연수" flag1="" flag2="" flag3="" idx="234" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="종합교육연수" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/539/L/CATEGORY/546/menu/234?brdCodeField=CATEGORY&amp;brdCodeValue=546" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="원격교육연수" flag1="" flag2="" flag3="" idx="235" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="원격교육연수" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/539/L/CATEGORY/547/menu/235?brdCodeField=CATEGORY&amp;brdCodeValue=547" viewType=""/>
+    </menu>
+  </menu>
+  <menu code1="" code2="" code3="" code4="" explain="성과/지식/홍보" flag1="" flag2="" flag3="" idx="236" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="성과/지식/홍보" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+    <bodyTop><![CDATA[<div class="se-contents" data-document-padding-top="18" data-document-padding-left="23" data-document-padding-right="23"><p style="margin: 16px 0px; display: block; overflow-wrap: break-word;"><br></p></div>]]></bodyTop>
+    <bodyBottom><![CDATA[<div class="se-contents" data-document-padding-top="18" data-document-padding-left="23" data-document-padding-right="23"><p style="margin: 16px 0px; display: block; overflow-wrap: break-word;"><br></p></div>]]></bodyBottom>
+    <menu code1="" code2="" code3="" code4="" explain="KOFAC 성과관" flag1="" flag2="" flag3="" idx="237" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="KOFAC 성과관" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+      <menu code1="1" code2="" code3="" code4="" explain="KOFAC 대표 성과" flag1="" flag2="" flag3="" idx="238" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="KOFAC 대표 성과" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+        <menu code1="" code2="" code3="" code4="" explain="과학기술문화 확산 선도" flag1="" flag2="" flag3="" idx="239" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="과학기술문화 확산 선도" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/239" viewType=""/>
+        <menu code1="" code2="" code3="" code4="" explain="과학기술인재양성" flag1="" flag2="" flag3="" idx="240" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="과학기술인재양성" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/240" viewType=""/>
+        <menu code1="" code2="" code3="" code4="" explain="과학·수학·융합교육" flag1="" flag2="" flag3="" idx="241" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="과학·수학·융합교육" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/241" viewType=""/>
+      </menu>
+      <menu code1="" code2="" code3="" code4="" explain="연차보고서" flag1="" flag2="" flag3="" idx="242" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="연차보고서" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/377/L/menu/242" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="통계데이터" flag1="" flag2="" flag3="" idx="243" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="통계데이터" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/548/L/menu/243" viewType="">
+        <bodyTop><![CDATA[<div class="esg_wrap"> 
+<div class="esg_L"><img alt="esg_img" src="/jnrepo/upload/editor/202203/93b84a3a8a134faf9329c02a1a3d291d_1648541025857.png"></div> 
+<div class="esg_R"> 
+<div class="esg_tit">2021년 과학창의 통계일람</div> 
+<div class="esg_doc"> 
+<div><strong>한국과학창의재단 2021년 통계정보를 열람 하실 수있습니다.</strong></div> </div> 
+<div class="tong_wrap"><strong>목차</strong> 
+<div class="tong_box"> 
+<div class="tit">통계총괄표</div> 
+<div class="tong_area"> 
+<div class="tong_L"> 
+<ul> 
+<li>1. 과학문화</li> 
+<li>2. 과학기술인재양성</li> 
+<li>3. 과학교육</li> 
+<li>4. 수학교육</li> 
+<li>5. 창의교육</li> 
+<li>6. 소프트웨어-AI교육</li> 
+<li>7. 종합원격연수</li> 
+<li>8. 재단경영지표</li> 
+<li>색인</li> 
+</ul> </div> </div> </div> </div> </div> </div>]]></bodyTop>
+        <bodyBottom><![CDATA[<p><br></p>]]></bodyBottom>
+      </menu>
+      <menu code1="" code2="" code3="" code4="" explain="연구보고서" flag1="" flag2="" flag3="" idx="244" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="연구보고서" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/457/L/menu/244" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="간행물" flag1="" flag2="" flag3="" idx="245" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="간행물" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/458/L/menu/245" viewType="">
+        <bodyTop><![CDATA[<p><br></p>]]></bodyTop>
+        <bodyBottom><![CDATA[<p><br></p>]]></bodyBottom>
+      </menu>
+    </menu>
+    <menu code1="" code2="" code3="" code4="" explain="KOFAC 지식관" flag1="" flag2="" flag3="" idx="246" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="KOFAC 지식관" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+      <menu code1="" code2="" code3="" code4="" explain="뉴스레터" flag1="" flag2="" flag3="" idx="247" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="뉴스레터" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/405/L/menu/247" viewType="">
+        <bodyTop><![CDATA[<div class="letter_box mb30"><strong>과학으로 세상을 보는 새로운 눈 SNS-View</strong>
+<p>한국과학창의재단 &#39;SNS-View&#39;는 과학기술문화, 과학융합인재, 과학수학정보교육 분야 정책 및 사업 관련 의사결정을 지원하고자 관련 국내외 트렌드 및 정보를 전달합니다. 격 호로 발행되는 본 간행물은 이메일 및 카카오채널을 통해 뉴스레터로 만나보실 수 있습니다.</p>
+</div>]]></bodyTop>
+      </menu>
+      <menu code1="" code2="" code3="" code4="" explain="동향리포트" flag1="" flag2="" flag3="" idx="248" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="동향리포트" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/459/L/menu/248" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="이슈페이퍼/FOCUS" flag1="" flag2="" flag3="" idx="249" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="이슈페이퍼/FOCUS" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/476/L/menu/249" viewType="">
+        <bodyTop><![CDATA[<div class="se-contents" data-document-padding-top="18" data-document-padding-left="23" data-document-padding-right="23"><p style="margin: 16px 0px; display: block; overflow-wrap: break-word;"><br></p></div>]]></bodyTop>
+        <bodyBottom><![CDATA[<div class="se-contents" data-document-padding-top="18" data-document-padding-left="23" data-document-padding-right="23"><p style="margin: 16px 0px; display: block; overflow-wrap: break-word;"><br></p></div>]]></bodyBottom>
+      </menu>
+      <menu code1="" code2="" code3="" code4="" explain="현장의 소리" flag1="" flag2="" flag3="" idx="250" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="현장의 소리" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/420/L/menu/250" viewType=""/>
+    </menu>
+    <menu code1="" code2="" code3="" code4="" explain="KOFAC 홍보관" flag1="" flag2="" flag3="" idx="251" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="KOFAC 홍보관" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+      <menu code1="" code2="" code3="" code4="" explain="KOFAC 50주년" flag1="" flag2="" flag3="" idx="253" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="KOFAC 50주년" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/253" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="재단 SNS" flag1="" flag2="" flag3="" idx="252" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="재단 SNS" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="P" url="/sns/facebook/feed/menu/252" viewType=""/>
+      <menu code1="1" code2="" code3="" code4="" explain="홍보 영상/자료" flag1="" flag2="" flag3="" idx="254" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="홍보 영상/자료" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+        <bodyTop><![CDATA[<div class="se-contents" data-document-padding-top="18" data-document-padding-left="23" data-document-padding-right="23"><p style="margin: 16px 0px; display: block; overflow-wrap: break-word;"><br></p></div>]]></bodyTop>
+        <bodyBottom><![CDATA[<div class="se-contents" data-document-padding-top="18" data-document-padding-left="23" data-document-padding-right="23"><p style="margin: 16px 0px; display: block; overflow-wrap: break-word;"><br></p></div>]]></bodyBottom>
+        <menu code1="" code2="" code3="" code4="" explain="홍보영상" flag1="" flag2="" flag3="" idx="255" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="홍보영상" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/431/L/menu/255" viewType=""/>
+        <menu code1="" code2="" code3="" code4="" explain="홍보물" flag1="" flag2="" flag3="" idx="256" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="홍보물" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/432/L/menu/256" viewType=""/>
+        <menu code1="" code2="" code3="" code4="" explain="" flag1="" flag2="" flag3="" idx="430" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="안내포스터" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/popup/menu/430" viewType=""/>
+      </menu>
+      <menu code1="1" code2="" code3="" code4="" explain="사진 자료실" flag1="" flag2="" flag3="" idx="257" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="사진 자료실" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/470/L/CATEGORY/475/menu/257?brdCodeField=CATEGORY&amp;brdCodeValue=475" viewType="">
+        <bodyTop><![CDATA[<p><br></p>]]></bodyTop>
+        <bodyBottom><![CDATA[<p><br></p>]]></bodyBottom>
+      </menu>
+      <menu code1="1" code2="" code3="" code4="" explain="수상·인증·평가" flag1="" flag2="" flag3="" idx="258" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="수상·인증·평가" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+        <menu code1="" code2="" code3="" code4="" explain="수상 현황" flag1="" flag2="" flag3="" idx="259" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="수상 현황" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/535/L/menu/259" viewType=""/>
+        <menu code1="" code2="" code3="" code4="" explain="인정·지정 현황" flag1="" flag2="" flag3="" idx="260" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="인정·지정 현황" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/536/L/menu/260" viewType=""/>
+        <menu code1="" code2="" code3="" code4="" explain="평가 현황" flag1="" flag2="" flag3="" idx="261" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="평가 현황" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/537/L/menu/261" viewType=""/>
+      </menu>
+      <menu code1="1" code2="" code3="" code4="" explain="국내외 협력기관" flag1="" flag2="" flag3="" idx="262" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="국내외 협력기관" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+        <menu code1="" code2="" code3="" code4="" explain="국내 협력" flag1="" flag2="" flag3="" idx="263" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="국내 협력" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/481/L/CATEGORY/483/menu/263?brdCodeField=CATEGORY&amp;brdCodeValue=483" viewType=""/>
+        <menu code1="" code2="" code3="" code4="" explain="국제 협력" flag1="" flag2="" flag3="" idx="264" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="국제 협력" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/481/L/CATEGORY/484/menu/264?brdCodeField=CATEGORY&amp;brdCodeValue=484" viewType=""/>
+      </menu>
+    </menu>
+  </menu>
+  <menu code1="" code2="" code3="" code4="" explain="공고/공지" flag1="" flag2="" flag3="" idx="265" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="공고/공지" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+    <bodyTop><![CDATA[<div class="se-contents" data-document-padding-top="18" data-document-padding-left="23" data-document-padding-right="23"><p style="margin: 16px 0px; display: block; overflow-wrap: break-word;"><br></p></div>]]></bodyTop>
+    <bodyBottom><![CDATA[<div class="se-contents" data-document-padding-top="18" data-document-padding-left="23" data-document-padding-right="23"><p style="margin: 16px 0px; display: block; overflow-wrap: break-word;"><br></p></div>]]></bodyBottom>
+    <menu code1="" code2="" code3="" code4="" explain="재단 소식" flag1="" flag2="" flag3="" idx="266" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="재단 소식" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+      <menu code1="1" code2="" code3="" code4="" explain="주요 일정" flag1="" flag2="" flag3="" idx="267" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="주요 일정" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="P" url="/calendar/month/menu/267" viewType="">
+        <bodyTop><![CDATA[<p><br></p>]]></bodyTop>
+        <bodyBottom><![CDATA[<p><br></p>]]></bodyBottom>
+      </menu>
+      <menu code1="1" code2="" code3="" code4="" explain="공지사항" flag1="" flag2="" flag3="" idx="270" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="공지사항" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/386/L/menu/270" viewType=""/>
+      <menu code1="1" code2="" code3="" code4="" explain="보도자료" flag1="" flag2="" flag3="" idx="272" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="보도자료" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/394/L/menu/272" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="연간 사업공모 일정" flag1="" flag2="" flag3="" idx="273" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="연간 사업공모 일정" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/772/L/menu/273" viewType="">
+        <bodyTop><![CDATA[<div class="letter_box mb15"> 
+<p class="sub_p mt0">연간 사업일정은 예정 계획이며 정확한 세부 일정 및 내용은 재단 홈페이지 사업공고 및 입찰공고 화면에서 확인 바랍니다.</p> </div>]]></bodyTop>
+        <bodyBottom><![CDATA[<p><br /></p>]]></bodyBottom>
+      </menu>
+    </menu>
+    <menu code1="" code2="" code3="" code4="" explain="사업공고" flag1="" flag2="" flag3="" idx="274" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="사업공고" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/bns/list/menu/274" viewType=""/>
+    <menu code1="1" code2="" code3="" code4="" explain="입찰공고" flag1="" flag2="" flag3="" idx="275" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="입찰공고" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/403/L/menu/275" viewType=""/>
+    <menu code1="" code2="" code3="" code4="" explain="신청/접수" flag1="" flag2="" flag3="" idx="281" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="신청/접수" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/reg/list/menu/281" viewType="">
+      <bodyTop><![CDATA[<div class="se-contents" data-document-padding-top="18" data-document-padding-left="23" data-document-padding-right="23"><p style="margin: 16px 0px; display: block; overflow-wrap: break-word;"><br></p></div>]]></bodyTop>
+      <bodyBottom><![CDATA[<div class="se-contents" data-document-padding-top="18" data-document-padding-left="23" data-document-padding-right="23"><p style="margin: 16px 0px; display: block; overflow-wrap: break-word;"><br></p></div>]]></bodyBottom>
+    </menu>
+    <menu code1="" code2="" code3="" code4="" explain="인사채용" flag1="" flag2="" flag3="" idx="282" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="인사채용" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+      <menu code1="" code2="" code3="" code4="" explain="인재상" flag1="" flag2="" flag3="" idx="283" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="인재상" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/283" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="채용 절차" flag1="" flag2="" flag3="" idx="284" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="채용 절차" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/284" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="채용 공고" flag1="" flag2="" flag3="" idx="285" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="채용 공고" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/507/L/menu/285" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="친인척 채용 현황" flag1="" flag2="" flag3="" idx="286" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="친인척 채용 현황" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/508/L/menu/286" viewType=""/>
+    </menu>
+    <menu code1="" code2="" code3="" code4="" explain="공시송달" flag1="" flag2="" flag3="" idx="287" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="공시송달" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/509/L/menu/287" viewType="">
+      <bodyTop><![CDATA[<div class="line_box mb30">
+<div>
+<div class="line_box_cont">
+
+<p><strong>한국과학창의재단</strong>에서는 고객님께 발송한 문서가 주소 불명 등으로 반송된 경우 홈페이지 게시판에 공시송달 내용을 안내하고 있습니다.</p>
+
+<ul class="list_blt">
+	<li>관련 근거: 행정절차법 제14조 4항</li>
+	<li>고객님의 자료를 보시려면 성명, 생년월(YYYYMM) 6자리(법인의 경우 사업자등록번호)로 조회하시면 됩니다.</li>
+	<li>공고대상자는 공고기간 내에 한국과학창의재단에 직접 방문하시거나 유선을 통하여 공시송달문서를 발급 요청하고 공고기간 내에 수령하시기 바랍니다.</li>
+</ul>
+</div>
+</div>
+</div>]]></bodyTop>
+    </menu>
+    <menu code1="" code2="" code3="" code4="" explain="홈페이지 이용 안내" flag1="" flag2="" flag3="" idx="288" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="홈페이지 이용 안내" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+      <menu code1="" code2="" code3="" code4="" explain="개인정보 처리 방침" flag1="" flag2="" flag3="" idx="289" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="개인정보 처리 방침" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/289" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="영상정보 처리 방침" flag1="" flag2="" flag3="" idx="802" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="영상정보 처리 방침" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/802" viewType="">
+        <bodyTop><![CDATA[<p><br></p>]]></bodyTop>
+        <bodyBottom><![CDATA[<p><br></p>]]></bodyBottom>
+      </menu>
+      <menu code1="" code2="" code3="" code4="" explain="" flag1="" flag2="" flag3="" idx="491" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="저작권 정책" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/491" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="자동 이메일 수집 거부" flag1="" flag2="" flag3="" idx="290" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="자동 이메일 수집 거부" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/290" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="게시물 관리 기준" flag1="" flag2="" flag3="" idx="291" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="게시물 관리 기준" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/291" viewType=""/>
+    </menu>
+  </menu>
+  <menu code1="" code2="" code3="" code4="" explain="열린경영" flag1="" flag2="" flag3="" idx="292" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="열린경영" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+    <menu code1="" code2="" code3="" code4="" explain="소통 공간" flag1="" flag2="" flag3="" idx="293" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="소통 공간" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+      <menu code1="" code2="" code3="" code4="" explain="질의/건의" flag1="" flag2="" flag3="" idx="295" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="질의/건의" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/413/CL/menu/295" viewType="">
+        <bodyTop><![CDATA[<div class="se-contents" data-document-padding-top="18" data-document-padding-left="23" data-document-padding-right="23"><p style="margin: 16px 0px; display: block; overflow-wrap: break-word;"><br></p></div>]]></bodyTop>
+        <bodyBottom><![CDATA[<div class="se-contents" data-document-padding-top="18" data-document-padding-left="23" data-document-padding-right="23"><p style="margin: 16px 0px; display: block; overflow-wrap: break-word;"><br></p></div>]]></bodyBottom>
+      </menu>
+      <menu code1="" code2="" code3="" code4="" explain="칭찬합니다" flag1="" flag2="" flag3="" idx="296" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="칭찬합니다" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/524/L/menu/296" viewType="">
+        <bodyTop><![CDATA[<div class="step_area mb30">
+<div class="step_top">한국과학창의재단은 고객님의 칭찬을 기다리고 있습니다.</div>
+
+<div class="step_txt">&quot;친절하고 적극적으로 업무를 수행하였던 재단 직원을 칭찬해주세요. 항상 고객에게 친절하고 정상을 다하는 한국과학창의재단 직원이 되겠습니다.&quot;</div>
+</div>
+
+<div class="btn_area mb30"><a class="btn_move black" href="/cms/content/view/291"><span>게시물관리기준</span></a></div>]]></bodyTop>
+      </menu>
+      <menu code1="" code2="" code3="" code4="" explain="불편/고충신고" flag1="" flag2="" flag3="" idx="297" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="불편/고충신고" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/532/CL/menu/297" viewType="">
+        <bodyTop><![CDATA[<div class="se-contents" data-document-padding-top="18" data-document-padding-left="23" data-document-padding-right="23"><p style="margin: 16px 0px; display: block; overflow-wrap: break-word;"><br></p></div>]]></bodyTop>
+        <bodyBottom><![CDATA[<div class="se-contents" data-document-padding-top="18" data-document-padding-left="23" data-document-padding-right="23"><p style="margin: 16px 0px; display: block; overflow-wrap: break-word;"><br></p></div>]]></bodyBottom>
+      </menu>
+      <menu code1="" code2="" code3="" code4="" explain="혁신아이디어 제안" flag1="" flag2="" flag3="" idx="298" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="혁신아이디어 제안" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/533/CL/menu/298" viewType=""/>
+      <menu code1="1" code2="" code3="" code4="" explain="기업성장응답센터" flag1="" flag2="" flag3="" idx="299" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="기업성장응답센터" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+        <menu code1="" code2="" code3="" code4="" explain="기업성장응답센터란 안내" flag1="" flag2="" flag3="" idx="300" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="기업성장응답센터란 안내" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/534/L/menu/300" viewType=""/>
+        <menu code1="" code2="" code3="" code4="" explain="기업민원 보호제도" flag1="" flag2="" flag3="" idx="301" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="기업민원 보호제도" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/301" viewType=""/>
+      </menu>
+    </menu>
+    <menu code1="" code2="" code3="" code4="" explain="제증명서 발급" flag1="" flag2="" flag3="" idx="302" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="제증명서 발급" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/302" viewType=""/>
+    <menu code1="" code2="" code3="" code4="" explain="클린신고센터" flag1="" flag2="" flag3="" idx="303" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="클린신고센터" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+      <menu code1="" code2="" code3="" code4="" explain="" flag1="" flag2="" flag3="" idx="492" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="KOFAC 헬프라인" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/492" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="" flag1="" flag2="" flag3="" idx="493" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="부패·공익신고" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/493" viewType=""/>
+    </menu>
+    <menu code1="1" code2="" code3="" code4="" explain="고객만족경영" flag1="" flag2="" flag3="" idx="304" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="고객만족경영" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+      <menu code1="" code2="" code3="" code4="" explain="고객서비스헌장" flag1="" flag2="" flag3="" idx="305" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="고객서비스헌장" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/305" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="고객만족도 조사 결과" flag1="" flag2="" flag3="" idx="307" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="고객만족도 조사 결과" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/489/L/menu/307" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="안전관리헌장" flag1="" flag2="" flag3="" idx="308" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="안전관리헌장" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/308" viewType=""/>
+    </menu>
+    <menu code1="" code2="" code3="" code4="" explain="사회적가치창출" flag1="" flag2="" flag3="" idx="311" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="사회적가치창출" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+      <menu code1="" code2="" code3="" code4="" explain="사회공헌 활동" flag1="" flag2="" flag3="" idx="312" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="사회공헌 활동" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/393/L/menu/312" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="ESG 보고서" flag1="" flag2="" flag3="" idx="313" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="ESG 보고서" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/525/L/menu/313" viewType=""/>
+    </menu>
+    <menu code1="" code2="" code3="" code4="" explain="" flag1="" flag2="" flag3="" idx="495" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="윤리경영" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+      <menu code1="" code2="" code3="" code4="" explain="윤리경영 헌장" flag1="" flag2="" flag3="" idx="306" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="윤리경영 헌장" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/306" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="임직원 행동강령" flag1="" flag2="" flag3="" idx="310" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="임직원 행동강령" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/526/L/menu/310" viewType=""/>
+      <menu code1="1" code2="" code3="" code4="" explain="임직원 청렴 서약서" flag1="" flag2="" flag3="" idx="309" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="임직원 청렴 서약서" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+        <menu code1="" code2="" code3="" code4="" explain="" flag1="" flag2="" flag3="" idx="497" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="반부패·청렴서약서" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/497" viewType=""/>
+        <menu code1="" code2="" code3="" code4="" explain="" flag1="" flag2="" flag3="" idx="498" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="임원직무청렴계약(이사장)" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/498" viewType=""/>
+        <menu code1="" code2="" code3="" code4="" explain="" flag1="" flag2="" flag3="" idx="499" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="청렴·윤리 실천 서약서(이사장)" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/499" viewType=""/>
+        <menu code1="" code2="" code3="" code4="" explain="" flag1="" flag2="" flag3="" idx="500" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="청렴·윤리 실천 서약서(지부장)" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/500" viewType=""/>
+        <menu code1="" code2="" code3="" code4="" explain="" flag1="" flag2="" flag3="" idx="807" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="이해충돌방지준수 서약서" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/807" viewType="">
+          <bodyTop><![CDATA[<p><br></p>]]></bodyTop>
+          <bodyBottom><![CDATA[<p><br></p>]]></bodyBottom>
+        </menu>
+      </menu>
+      <menu code1="" code2="" code3="" code4="" explain="" flag1="" flag2="" flag3="" idx="496" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="윤리경영 추진활동" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/527/L/menu/496" viewType=""/>
+    </menu>
+    <menu code1="" code2="" code3="" code4="" explain="투명경영" flag1="" flag2="" flag3="" idx="323" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="투명경영" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+      <menu code1="1" code2="" code3="" code4="" explain="사전정보공표" flag1="" flag2="" flag3="" idx="324" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="사전정보공표" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/528/L/menu/324" viewType="">
+        <bodyTop><![CDATA[<p><br /></p>]]></bodyTop>
+        <bodyBottom><![CDATA[<p><br /></p>]]></bodyBottom>
+      </menu>
+      <menu code1="" code2="" code3="" code4="" explain="수의계약 현황" flag1="" flag2="" flag3="" idx="325" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="수의계약 현황" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/554/L/menu/325" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="기관장 업무추진비" flag1="" flag2="" flag3="" idx="326" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="기관장 업무추진비" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/555/L/menu/326" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="부서장 업무추진비" flag1="" flag2="" flag3="" idx="327" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="부서장 업무추진비" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/773/L/menu/327" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="" flag1="" flag2="" flag3="" idx="501" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="내부감사결과" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/529/L/menu/501" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="" flag1="" flag2="" flag3="" idx="806" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="반부패 청렴자료" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/805/L/menu/806" viewType="">
+        <bodyTop><![CDATA[<p><br></p>]]></bodyTop>
+        <bodyBottom><![CDATA[<p><br></p>]]></bodyBottom>
+      </menu>
+    </menu>
+    <menu code1="" code2="" code3="" code4="" explain="" flag1="" flag2="" flag3="" idx="502" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="인권경영" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+      <menu code1="" code2="" code3="" code4="" explain="" flag1="" flag2="" flag3="" idx="503" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="인권경영헌장" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/503" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="" flag1="" flag2="" flag3="" idx="504" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="인권경영 추진활동" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/531/L/menu/504" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="" flag1="" flag2="" flag3="" idx="505" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="인권경영 자료실" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/530/L/menu/505" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="" flag1="" flag2="" flag3="" idx="506" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="인권침해 신고" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/506" viewType=""/>
+    </menu>
+  </menu>
+  <menu code1="" code2="" code3="" code4="" explain="정보공개" flag1="" flag2="" flag3="" idx="314" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="정보공개" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+    <menu code1="" code2="" code3="" code4="" explain="정보공개제도안내" flag1="" flag2="" flag3="" idx="318" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="정보공개제도안내" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+      <menu code1="" code2="" code3="" code4="" explain="정보공개제도란?" flag1="" flag2="" flag3="" idx="319" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="정보공개제도란?" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/319" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="정보공개 처리 절차" flag1="" flag2="" flag3="" idx="320" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="정보공개 처리 절차" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/320" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="불복구제 절차" flag1="" flag2="" flag3="" idx="321" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="불복구제 절차" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/321" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="정보비공개 세부 기준" flag1="" flag2="" flag3="" idx="322" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="정보비공개 세부 기준" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/514/L/menu/322" viewType="">
+        <bodyTop><![CDATA[<div class="cont_p">
+<p class="sub_p">공공기관의 정보공개에 관한 법류 제9조 (비공개 대상 정보) 제1항 각호</p>
+</div>]]></bodyTop>
+      </menu>
+      <menu code1="1" code2="" code3="" code4="" explain="정보공개목록" flag1="" flag2="" flag3="" idx="316" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="정보공개목록" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+        <menu code1="" code2="" code3="" code4="" explain="" flag1="" flag2="" flag3="" idx="797" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="13년 이전" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/404/L/menu/797" viewType=""/>
+        <menu code1="" code2="" code3="" code4="" explain="" flag1="" flag2="" flag3="" idx="798" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="13년 이후" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/798" viewType=""/>
+      </menu>
+    </menu>
+    <menu code1="" code2="" code3="" code4="" explain="사업실명제" flag1="" flag2="" flag3="" idx="328" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="사업실명제" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/513/L/menu/328" viewType="">
+      <bodyTop><![CDATA[<div class="letter_box mb30">
+									<p class="sub_p mt0">재단은 추진 중인 주요사업의 기획 단계부터 종료 시까지 해당 사업에 참여한 담당자 및 책임자의 실명과 사업의 중점 추진내용을 밝혀 사업의 투명성과 책임성을 제고하고 있습니다.</p>
+								</div>]]></bodyTop>
+    </menu>
+    <menu code1="" code2="" code3="" code4="" explain="경영공시" flag1="" flag2="" flag3="" idx="329" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="경영공시" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+      <menu code1="" code2="" code3="" code4="" explain="경영공시" flag1="" flag2="" flag3="" idx="331" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="경영공시" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/331" viewType=""/>
+    </menu>
+    <menu code1="" code2="" code3="" code4="" explain="공공데이터 개방" flag1="" flag2="" flag3="" idx="332" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="공공데이터 개방" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+      <menu code1="" code2="" code3="" code4="" explain="공공데이터 개요" flag1="" flag2="" flag3="" idx="333" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="공공데이터 개요" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/333" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="공공데이터 제공" flag1="" flag2="" flag3="" idx="334" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="공공데이터 제공" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/334" viewType=""/>
+      <menu code1="" code2="" code3="" code4="" explain="오류 신고" flag1="" flag2="" flag3="" idx="335" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="오류 신고" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="P" url="/brd/board/510/C/menu/335" viewType="">
+        <bodyTop><![CDATA[<div class="list_area">
+<div class="sub_tit">공공데이터 품질오류 신고</div>
+
+<div class="cont_p">
+<p>개방한 공공데이터의 파일 및 API에 오류가 발생한 경우 신고 및 개선 요청을 하실 수 있습니다.</p>
+
+<p>오류 신고는 접수 후 10일 이내에 조치 결과에 대해 회신해 드립니다.</p>
+
+<p>※ 공공데이터 품질 오류 사례 : 데이터 링크 에러, API 호출 에러, 데이터 값에 대한 문의 등</p>
+</div>
+</div>
+
+<div class="list_area">
+<div class="sub_tit">공공데이터 품질오류 처리 절차</div>
+
+<div class="mistake_wrap">
+<ul>
+	<li>
+	<div><strong>오류신고</strong>
+
+	<p>데이터오류신고</p>
+	</div>
+	</li>
+	<li class="next"><span class="skip">다음</span></li>
+	<li>
+	<div><strong>담당자지정</strong>
+	<p>데이터담당자 지정 및 검토요청</p>
+	</div>
+	</li>
+	<li class="next"><span class="skip">다음</span></li>
+	<li>
+	<div><strong>담당자처리</strong>
+	<p>오류 확인 및 처리</p>
+	</div>
+	</li>
+	<li class="next"><span class="skip">다음</span></li>
+	<li>
+	<div><strong>처리결과 통보</strong>
+	<p>공공데이터 조치 및 이메일 통보</p>
+	</div>
+	</li>
+</ul>
+</div>
+</div>
+
+<div class="list_area">
+<div class="sub_tit">품질오류 신고</div>
+
+<p>제공한 공공데이터에 오류가 있는 경우 이용자가 직접 신고할 수 있습니다.</p>
+</div>]]></bodyTop>
+      </menu>
+      <menu code1="" code2="" code3="" code4="" explain="국민 참여" flag1="" flag2="" flag3="" idx="336" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="국민 참여" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="P" url="/brd/board/511/C/menu/336" viewType="">
+        <bodyTop><![CDATA[<div class="list_area">
+<div class="sub_tit">공공데이터 개방 국민참여</div>
+
+<p>한국과학창의재단에서 보유한 데이터에 대한 개방 요구 및 의견을 자유롭게 보내 주시기 바랍니다.</p>
+</div>]]></bodyTop>
+      </menu>
+    </menu>
+  </menu>
+  <menu code1="" code2="" code3="" code4="" explain="주요 사이트" flag1="" flag2="" flag3="" idx="337" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="주요 사이트" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+    <menu code1="" code2="" code3="" code4="" explain="사이언스올" flag1="" flag2="" flag3="" idx="344" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="사이언스올" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/344" viewType=""/>
+    <menu code1="" code2="" code3="" code4="" explain="사이언스타임즈" flag1="" flag2="" flag3="" idx="345" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="사이언스타임즈" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/345" viewType=""/>
+    <menu code1="" code2="" code3="" code4="" explain="사이언스TV　" flag1="" flag2="" flag3="" idx="338" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="사이언스TV" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/338" viewType=""/>
+    <menu code1="" code2="" code3="" code4="" explain="교육기부 포털사이트" flag1="" flag2="" flag3="" idx="339" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="교육기부 포털사이트" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/339" viewType=""/>
+    <menu code1="" code2="" code3="" code4="" explain="STEAM사이트" flag1="" flag2="" flag3="" idx="340" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="STEAM사이트" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/340" viewType=""/>
+    <menu code1="" code2="" code3="" code4="" explain="창의인성교육넷(크레존)" flag1="" flag2="" flag3="" idx="341" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="창의인성교육넷(크레존)" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/341" viewType=""/>
+    <menu code1="" code2="" code3="" code4="" explain="SW중심사회포털" flag1="" flag2="" flag3="" idx="342" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="SW중심사회포털" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/342" viewType=""/>
+    <menu code1="" code2="" code3="" code4="" explain="알지오매스(AlgeoMath)" flag1="" flag2="" flag3="" idx="343" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="알지오매스(AlgeoMath)" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/343" viewType=""/>
+    <menu code1="" code2="" code3="" code4="" explain="수학교육정책사이트(AskMath)" flag1="" flag2="" flag3="" idx="346" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="수학교육정책사이트(AskMath)" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/346" viewType=""/>
+    <menu code1="" code2="" code3="" code4="" explain="과학기술인재진로지원센터" flag1="" flag2="" flag3="" idx="347" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="과학기술인재진로지원센터" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/347" viewType=""/>
+    <menu code1="" code2="" code3="" code4="" explain="과학문화 전문인력 플랫폼" flag1="" flag2="" flag3="" idx="348" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="과학문화 전문인력 플랫폼" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/348" viewType="">
+      <bodyTop><![CDATA[<p><br /></p><grammarly-desktop-integration data-grammarly-shadow-root="true"></grammarly-desktop-integration>]]></bodyTop>
+      <bodyBottom><![CDATA[<p><br /></p><grammarly-desktop-integration data-grammarly-shadow-root="true"></grammarly-desktop-integration>]]></bodyBottom>
+    </menu>
+    <menu code1="" code2="" code3="" code4="" explain="무한상상정보넷" flag1="" flag2="" flag3="" idx="349" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="무한상상정보넷" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/349" viewType=""/>
+    <menu code1="" code2="" code3="" code4="" explain="종합·원격교육연수원" flag1="" flag2="" flag3="" idx="350" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="종합·원격교육연수원" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/350" viewType=""/>
+    <menu code1="" code2="" code3="" code4="" explain="검정시스템" flag1="" flag2="" flag3="" idx="351" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="검정시스템" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="C" url="/cms/content/view/351" viewType=""/>
+  </menu>
+  <menu code1="" code2="" code3="" code4="" explain="이용안내" flag1="" flag2="" flag3="" idx="354" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="이용안내" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="M" url="" viewType="">
+    <menu code1="" code2="" code3="" code4="" explain="로그인" flag1="" flag2="" flag3="" idx="355" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="로그인" openNewYn="N" showType="" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="P" url="" viewType=""/>
+    <menu code1="" code2="" code3="" code4="" explain="사이트맵" flag1="" flag2="" flag3="" idx="356" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="사이트맵" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="P" url="/sitemap/menu/356" viewType=""/>
+  </menu>
+  <menu code1="" code2="" code3="" code4="" explain="" flag1="" flag2="" flag3="" idx="799" img1="" img2="" img3="" img4="" leftImgPath1="" leftImgPath2="" name="첨부파일용" openNewYn="N" showType="0" site="2" template="" text1="" text2="" text3="" text4="" titleImgPath="" topImgPath1="" topImgPath2="" type="B" url="/brd/board/800/L/menu/799" viewType=""/>
+</site>

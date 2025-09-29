@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.com.file.File">
+
+  <insert id="insertFileGroup" parameterType="map" useGeneratedKeys="true" keyProperty="fileGrpId">
+    INSERT INTO TB_FILE_GRP (FILE_CNT, TOTAL_SIZE, DESC_TXT, CREATED_BY, CREATED_DT, UPDATED_DT, USE_AT)
+    VALUES (0, 0, #{descTxt}, #{createdBy}, NOW(), NOW(), 'Y')
+  </insert>
+
+  <update id="updateFileGroupAgg" parameterType="map">
+    UPDATE TB_FILE_GRP
+       SET FILE_CNT = FILE_CNT + #{plusCnt},
+           TOTAL_SIZE = TOTAL_SIZE + #{plusSize},
+           UPDATED_DT = NOW()
+     WHERE FILE_GRP_ID = #{fileGrpId}
+  </update>
+
+  <insert id="insertFile" parameterType="map" useGeneratedKeys="true" keyProperty="fileId">
+    INSERT INTO TB_FILE
+      (FILE_GRP_ID, ORG_FILE_NM, SAVE_FILE_NM, SAVE_PATH, EXT_NM, CONTENT_TYPE, FILE_SIZE, CREATED_BY, CREATED_DT, UPDATED_DT, USE_AT)
+    VALUES
+      (#{fileGrpId}, #{orgFileNm}, #{saveFileNm}, #{savePath}, #{extNm}, #{contentType}, #{fileSize}, #{createdBy}, NOW(), NOW(), 'Y')
+  </insert>
+
+  <select id="selectFilesByGroup" parameterType="map" resultType="CamelHashMap">
+    SELECT FILE_ID, FILE_GRP_ID, ORG_FILE_NM, SAVE_FILE_NM, SAVE_PATH, EXT_NM, CONTENT_TYPE, FILE_SIZE, DOWN_CNT,
+           DATE_FORMAT(CREATED_DT,'%Y-%m-%d %H:%i:%s') AS createdDt
+      FROM TB_FILE
+     WHERE FILE_GRP_ID = #{fileGrpId} AND USE_AT='Y'
+     ORDER BY FILE_ID
+  </select>
+
+  <select id="selectFileById" parameterType="map" resultType="CamelHashMap">
+    SELECT *
+      FROM TB_FILE
+     WHERE FILE_ID = #{fileId} AND USE_AT='Y'
+     LIMIT 1
+  </select>
+
+  <update id="increaseDownload" parameterType="map">
+    UPDATE TB_FILE SET DOWN_CNT = DOWN_CNT + 1 WHERE FILE_ID = #{fileId}
+  </update>
+
+  <update id="softDeleteFile" parameterType="map">
+    UPDATE TB_FILE SET USE_AT='N', UPDATED_DT=NOW() WHERE FILE_ID=#{fileId}
+  </update>
+
+</mapper>

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.com.comment.Comment">
+
+    <!-- 타겟 내 다음 루트댓글 순번 -->
+    <select id="selectNextRootOrdr" parameterType="map" resultType="int">
+        SELECT IFNULL(MAX(ROOT_ORDR), 0) + 1
+        FROM TB_COMMENT
+        WHERE TARGET_TY_CD = #{targetTyCd}
+          AND TARGET_ID    = #{targetId}
+    </select>
+
+    <!-- 부모 내 다음 대댓글 순번 -->
+    <select id="selectNextChildOrdr" parameterType="map" resultType="int">
+        SELECT IFNULL(MAX(CHILD_ORDR), 0) + 1
+        FROM TB_COMMENT
+        WHERE TARGET_TY_CD      = #{targetTyCd}
+          AND TARGET_ID         = #{targetId}
+          AND PARENT_COMMENT_ID = #{parentCommentId}
+    </select>
+
+    <!-- 코멘트 등록 -->
+    <insert id="insertComment" parameterType="map" useGeneratedKeys="true" keyProperty="commentId">
+        INSERT INTO TB_COMMENT
+        (
+            TARGET_TY_CD, TARGET_ID,
+            PARENT_COMMENT_ID, DEPTH,
+            ROOT_ORDR, CHILD_ORDR,
+            CONTENT, USER_ID, SECRET_AT, USE_AT,
+            IP_HASH, UA_HASH,
+            CREATED_DT
+        )
+        VALUES
+        (
+            #{targetTyCd}, #{targetId},
+            #{parentCommentId, jdbcType=BIGINT}, #{depth},
+            #{rootOrdr}, #{childOrdr, jdbcType=INTEGER},
+            #{content}, #{userId}, #{secretAt}, 'Y',
+            #{ipHash, jdbcType=VARBINARY}, #{uaHash, jdbcType=VARBINARY},
+            NOW()
+        )
+    </insert>
+
+    <!-- 부모 REPLY_CNT +1 -->
+    <update id="increaseParentReplyCnt" parameterType="map">
+        UPDATE TB_COMMENT
+           SET REPLY_CNT = REPLY_CNT + 1,
+               UPDATED_DT = NOW()
+         WHERE COMMENT_ID = #{parentCommentId}
+    </update>
+
+	<!-- 타겟별 코멘트 리스트 (활성만) + 작성자 닉네임 + 본인 여부 -->
+	<select id="selectCommentListByTarget" parameterType="map" resultType="hashmap">
+	    SELECT
+	        C.COMMENT_ID,
+	        C.TARGET_TY_CD, C.TARGET_ID,
+	        C.PARENT_COMMENT_ID, C.DEPTH, C.ROOT_ORDR, C.CHILD_ORDR,
+	        C.CONTENT, C.USER_ID, C.SECRET_AT, C.USE_AT, C.REPLY_CNT,
+	        C.CREATED_DT, C.UPDATED_DT, C.DELETED_DT,
+	        /* 닉네임(가장 먼저 존재하는 항목으로 노출) */
+	        COALESCE(U.NICK_NM, U.USER_NM, U.EMAIL)       AS USER_NM,
+	        /* 현재 로그인 사용자와 동일하면 'Y' */
+	        CASE WHEN C.USER_ID = #{viewerUserId, jdbcType=BIGINT} THEN 'Y' ELSE 'N' END AS ME
+	    FROM TB_COMMENT C
+	    LEFT JOIN TB_USER U
+	           ON U.USER_ID = C.USER_ID
+	    WHERE C.TARGET_TY_CD = #{targetTyCd}
+	      AND C.TARGET_ID    = #{targetId}
+	      AND C.USE_AT       = 'Y'
+	    ORDER BY C.ROOT_ORDR ASC, C.DEPTH ASC, C.CHILD_ORDR ASC, C.COMMENT_ID ASC
+	</select>
+
+    <!-- 단건 조회 -->
+    <select id="selectCommentById" parameterType="map" resultType="hashmap">
+        SELECT *
+          FROM TB_COMMENT
+         WHERE COMMENT_ID = #{commentId}
+    </select>
+
+    <!-- 코멘트 수정 (작성자 본인만) -->
+    <update id="updateComment" parameterType="map">
+        UPDATE TB_COMMENT
+           SET CONTENT = #{content},
+               SECRET_AT = #{secretAt},
+               UPDATED_DT = NOW()
+         WHERE COMMENT_ID = #{commentId}
+           AND USER_ID    = #{userId}
+           AND USE_AT     = 'Y'
+    </update>
+
+    <!-- 소프트 삭제 (작성자 본인만) -->
+    <update id="softDeleteComment" parameterType="map">
+        UPDATE TB_COMMENT
+           SET USE_AT = 'N',
+               DELETED_DT = NOW(),
+               UPDATED_DT = NOW()
+         WHERE COMMENT_ID = #{commentId}
+           AND USER_ID    = #{userId}
+           AND USE_AT     = 'Y'
+    </update>
+
+    <!-- 타겟별 카운트 -->
+    <select id="selectCommentCountByTarget" parameterType="map" resultType="int">
+        SELECT COUNT(*)
+          FROM TB_COMMENT
+         WHERE TARGET_TY_CD = #{targetTyCd}
+           AND TARGET_ID    = #{targetId}
+           AND USE_AT       = 'Y'
+    </select>
+
+</mapper>

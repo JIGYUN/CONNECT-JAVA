@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+		http://www.springframework.org/schema/tx  http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+        http://www.springframework.org/schema/aop  http://www.springframework.org/schema/aop/spring-aop-4.0.xsd">
+	
+	<!-- 데이터 베이스 타입 -->
+	<bean id="databaseType" class="java.lang.String">
+		<constructor-arg value="1"/> 
+	</bean>
+	
+	<!-- Datasource 설정 -->
+	<!-- oracle -->
+	<!-- Use log4jdbc -->
+	<bean id="dataSourceSpied" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+		<property name="driverClassName" value="#{ConfigProperties['db.driverClassName']}"/>
+        <property name="url" value="#{ConfigProperties['db.url']}"/>
+        <property name="username" value="#{ConfigProperties['db.username']}"/>
+        <property name="password" value="#{ConfigProperties['db.password']}"/>
+ 		<property name="validationQuery" value="SELECT 1 FROM DUAL"/>
+        <property name="minIdle" value="10"/>
+        <property name="maxIdle" value="30"/>
+        <property name="maxActive" value="30"/>
+	</bean>
+	
+	<bean id="dataSource" class="net.sf.log4jdbc.Log4jdbcProxyDataSource">
+		<constructor-arg ref="dataSourceSpied"/>
+		<property name="logFormatter">
+			<bean class="net.sf.log4jdbc.tools.Log4JdbcCustomFormatter">
+				<property name="loggingType" value="MULTI_LINE"/>
+				<!-- <property name="margin" value="19"/> -->
+				<property name="sqlPrefix" value="@Sql : "/>
+			</bean>
+		</property>
+	</bean>
+	
+	<!-- OLD
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+        <property name="driverClassName" value="${db.driver}"/>
+        <property name="url" value="${db.url}"/>
+        <property name="username" value="${db.username}"/>
+        <property name="password" value="${db.password}"/>
+        <property name="validationQuery" value="${db.validationQuery}"/>
+    </bean>
+     -->
+    
+    <!-- for log4j2 -->
+    <bean class="egovframework.rte.fdl.logging.db.EgovConnectionFactory">
+    	<property name="dataSource" ref="dataSource"/>
+    </bean>
+</beans>

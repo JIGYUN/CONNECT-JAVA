@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.basic.admin.sample.Template">
+
+    <sql id="whereTemplate">
+        <!-- 
+        동적 검색 조건 템플릿 (필요 시 활성화)
+
+        <choose>
+            <when test='id != null and id != "" '>
+
+            </when>
+            <otherwise>
+
+            </otherwise>
+        </choose>
+
+        <if test="searchField != null and searchText != null and searchField != '' and searchText != ''">
+            <choose>
+                <when test='searchField == "title"'>
+                    AND TITLE LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "content"'>
+                    AND CONTENT LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "writer"'>
+                    AND WRITER LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        -->
+    </sql> 
+
+    <select id="selectTemplateList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: com.basic.admin.sample.Template.selectTemplateList
+         Description : 목록 Query 
+        */
+        SELECT
+            columns_
+        FROM table_
+        <where>
+            <include refid="whereTemplate" />
+        </where>
+        ORDER BY columnId_ DESC
+        <if test="limit != null and offset != null">
+            /*  페이징 하단 시작  */
+            LIMIT #{limit} OFFSET #{offset}
+            /*  페이징 하단 끝  */
+        </if>
+    </select>
+
+    <select id="selectTemplateListCount" parameterType="hashmap" resultType="int">
+        /*
+         SQL ID: com.basic.admin.sample.Template.selectTemplateListCount
+         Description : 목록에서 레코드수 Query 
+        */
+        SELECT
+            COUNT(*) CNT
+        FROM table_
+        <where>
+            <include refid="whereTemplate" />
+        </where> 
+    </select>
+
+    <select id="selectTemplateDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: com.basic.admin.sample.Template.selectTemplateDetail
+         Description : 상세조회 Query 
+        */  
+        SELECT
+            columns_
+        FROM table_
+        WHERE columnId_ = valueId_
+    </select>
+
+    <insert id="insertTemplate" parameterType="hashmap">
+        /*
+         SQL ID: com.basic.admin.sample.Template.insertTemplate
+         Description : 등록 Query 
+        */
+        INSERT INTO table_
+        (
+            columnsAdd_
+        )
+        VALUES
+        (
+            values_
+        )
+    </insert>
+
+    <update id="updateTemplate" parameterType="hashmap">
+        /*
+         SQL ID: com.basic.admin.sample.Template.updateTemplate
+         Description : 수정 Query 
+        */
+        UPDATE table_
+        <set>
+            columnUpdate_
+        </set>
+        WHERE columnId_ = valueId_
+    </update>
+
+    <delete id="deleteTemplate" parameterType="hashmap">
+        /*
+         SQL ID: com.basic.admin.sample.Template.deleteTemplate
+         Description : 삭제 Query 
+        */
+        DELETE FROM table_
+        WHERE columnId_ = valueId_
+    </delete>
+
+</mapper>

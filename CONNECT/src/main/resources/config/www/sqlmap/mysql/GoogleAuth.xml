@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.mba.auth.GoogleAuth">
+
+  <!-- 이메일 기준 단건 조회(Map용) -->
+  <select id="selectByEmail" parameterType="map" resultType="CamelHashMap">
+    SELECT
+      USER_ID,
+      EMAIL,
+      USER_NM,
+      NICK_NM,
+      PROFILE_IMG_URL,
+      AUTH_TYPE,
+      USE_AT,
+      SOCIAL_SUB
+    FROM TB_USER
+    WHERE EMAIL = #{email}
+    LIMIT 1
+  </select>
+
+  <!-- 세션 적재용: UserVO로 바로 매핑 -->
+  <select id="selectSessionUser" parameterType="map" resultType="CamelHashMap">
+    SELECT
+      USER_ID,
+      EMAIL, 
+      PASSWORD_HASH,
+      USER_NM,
+      NICK_NM,
+      PROFILE_IMG_URL,
+      TELNO,
+      AUTH_TYPE
+    FROM TB_USER 
+    WHERE EMAIL = #{email}
+    LIMIT 1
+  </select>
+
+  <!-- 신규 가입 (Google) : 닉네임/프로필 포함 -->
+  <insert id="insertUserSocial" parameterType="map">
+    INSERT INTO TB_USER
+    (
+      EMAIL,
+      SOCIAL_SUB,
+      PASSWORD_HASH,
+      USER_NM,
+      NICK_NM,
+      PROFILE_IMG_URL,
+      TELNO,
+      USER_STTS_CD,
+      EMAIL_VRFCT_AT,
+      PW_FAILR_CNT,
+      LAST_LOGIN_DT,
+      USE_AT,
+      CREATED_DT,
+      CREATED_BY,
+      UPDATED_DT,
+      UPDATED_BY,
+      AUTH_TYPE
+    )
+    VALUES
+    (
+      #{email},
+      #{socialSub},
+      NULL,
+      #{userNm},
+      #{nickNm},
+      #{profileImgUrl},
+      NULL,
+      'ACTIVE',
+      'Y',
+      0,
+      NOW(),
+      'Y',
+      NOW(),
+      #{createdBy},
+      NOW(),
+      #{updatedBy},
+      'G'
+    )
+  </insert>
+
+  <!-- 기존 사용자 갱신 -->
+  <update id="updateUserSocial" parameterType="map">
+    UPDATE TB_USER
+    SET USER_NM         = COALESCE(#{userNm}, USER_NM),
+        NICK_NM        = COALESCE(#{nickNm}, NICK_NM),
+        PROFILE_IMG_URL = COALESCE(#{profileImgUrl}, PROFILE_IMG_URL),
+        SOCIAL_SUB      = COALESCE(#{socialSub}, SOCIAL_SUB),
+        UPDATED_BY      = #{updatedBy},
+        UPDATED_DT      = NOW(),
+        LAST_LOGIN_DT   = NOW(),
+        AUTH_TYPE       = CASE
+                            WHEN AUTH_TYPE IS NULL OR AUTH_TYPE = 'U' THEN 'G'
+                            ELSE AUTH_TYPE
+                          END
+    WHERE EMAIL = #{email}
+    LIMIT 1
+  </update>
+
+</mapper>

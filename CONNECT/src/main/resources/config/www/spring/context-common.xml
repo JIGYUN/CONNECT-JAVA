@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+			http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd
+			http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.3.xsd">
+	
+	<context:component-scan base-package="www">
+       <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller" />
+    </context:component-scan>
+    
+	<context:component-scan base-package="adm">
+       <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller" />
+    </context:component-scan>
+    
+
+	<bean id="leaveaTrace" class="egovframework.rte.fdl.cmmn.trace.LeaveaTrace">
+        <property name="traceHandlerServices">
+            <list>
+                <ref bean="traceHandlerService" />
+            </list>
+        </property>
+	</bean>
+	
+	<bean id="traceHandlerService" class="egovframework.rte.fdl.cmmn.trace.manager.DefaultTraceHandleManager">
+	     <property name="reqExpMatcher">
+	         <ref bean="antPathMater" />
+	     </property>
+	     <property name="patterns">
+	         <list>
+	             <value>*</value>
+	         </list>
+	     </property>
+	     <property name="handlers">
+	         <list>
+	             <ref bean="defaultTraceHandler" />
+	         </list>
+	      </property>
+	</bean>
+<!-- 	
+	<bean id="sqlSessionTemplate" class="org.mybatis.spring.SqlSessionTemplate" destroy-method="clearCache">
+		<constructor-arg name="sqlSessionFactory" ref="sqlSession"></constructor-arg>
+	</bean> -->
+
+
+	<bean id="antPathMater" class="org.springframework.util.AntPathMatcher" />
+	<bean id="defaultTraceHandler" class="egovframework.rte.fdl.cmmn.trace.handler.DefaultTraceHandler" />
+	
+	<!-- 환경변수/시스템프로퍼티 해석 활성화 -->
+	<context:property-placeholder ignore-unresolvable="true" system-properties-mode="OVERRIDE"/>
+	
+	<!-- 기존 -->
+	<!-- <util:properties id="ConfigProperties" location="classpath:config/Config.properties"/> -->
+	
+	<!-- 변경: 환경변수 CONNECT_CONFIG 우선, 없으면 classpath fallback -->
+	<util:properties id="ConfigProperties" location="${CONNECT_CONFIG:classpath:config/Config.properties}"/>
+</beans>

@@ -1,0 +1,18 @@
+/*���̾��˾�*/
+#fade { display: none; position:fixed; left:0; top:0; z-index:10; width:100%; height:100%; opacity:.80; z-index:9999; }
+.popup_block{ display: none; background: #eee; position: fixed; top: 300px; left: 260px; z-index: 99999; padding: 20px 20px 0 20px; border:1px solid #909090; box-shadow: 2px 2px 20px #909090;}
+.labelClose { top: 0; text-align: right; padding: 10px 0 10px;}
+.labelClose a.close { top: 2px; right: 2px; position: absolute;}
+div.mainVisual_tit { display:none;}
+
+#header .link_nav li:nth-of-type(1) a.on{background:#cd867e; color:#fff;}
+#header .link_nav li:nth-of-type(2) a.on{background:#9d8c90; color:#fff;}
+#header .link_nav li:nth-of-type(3) a.on{background:#a6b364; color:#fff;}
+#header .link_nav li:nth-of-type(4) a.on{background:#d4ca95; color:#fff;}
+#header .link_nav li:nth-of-type(5) a.on{background:#bb9b72; color:#fff;}
+#header .link_nav li:nth-of-type(6) a.on{background:#b0cbc7; color:#fff;}
+#header .link_nav li:nth-of-type(7) a.on{background:#959d8c; color:#fff;}
+
+@media all and (max-width:767px){
+    .popup_block{left: 0 !important;}
+}
