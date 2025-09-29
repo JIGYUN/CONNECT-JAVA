@@ -1,0 +1,196 @@
+name: CI-CD (Build & Deploy via wrapper)
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cd-main
+  cancel-in-progress: true
+
+env:
+  PROJECT_DIR: CONNECT     # pom.xml이 있는 하위 폴더명(루트면 이 줄/working-directory 제거)
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "8"
+          cache: maven
+
+      - name: Build (skip tests)
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: mvn -B -DskipTests clean package
+
+      - name: Upload WAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-war
+          path: ${{ env.PROJECT_DIR }}/target/*.war
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # 1) 아티팩트 다운로드/선택
+      - name: Download WAR
+        uses: actions/download-artifact@v4
+        with:
+          name: app-war
+          path: .
+
+      - name: Pick artifact
+        id: pick
+        shell: bash
+        run: |
+          set -e
+          WAR=$(ls -1 *.war | head -n1)
+          echo "war_file=$WAR" >> "$GITHUB_OUTPUT"
+          echo "war_basename=$(basename "$WAR")" >> "$GITHUB_OUTPUT"
+          echo "Picked WAR: $WAR"
+
+      # 2) 시크릿 존재 여부만 여기서 판정 → 이후 if는 outputs 사용
+      - name: Detect config secret
+        id: detect
+        shell: bash
+        run: |
+          if [ -n "${{ secrets.PROD_CONFIG }}" ]; then
+            echo "has_cfg=true"  >> $GITHUB_OUTPUT
+          else
+            echo "has_cfg=false" >> $GITHUB_OUTPUT
+          fi
+
+      # 3) 러너에서 Config 파일 생성(+검증)
+      - name: Prepare Config.properties on runner
+        if: ${{ steps.detect.outputs.has_cfg == 'true' }}
+        shell: bash
+        env:
+          PROD_CONFIG: ${{ secrets.PROD_CONFIG }}
+        run: |
+          set -euo pipefail
+          echo "::add-mask::$PROD_CONFIG"
+          printf "%s" "$PROD_CONFIG" > config-real.properties
+          echo "[RUNNER] size(bytes)="$(wc -c < config-real.properties)
+          echo "[RUNNER] head ↓"
+          sed -n '1,5p' config-real.properties || true
+          [ -s config-real.properties ] || { echo "Config is empty"; exit 1; }
+
+      # 4) 서버로 업로드
+      - name: Copy WAR to server (/tmp)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          source: ${{ steps.pick.outputs.war_file }}
+          target: /tmp/
+
+      - name: Copy Config to server (/tmp) (optional)
+        if: ${{ steps.detect.outputs.has_cfg == 'true' }}
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          source: config-real.properties
+          target: /tmp/
+
+      # 5) 서버에서 업로드된 파일 검증
+      - name: Verify uploaded files on server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            set -e
+            echo "[SERVER] WAR:"
+            ls -lh /tmp/${{ steps.pick.outputs.war_basename }} || true
+            if [ -f /tmp/config-real.properties ]; then
+              echo "[SERVER] Config:"
+              ls -lh /tmp/config-real.properties
+              echo "[SERVER] size(bytes)="$(wc -c < /tmp/config-real.properties)
+              echo "[SERVER] head ↓"
+              sed -n '1,5p' /tmp/config-real.properties || true
+            else
+              echo "[SERVER] (no config provided)"
+            fi
+
+      # 6) 래퍼만 sudo로 호출(서버에 /usr/local/bin/deploy_tomcat.sh 준비되어 있어야 함)
+      - name: Deploy via wrapper (sudo deploy_tomcat.sh)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            set -e
+            WAR="/tmp/${{ steps.pick.outputs.war_basename }}"
+            CFG="/tmp/config-real.properties"
+            echo "[CI] calling wrapper: $WAR (cfg: $CFG if exists)"
+            if [ -f "$CFG" ]; then
+              sudo /usr/local/bin/deploy_tomcat.sh "$WAR" "$CFG"
+            else
+              sudo /usr/local/bin/deploy_tomcat.sh "$WAR"
+            fi
+
+      # 7) 배포 결과 추가 검증(서버에서 실제 반영 파일 해시/앞부분 확인)
+      - name: Verify effective Config on server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            set -e
+            SRC=/tmp/config-real.properties
+            if [ -s "$SRC" ]; then
+              echo "[VERIFY] src hash:"; sha256sum "$SRC" || true
+            fi
+            for D in \
+              /opt/tomcat/webapps/ROOT/WEB-INF/classes/config/Config.properties \
+              /opt/tomcat/webapps/ROOT/WEB-INF/classes/Config.properties; do
+              if [ -f "$D" ]; then
+                echo "[VERIFY] dst: $D"
+                ls -lh "$D"
+                echo "[VERIFY] dst hash:"; sha256sum "$D" || true
+                echo "[VERIFY] dst head ↓"
+                sed -n '1,10p' "$D" || true
+              fi
+            done
+
+      # 8) 헬스체크
+      - name: Health check (HTTPS)
+        env:
+          DOMAIN: ${{ secrets.PROD_DOMAIN }}
+        shell: bash
+        run: |
+          set -e
+          if [ -z "$DOMAIN" ]; then
+            echo "[CI] PROD_DOMAIN is empty. Skip health check."
+            exit 0
+          fi
+          url="https://${DOMAIN}/"
+          echo "[CI] Health check: $url"
+          for i in {1..30}; do
+            code=$(curl -k -s -o /dev/null -w '%{http_code}' "$url" || true)
+            echo "try#$i -> $code"
+            if [ "$code" = "200" ] || [ "$code" = "302" ]; then
+              echo "OK ($code)"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Health check failed"
+          exit 1
