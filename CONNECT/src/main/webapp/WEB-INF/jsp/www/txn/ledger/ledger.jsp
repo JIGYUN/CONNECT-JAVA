@@ -205,8 +205,8 @@
             var html='';
             for(var i=0;i<rows.length;i++){
                 var r = rows[i];
-                // 키 유연 처리
-                var id   = r.ledgerIdx || r.TXN_ID || r.id || '';
+                // 키 유연 처리  
+                var id   = r.txnId;
                 var ttl  = r.accountNm || r.accountNm || '';
                 var cat  = r.categoryNm || r.CATEGORY_NM || '';
                 var io   = (r.ioType || r.IO_TYPE || '').toString().toUpperCase();

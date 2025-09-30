@@ -4,15 +4,21 @@
 
     <!-- 공통 where 템플릿(필요 시 활성화) -->
     <sql id="whereTask">
-        <!-- 동적 검색 조건 자리 -->
-        <!-- 예: <if test="grpCd != null and grpCd != ''"> AND GRP_CD = #{grpCd} </if> -->
+        <!-- 예시
+        <if test="grpCd != null and grpCd != ''">
+            AND GRP_CD = #{grpCd}
+        </if>
+        <if test="statusCd != null and statusCd != ''">
+            AND STATUS_CD = #{statusCd}
+        </if>
+        -->
     </sql>
 
-    <!-- 목록 -->
+    <!-- 목록: 시간(분) 기준 오름차순 + TODO 우선 + NULL 시간은 마지막 -->
     <select id="selectTaskList" parameterType="map" resultType="CamelHashMap">
         /*
          SQL ID: www.api.tsk.task.Task.selectTaskList
-         Description : 목록 Query (PK: TASK_ID, 호환 alias TASK_ID)
+         Description : 목록 Query (시간 정렬)
         */
         SELECT
             TASK_ID,
@@ -30,9 +36,15 @@
             DATE_FORMAT(UPDATED_DT,'%Y-%m-%d %H:%i:%s') AS UPDATED_DT
         FROM TB_TASK
         <where>
+            USE_AT = 'Y'
             <include refid="whereTask" />
         </where>
-        ORDER BY TASK_ID DESC
+        ORDER BY
+            CASE WHEN STATUS_CD = 'DONE' THEN 1 ELSE 0 END ASC,   /* TODO 먼저 */
+            CASE WHEN DUE_DT IS NULL  THEN 1 ELSE 0 END ASC,      /* NULL 시간 뒤로 */
+            DUE_DT ASC,                                           /* 시간 오름차순 */
+            SORT_ORDR ASC,
+            TASK_ID DESC
         <if test="limit != null and offset != null">
             LIMIT #{limit} OFFSET #{offset}
         </if>
@@ -43,18 +55,18 @@
         SELECT COUNT(*) CNT
         FROM TB_TASK
         <where>
+            USE_AT = 'Y'
             <include refid="whereTask" />
         </where>
     </select>
 
-    <!-- 상세 -->
+    <!-- 상세: taskId 또는 taskNo(호환) 모두 수용 -->
     <select id="selectTaskDetail" parameterType="map" resultType="CamelHashMap">
         /*
          SQL ID: www.api.tsk.task.Task.selectTaskDetail
-         Description : 상세조회 Query (taskNo 우선, 없으면 taskId)
+         Description : 상세조회 Query (taskId 우선, 없으면 taskNo)
         */
         SELECT
-            TASK_ID                                                AS TASK_ID,
             TASK_ID,
             GRP_CD,
             TITLE,
@@ -70,17 +82,25 @@
             DATE_FORMAT(UPDATED_DT,'%Y-%m-%d %H:%i:%s') AS UPDATED_DT
         FROM TB_TASK
         <where>
-            <if test="taskNo != null and taskNo != ''">
-                TASK_ID = #{taskId}
-            </if>
+            <choose>
+                <when test="taskId != null and taskId != ''">
+                    TASK_ID = #{taskId}
+                </when>
+                <when test="taskNo != null and taskNo != ''">
+                    TASK_ID = #{taskNo}
+                </when>
+                <otherwise>
+                    1 = 0
+                </otherwise>
+            </choose>
         </where>
     </select>
 
-    <!-- 등록 -->
+    <!-- 등록: YYYY-MM-DDTHH:mm(:ss) 수용 -->
     <insert id="insertTask" parameterType="hashmap">
         /*
          SQL ID: www.api.tsk.task.Task.insertTask
-         Description : 등록 Query (NULLIF/문자열 datetime 파싱 유지)
+         Description : 등록 Query (시간 포함)
         */
         INSERT INTO TB_TASK
         (
@@ -129,11 +149,11 @@
         )
     </insert>
 
-    <!-- 수정 -->
+    <!-- 수정: 시간 포함 -->
     <update id="updateTask" parameterType="hashmap">
         /*
          SQL ID: www.api.tsk.task.Task.updateTask
-         Description : 수정 Query (TASK_ID 기준)
+         Description : 수정 Query (TASK_ID 기준, 시간 포함)
         */
         UPDATE TB_TASK
         <set>
@@ -167,7 +187,7 @@
     <!-- Soft Delete -->
     <update id="softDeleteTask" parameterType="hashmap">
         UPDATE TB_TASK
-        SET USE_AT = 'N', UPDATED_DT = NOW()   
+        SET USE_AT = 'N', UPDATED_DT = NOW()
         WHERE TASK_ID = #{taskId}
     </update>
 
@@ -177,11 +197,11 @@
         WHERE TASK_ID = #{taskId}
     </delete>
 
-    <!-- ===== 신규: 날짜별 목록 ===== -->
+    <!-- 날짜별 목록: 시간 정렬 + TODO 우선 + NULL 시간 뒤로 -->
     <select id="selectTaskListByDate" parameterType="map" resultType="CamelHashMap">
         /*
          SQL ID: www.api.tsk.task.Task.selectTaskListByDate
-         Description : 선택한 날짜(YYYY-MM-DD)의 Task 목록
+         Description : 선택한 날짜(YYYY-MM-DD)의 Task 목록 (시간 정렬)
         */
         SELECT
             TASK_ID,
@@ -206,10 +226,15 @@
             (#{dueDate} IS NULL AND DATE(DUE_DT) = CURRENT_DATE())
             OR (#{dueDate} IS NOT NULL AND DATE(DUE_DT) = #{dueDate})
           )
-        ORDER BY STATUS_CD, DUE_DT, SORT_ORDR, TASK_ID DESC
+        ORDER BY
+            CASE WHEN STATUS_CD = 'DONE' THEN 1 ELSE 0 END ASC,
+            CASE WHEN DUE_DT IS NULL  THEN 1 ELSE 0 END ASC,
+            DUE_DT ASC,
+            SORT_ORDR ASC,
+            TASK_ID DESC
     </select>
 
-    <!-- ===== 신규: 상태 토글 ===== -->
+    <!-- 상태 토글 -->
     <update id="toggleTaskStatus" parameterType="hashmap">
         /*
          SQL ID: www.api.tsk.task.Task.toggleTaskStatus
@@ -224,4 +249,4 @@
           AND USE_AT = 'Y'
     </update>
 
-</mapper>
+</mapper> 

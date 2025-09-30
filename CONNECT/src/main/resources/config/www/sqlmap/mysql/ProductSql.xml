@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.prd.product.Product">
+
+    <sql id="whereProduct">
+        <!-- 
+        동적 검색 조건 템플릿 (필요 시 활성화)
+
+        <choose>
+            <when test='id != null and id != "" '>
+
+            </when>
+            <otherwise>
+
+            </otherwise>
+        </choose>
+
+        <if test="searchField != null and searchText != null and searchField != '' and searchText != ''">
+            <choose>
+                <when test='searchField == "title"'>
+                    AND TITLE LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "content"'>
+                    AND CONTENT LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "writer"'>
+                    AND WRITER LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        -->
+    </sql> 
+
+    <select id="selectProductList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.prd.product.Product.selectProductList
+         Description : 목록 Query 
+        */
+        SELECT
+            PRODUCT_ID
+			,GRP_CD
+			,SOURCE_CD
+			,SOURCE_PID
+			,TITLE
+			,BRAND_NM
+			,MODEL_NO
+			,BARCODE
+			,CATEGORY_L1_NM
+			,CATEGORY_L2_NM
+			,CATEGORY_L3_NM
+			,LIST_PRICE
+			,SALE_PRICE
+			,CURRENCY_CD
+			,DISCOUNT_RATE
+			,RATING_AVG
+			,REVIEW_CNT
+			,SELLER_ID_EXT
+			,SELLER_NM
+			,SHIP_FEE
+			,SHIP_METHOD_CD
+			,STOCK_STAT_CD
+			,STOCK_QTY
+			,MAIN_IMG_URL
+			,IMG_URL_1
+			,IMG_URL_2
+			,IMG_URL_3
+			,PRODUCT_URL
+			,ATTR_JSON
+			,DESCRIPTION_TXT
+			,TAGS
+			,UNIQ_SHA256
+			,USE_AT
+			,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+			,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+			,DATE_FORMAT(CRAWLED_DT, '%Y-%m-%d %H:%i:%s') AS CRAWLED_DT
+
+        FROM TB_PRODUCT
+        <where>
+            <include refid="whereProduct" />
+        </where>
+        ORDER BY PRODUCT_ID DESC
+        <if test="limit != null and offset != null">
+            /*  페이징 하단 시작  */
+            LIMIT #{limit} OFFSET #{offset}
+            /*  페이징 하단 끝  */
+        </if>
+    </select>
+
+    <select id="selectProductListCount" parameterType="hashmap" resultType="int">
+        /*
+         SQL ID: www.api.prd.product.Product.selectProductListCount
+         Description : 목록에서 레코드수 Query 
+        */
+        SELECT
+            COUNT(*) CNT
+        FROM TB_PRODUCT
+        <where>
+            <include refid="whereProduct" />
+        </where> 
+    </select>
+
+    <select id="selectProductDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.prd.product.Product.selectProductDetail
+         Description : 상세조회 Query 
+        */  
+        SELECT
+            PRODUCT_ID
+			,GRP_CD
+			,SOURCE_CD
+			,SOURCE_PID
+			,TITLE
+			,BRAND_NM
+			,MODEL_NO
+			,BARCODE
+			,CATEGORY_L1_NM
+			,CATEGORY_L2_NM
+			,CATEGORY_L3_NM
+			,LIST_PRICE
+			,SALE_PRICE
+			,CURRENCY_CD
+			,DISCOUNT_RATE
+			,RATING_AVG
+			,REVIEW_CNT
+			,SELLER_ID_EXT
+			,SELLER_NM
+			,SHIP_FEE
+			,SHIP_METHOD_CD
+			,STOCK_STAT_CD
+			,STOCK_QTY
+			,MAIN_IMG_URL
+			,IMG_URL_1
+			,IMG_URL_2
+			,IMG_URL_3
+			,PRODUCT_URL
+			,ATTR_JSON
+			,DESCRIPTION_TXT
+			,TAGS
+			,UNIQ_SHA256
+			,USE_AT
+			,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+			,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+			,DATE_FORMAT(CRAWLED_DT, '%Y-%m-%d %H:%i:%s') AS CRAWLED_DT
+
+        FROM TB_PRODUCT
+        WHERE PRODUCT_ID = #{productId}
+    </select>
+
+    <insert id="insertProduct" parameterType="hashmap">
+        /*
+         SQL ID: www.api.prd.product.Product.insertProduct
+         Description : 등록 Query 
+        */
+        INSERT INTO TB_PRODUCT
+        (
+            GRP_CD
+			,SOURCE_CD
+			,SOURCE_PID
+			,TITLE
+			,BRAND_NM
+			,MODEL_NO
+			,BARCODE
+			,CATEGORY_L1_NM
+			,CATEGORY_L2_NM
+			,CATEGORY_L3_NM
+			,LIST_PRICE
+			,SALE_PRICE
+			,CURRENCY_CD
+			,DISCOUNT_RATE
+			,RATING_AVG
+			,REVIEW_CNT
+			,SELLER_ID_EXT
+			,SELLER_NM
+			,SHIP_FEE
+			,SHIP_METHOD_CD
+			,STOCK_STAT_CD
+			,STOCK_QTY
+			,MAIN_IMG_URL
+			,IMG_URL_1
+			,IMG_URL_2
+			,IMG_URL_3
+			,PRODUCT_URL
+			,ATTR_JSON
+			,DESCRIPTION_TXT
+			,TAGS
+			,UNIQ_SHA256
+			,USE_AT
+			,CREATED_DT
+			,UPDATED_DT
+			,CRAWLED_DT
+
+        )
+        VALUES
+        (
+            #{grpCd}
+			,#{sourceCd}
+			,#{sourcePid}
+			,#{title}
+			,#{brandNm}
+			,#{modelNo}
+			,#{barcode}
+			,#{categoryL1Nm}
+			,#{categoryL2Nm}
+			,#{categoryL3Nm}
+			,#{listPrice}
+			,#{salePrice}
+			,#{currencyCd}
+			,#{discountRate}
+			,#{ratingAvg}
+			,#{reviewCnt}
+			,#{sellerIdExt}
+			,#{sellerNm}
+			,#{shipFee}
+			,#{shipMethodCd}
+			,#{stockStatCd}
+			,#{stockQty}
+			,#{mainImgUrl}
+			,#{imgUrl1}
+			,#{imgUrl2}
+			,#{imgUrl3}
+			,#{productUrl}
+			,#{attrJson}
+			,#{descriptionTxt}
+			,#{tags}
+			,#{uniqSha256}
+			,#{useAt}
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{crawledDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{crawledDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+
+        )
+    </insert>
+
+    <update id="updateProduct" parameterType="hashmap">
+        /*
+         SQL ID: www.api.prd.product.Product.updateProduct
+         Description : 수정 Query 
+        */
+        UPDATE TB_PRODUCT
+        <set>
+            			<if test='grpCd != null and grpCd != ""'>
+				GRP_CD = #{grpCd},
+			</if>
+			<if test='sourceCd != null and sourceCd != ""'>
+				SOURCE_CD = #{sourceCd},
+			</if>
+			<if test='sourcePid != null and sourcePid != ""'>
+				SOURCE_PID = #{sourcePid},
+			</if>
+			<if test='title != null and title != ""'>
+				TITLE = #{title},
+			</if>
+			<if test='brandNm != null and brandNm != ""'>
+				BRAND_NM = #{brandNm},
+			</if>
+			<if test='modelNo != null and modelNo != ""'>
+				MODEL_NO = #{modelNo},
+			</if>
+			<if test='barcode != null and barcode != ""'>
+				BARCODE = #{barcode},
+			</if>
+			<if test='categoryL1Nm != null and categoryL1Nm != ""'>
+				CATEGORY_L1_NM = #{categoryL1Nm},
+			</if>
+			<if test='categoryL2Nm != null and categoryL2Nm != ""'>
+				CATEGORY_L2_NM = #{categoryL2Nm},
+			</if>
+			<if test='categoryL3Nm != null and categoryL3Nm != ""'>
+				CATEGORY_L3_NM = #{categoryL3Nm},
+			</if>
+			<if test='listPrice != null and listPrice != ""'>
+				LIST_PRICE = #{listPrice},
+			</if>
+			<if test='salePrice != null and salePrice != ""'>
+				SALE_PRICE = #{salePrice},
+			</if>
+			<if test='currencyCd != null and currencyCd != ""'>
+				CURRENCY_CD = #{currencyCd},
+			</if>
+			<if test='discountRate != null and discountRate != ""'>
+				DISCOUNT_RATE = #{discountRate},
+			</if>
+			<if test='ratingAvg != null and ratingAvg != ""'>
+				RATING_AVG = #{ratingAvg},
+			</if>
+			<if test='reviewCnt != null and reviewCnt != ""'>
+				REVIEW_CNT = #{reviewCnt},
+			</if>
+			<if test='sellerIdExt != null and sellerIdExt != ""'>
+				SELLER_ID_EXT = #{sellerIdExt},
+			</if>
+			<if test='sellerNm != null and sellerNm != ""'>
+				SELLER_NM = #{sellerNm},
+			</if>
+			<if test='shipFee != null and shipFee != ""'>
+				SHIP_FEE = #{shipFee},
+			</if>
+			<if test='shipMethodCd != null and shipMethodCd != ""'>
+				SHIP_METHOD_CD = #{shipMethodCd},
+			</if>
+			<if test='stockStatCd != null and stockStatCd != ""'>
+				STOCK_STAT_CD = #{stockStatCd},
+			</if>
+			<if test='stockQty != null and stockQty != ""'>
+				STOCK_QTY = #{stockQty},
+			</if>
+			<if test='mainImgUrl != null and mainImgUrl != ""'>
+				MAIN_IMG_URL = #{mainImgUrl},
+			</if>
+			<if test='imgUrl1 != null and imgUrl1 != ""'>
+				IMG_URL_1 = #{imgUrl1},
+			</if>
+			<if test='imgUrl2 != null and imgUrl2 != ""'>
+				IMG_URL_2 = #{imgUrl2},
+			</if>
+			<if test='imgUrl3 != null and imgUrl3 != ""'>
+				IMG_URL_3 = #{imgUrl3},
+			</if>
+			<if test='productUrl != null and productUrl != ""'>
+				PRODUCT_URL = #{productUrl},
+			</if>
+			<if test='attrJson != null and attrJson != ""'>
+				ATTR_JSON = #{attrJson},
+			</if>
+			<if test='descriptionTxt != null and descriptionTxt != ""'>
+				DESCRIPTION_TXT = #{descriptionTxt},
+			</if>
+			<if test='tags != null and tags != ""'>
+				TAGS = #{tags},
+			</if>
+			<if test='uniqSha256 != null and uniqSha256 != ""'>
+				UNIQ_SHA256 = #{uniqSha256},
+			</if>
+			<if test='useAt != null and useAt != ""'>
+				USE_AT = #{useAt},
+			</if>
+			<if test='createdDt != null and createdDt != ""'>
+				CREATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='updatedDt != null and updatedDt != ""'>
+				UPDATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='crawledDt != null and crawledDt != ""'>
+				CRAWLED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{crawledDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{crawledDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+
+        </set>
+        WHERE PRODUCT_ID = #{productId}
+    </update>
+
+    <delete id="deleteProduct" parameterType="hashmap">
+        /*
+         SQL ID: www.api.prd.product.Product.deleteProduct
+         Description : 삭제 Query 
+        */
+        DELETE FROM TB_PRODUCT
+        WHERE PRODUCT_ID = #{productId}
+    </delete>
+
+</mapper>

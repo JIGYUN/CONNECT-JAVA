@@ -12,6 +12,12 @@
 	
 	<mvc:default-servlet-handler/>
 	
+	<mvc:resources mapping="/media/**"
+               location="#{ConfigProperties['media.fs-root']}" />
+               
+               
+               
+	
     <context:component-scan base-package="www">
         <context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
         <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Service"/>

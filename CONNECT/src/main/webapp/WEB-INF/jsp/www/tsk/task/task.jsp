@@ -7,7 +7,7 @@
         <span class="badge badge-light align-self-center pill">grpCd: <span id="grpCdTxt"><c:out value="${grpCd}"/></span></span>
     </div>
 
-    <!-- Calendar + Quick Add -->
+    <!-- Calendar + Quick Add (시간 입력 추가) -->
     <div class="panel-elev mb-3">
         <div class="toolbar">
             <!-- Calendar -->
@@ -27,15 +27,16 @@
                 <div class="cal-grid-body" id="calBody"></div>
             </div>
 
-            <!-- Quick Add -->
+            <!-- Quick Add (시간 입력 포함) -->
             <div class="quick-wrap">
-                <div class="input-group">
+                <div class="input-group mb-2">
+                    <input type="time" id="pickTime" class="form-control" style="max-width:140px;" aria-label="시간 선택">
                     <input type="search" id="titleInput" class="form-control" placeholder="할 일을 입력하고 Enter (예: 기획안 검토)" aria-label="제목 입력"/>
                     <div class="input-group-append">
                         <button class="btn btn-primary" id="btnAdd" type="button">추가</button>
                     </div>
                 </div>
-                <div class="muted small mt-2">선택한 날짜로 저장됩니다.</div>
+                <div class="muted small">선택한 날짜 + 시간으로 저장됩니다.</div>
             </div>
         </div>
     </div>
@@ -62,7 +63,7 @@
     <input type="hidden" id="pickDate" />
 </section>
 
-<!-- jQuery (안 로드된 환경 대비) -->
+<!-- jQuery CDN (안 로드된 환경 대비) -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <style>
@@ -71,16 +72,8 @@
         --pill:#f3f5f8; --ring:#dbeafe; --sel:#e0ecff;
     }
     body{ background:var(--bg); }
-    .panel-elev{
-        background:var(--card);
-        border:1px solid var(--line);
-        border-radius:16px;
-        box-shadow:0 6px 16px rgba(15,23,42,.05);
-        padding:16px;
-    }
-    .toolbar{
-        display:grid; grid-template-columns: 1fr 1fr; gap:16px; align-items:start;
-    }
+    .panel-elev{ background:var(--card); border:1px solid var(--line); border-radius:16px; box-shadow:0 6px 16px rgba(15,23,42,.05); padding:16px; }
+    .toolbar{ display:grid; grid-template-columns: 1fr 1fr; gap:16px; align-items:start; }
     @media (max-width: 992px){ .toolbar{ grid-template-columns: 1fr; } }
 
     .pill{ font-size:12px; padding:4px 10px; border-radius:999px; border:1px solid var(--line); color:#475569; background:#fff; }
@@ -91,34 +84,18 @@
     .cal-head{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
     .cal-title{ font-weight:800; color:var(--text); margin-right:auto; letter-spacing:.3px; }
 
-    .cal-grid-dow{
-        display:grid; grid-template-columns: repeat(7, 1fr); gap:6px; margin-bottom:6px;
-    }
-    .cal-grid-dow > div{
-        text-align:center; font-size:12px; color:#64748b; font-weight:700; padding:6px 0;
-        border:1px solid var(--line); border-radius:10px; background:#fff;
-    }
+    .cal-grid-dow{ display:grid; grid-template-columns: repeat(7, 1fr); gap:6px; margin-bottom:6px; }
+    .cal-grid-dow > div{ text-align:center; font-size:12px; color:#64748b; font-weight:700; padding:6px 0; border:1px solid var(--line); border-radius:10px; background:#fff; }
 
     .cal-grid-body{
         display:grid; grid-template-columns: repeat(7, 1fr); gap:6px;
-        background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px;
-        min-height:264px; /* 6주(6*44px) 보장 */
+        background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px; min-height:264px;
     }
-    .cal-cell{
-        border:1px solid var(--line); border-radius:10px; background:#fff; height:40px;
-        display:flex; align-items:center; justify-content:center; cursor:pointer;
-        transition:transform .05s ease, box-shadow .05s ease, background .15s ease;
-        user-select:none; font-weight:600; color:#334155;
-    }
+    .cal-cell{ border:1px solid var(--line); border-radius:10px; background:#fff; height:40px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:.05s; user-select:none; font-weight:600; color:#334155; }
     .cal-cell:hover{ background:#f8fafc; }
     .cal-cell.is-other{ opacity:.35; }
     .cal-cell.is-today{ box-shadow:0 0 0 2px var(--ring) inset; }
     .cal-cell.is-selected{ background:var(--sel); border-color:#c7d2fe; }
-
-    /* Quick Add */
-    .quick-wrap{ margin-left:auto; max-width:520px; width:100%; }
-    .input-group .form-control{ height:38px; }
-    .input-group .btn{ height:38px; }
 
     /* Table */
     .table thead th{ background:#f3f5f8; border-bottom:1px solid var(--line); color:#475569; font-weight:700; }
@@ -127,10 +104,7 @@
     .title-cell{ display:flex; align-items:center; gap:8px; }
     .title-text{ font-weight:600; color:var(--text); }
     .row-done .title-text{ text-decoration:line-through; color:#9ca3af; }
-    .status-badge{
-        margin-left:4px; font-size:11px; border-radius:999px; padding:2px 8px; border:1px solid var(--line);
-        color:#334155; background:#fff;
-    }
+    .status-badge{ margin-left:4px; font-size:11px; border-radius:999px; padding:2px 8px; border:1px solid var(--line); color:#334155; background:#fff; }
     .status-done{ background:#ecfdf5; border-color:#a7f3d0; color:#065f46; }
     .status-todo{ background:#eef2ff; border-color:#c7d2fe; color:#3730a3; }
     .btn-ghost{ border:1px solid var(--line); color:#64748b; background:#fff; }
@@ -142,17 +116,16 @@
     var API_BASE = '/api/tsk/task';
     var taskId   = 'taskId';   
     var grpEl    = document.getElementById('grpCdTxt');
-    var DEFAULT_GRP_CD = grpEl ? grpEl.textContent : 'personal'; // (옵셔널 체이닝 미사용)
+    var DEFAULT_GRP_CD = grpEl ? grpEl.textContent : 'personal';
 
     // ===== State =====
-    var selectedDate = null;   // Date 객체 (선택일)
-    var viewYear = null;       // 캘린더 뷰 기준 년
-    var viewMonth = null;      // 0-11
-  
+    var selectedDate = null;   // Date 객체
+    var viewYear = null, viewMonth = null;
+
     // ===== Init =====
     (function () {
-        initTodayState();          // 오늘로 상태 세팅
-        renderCalendar();          // 6주(42칸) 렌더
+        initTodayState();          // 오늘 + 현재시간
+        renderCalendar();          // 42칸
         bindCalendarHandlers();
         bindQuickAdd();
         bindTableHandlers();
@@ -166,6 +139,7 @@
         viewYear  = selectedDate.getFullYear();
         viewMonth = selectedDate.getMonth();
         document.getElementById('pickDate').value = toYMD(selectedDate);
+        document.getElementById('pickTime').value = toHM(now); // 현재 시각 기본
     }
     function setSelectedDate(d){
         selectedDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -176,7 +150,7 @@
         selectTaskList();
     }
 
-    // ===== Calendar render (42칸 고정) =====
+    // ===== Calendar render =====
     function renderCalendar(){
         var title = viewYear + "년 " + ('0'+(viewMonth+1)).slice(-2) + "월";
         document.getElementById('calTitle').textContent = title;
@@ -185,7 +159,7 @@
         body.innerHTML = '';
 
         var first = new Date(viewYear, viewMonth, 1);
-        var startDow = first.getDay(); // 0:일 ~ 6:토
+        var startDow = first.getDay();
 
         for (var i = 0; i < 42; i++){
             var dayNum = i - startDow + 1;
@@ -219,17 +193,15 @@
     // ===== Calendar handlers =====
     function bindCalendarHandlers(){
         document.getElementById('calPrev').addEventListener('click', function(){
-            viewMonth -= 1;
-            if (viewMonth < 0){ viewMonth = 11; viewYear -= 1; }
+            viewMonth -= 1; if (viewMonth < 0){ viewMonth = 11; viewYear -= 1; }
             renderCalendar();
         });
         document.getElementById('calNext').addEventListener('click', function(){
-            viewMonth += 1;
-            if (viewMonth > 11){ viewMonth = 0; viewYear += 1; }
+            viewMonth += 1; if (viewMonth > 11){ viewMonth = 0; viewYear += 1; }
             renderCalendar();
         });
         document.getElementById('btnToday').addEventListener('click', function(){
-            initTodayState();      // 오늘로 확정 세팅(빈값 방지)
+            initTodayState();      // 오늘+현재시간로 확정 세팅
             renderCalendar();
             selectTaskList();
         });
@@ -273,7 +245,9 @@
             contentType: 'application/json',
             data: JSON.stringify(payload),
             success: function (map) {
+                // 정렬: 클라이언트에서 dueDt(시:분) 기준 오름차순
                 var list = (map.result && map.result.list) ? map.result.list : (map.result || []);
+                list.sort(function(a,b){ return getDueMillis(a.dueDt) - getDueMillis(b.dueDt); });
                 renderRows(list);
             },
             error: function () { alert('목록 조회 중 오류 발생'); }
@@ -281,11 +255,11 @@
     }
 
     function insertTitle(title) {
-        var payload = {
-            title: title,
-            grpCd: DEFAULT_GRP_CD,
-            dueDt: document.getElementById('pickDate').value || toYMD(new Date())
-        };
+        var d = document.getElementById('pickDate').value || toYMD(new Date());
+        var t = document.getElementById('pickTime').value || '09:00';
+        var due = d + 'T' + t; // 서버 XML에서 T->공백 변환 처리됨
+
+        var payload = { title: title, grpCd: DEFAULT_GRP_CD, dueDt: due };
         $.ajax({
             url: API_BASE + '/insertTask',
             type: 'post',
@@ -321,7 +295,7 @@
     function onRowChkChanged(id, checked){
         var payload = {}; payload[taskId] = id; payload['statusCd'] = checked ? 'DONE' : 'TODO';
         $.ajax({
-            url: API_BASE + '/toggleTask', 
+            url: API_BASE + '/toggleTask',
             type: 'post',
             contentType: 'application/json',
             dataType: 'json',
@@ -335,13 +309,13 @@
                         pill.classList.toggle('status-done', checked);
                         pill.classList.toggle('status-todo', !checked);
                         pill.textContent = checked ? '완료' : '진행중';
-                    }   
+                    }
                 }
             },
             error: function(xhr){
                 alert('상태 변경 실패: ' + (xhr.responseText || xhr.status));
                 var chk = document.getElementById('chk-'+id);
-                if (chk) chk.checked = !checked; // 되돌림
+                if (chk) chk.checked = !checked;
             }
         });
     }
@@ -357,7 +331,7 @@
                 var id       = r.taskId;
                 var title    = (r.title != null ? r.title : '');
                 var statusCd = (r.statusCd != null ? String(r.statusCd) : 'TODO').toUpperCase();
-                var dueTxt   = fmtDateMaybe(r.dueDt) || '-';
+                var dueTxt   = formatDue(r.dueDt); // HH:mm (툴팁에 전체)
                 var checked  = (statusCd === 'DONE');
                 var rowCls   = checked ? 'row-done' : '';
                 var badgeCls = checked ? 'status-badge status-done' : 'status-badge status-todo';
@@ -376,11 +350,9 @@
                 html += "      <span class='"+badgeCls+"'>"+badgeTxt+"</span>";
                 html += "    </div>";
                 html += "  </td>";
-                html += "  <td>"+escapeHtml(dueTxt)+"</td>";
+                html += "  <td title='"+escapeHtml(fullDateTime(r.dueDt))+"'>"+escapeHtml(dueTxt)+"</td>";
                 html += "  <td class='text-center' onclick='event.stopPropagation();'>";
-                html += "    <button type='button' class='btn btn-sm btn-ghost'";
-                html += "            aria-label='항목 "+(id || '')+" 삭제'";
-                html += "            onclick=\"deleteRow('"+(id)+"')\">삭제</button>";
+                html += "    <button type='button' class='btn btn-sm btn-ghost' onclick=\"deleteRow('"+(id)+"')\">삭제</button>";
                 html += "  </td>";
                 html += "</tr>";
             }
@@ -388,28 +360,34 @@
         document.getElementById('taskListBody').innerHTML = html;
     }
 
-    // ===== Navigation =====
+    // ===== Utils =====
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, function (m) {
+            return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }  
+        });     
+    }
+    function toYMD(d){ var y=d.getFullYear(), m=('0'+(d.getMonth()+1)).slice(-2), dd=('0'+d.getDate()).slice(-2); return y+'-'+m+'-'+dd; }
+    function toHM(d){ var h=('0'+d.getHours()).slice(-2), m=('0'+d.getMinutes()).slice(-2); return h+':'+m; }
+
+    // dueDt parser (YYYY-MM-DD[ T]HH:mm[:ss]) → local Date
+    function parseLocal(dts){
+        if (!dts) return null;
+        if (typeof dts === 'object' && dts.value) dts = dts.value;
+        dts = String(dts).replace('T',' ').trim();
+        var m = /^(\d{4})-(\d{2})-(\d{2})(?:\s(\d{2}):(\d{2})(?::(\d{2}))?)?$/.exec(dts);
+        if (!m) return null;
+        var Y=+m[1], Mo=+m[2]-1, D=+m[3], h=+(m[4]||0), mi=+(m[5]||0), s=+(m[6]||0);
+        return new Date(Y,Mo,D,h,mi,s);
+    }
+    function getDueMillis(dueDt){ var d=parseLocal(dueDt); return d? d.getTime() : Number.MAX_SAFE_INTEGER; }
+    function formatDue(dueDt){ var d=parseLocal(dueDt); if(!d) return '-'; return to2(d.getHours())+':'+to2(d.getMinutes()); }
+    function fullDateTime(dueDt){ var d=parseLocal(dueDt); if(!d) return ''; return toYMD(d)+' '+to2(d.getHours())+':'+to2(d.getMinutes()); }
+    function to2(n){ return ('0'+n).slice(-2); }
+
+    // row nav
     function goToTaskModify(id) {
         var url = '/tsk/task/taskModify';
         if (id) url += '?' + taskId + '=' + encodeURIComponent(id);
         location.href = url;
     }
-
-    // ===== Utils =====
-    function escapeHtml(s) {
-        return String(s).replace(/[&<>"']/g, function (m) {
-            return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' };
-        }); 
-    }  
-    function fmtDateMaybe(v){
-        if (!v) return '';
-        if (typeof v === 'object' && v.value) v = v.value;
-        return String(v).replace('T',' ').slice(0,16);
-    }
-    function toYMD(d){
-        var y = d.getFullYear();
-        var m = ('0'+(d.getMonth()+1)).slice(-2);
-        var dd= ('0'+d.getDate()).slice(-2);
-        return y + '-' + m + '-' + dd;
-    }
-</script>  
+</script>
