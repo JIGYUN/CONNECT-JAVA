@@ -13,10 +13,11 @@
     <meta name="description" content="ktr ADMIN" />
     <meta name="keywords" content="ktr">
     <meta name="author" content="ktr" />
+
     <%-- 내부망 http 테스트에서는 CSP 업그레이드 사용 금지
     <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     --%>
-
+ 
     <!-- Bootstrap core CSS -->
     <link rel="stylesheet" href="<c:url value='/static/assets/css/bootstrap.min.css'/>">
     <!-- Custom styles -->
