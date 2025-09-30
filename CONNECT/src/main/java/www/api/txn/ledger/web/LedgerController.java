@@ -23,6 +23,9 @@ public class LedgerController {
     @RequestMapping("/api/txn/ledger/selectLedgerList")
     @ResponseBody
     public Map<String, Object> selectLedgerList(@RequestBody HashMap<String, Object> map) throws Exception {
+        if (UserSessionManager.isUserLogined()) {
+            map.put("ownerId", UserSessionManager.getLoginUserVO().getUserId());
+        }
         Map<String, Object> resultMap = new HashMap<>();
         List<Map<String, Object>> result = ledgerService.selectLedgerList(map);
         resultMap.put("msg", "성공");
@@ -36,6 +39,9 @@ public class LedgerController {
     @RequestMapping("/api/txn/ledger/selectLedgerDetail")
     @ResponseBody
     public Map<String, Object> selectLedgerDetail(@RequestBody HashMap<String, Object> map) throws Exception {
+        if (UserSessionManager.isUserLogined()) {
+            map.put("ownerId", UserSessionManager.getLoginUserVO().getUserId());
+        }
         Map<String, Object> resultMap = new HashMap<>();
         Map<String, Object> result = ledgerService.selectLedgerDetail(map);
         resultMap.put("msg", "성공");
@@ -49,8 +55,8 @@ public class LedgerController {
     @RequestMapping("/api/txn/ledger/insertLedger")
     @ResponseBody
     public Map<String, Object> insertLedger(@RequestBody HashMap<String, Object> map) throws Exception {
-        if (UserSessionManager.isUserLogined()) {   	
-        	map.put("createUser", UserSessionManager.getLoginUserVO().getEmail());
+        if (UserSessionManager.isUserLogined()) {
+            map.put("ownerId", UserSessionManager.getLoginUserVO().getUserId());
         }
         Map<String, Object> resultMap = new HashMap<>();
         ledgerService.insertLedger(map);
@@ -64,8 +70,8 @@ public class LedgerController {
     @RequestMapping("/api/txn/ledger/updateLedger")
     @ResponseBody
     public Map<String, Object> updateLedger(@RequestBody HashMap<String, Object> map) throws Exception {
-        if (UserSessionManager.isUserLogined()) {   	
-        	map.put("updateUser", UserSessionManager.getLoginUserVO().getEmail());
+        if (UserSessionManager.isUserLogined()) {
+            map.put("ownerId", UserSessionManager.getLoginUserVO().getUserId());
         }
         Map<String, Object> resultMap = new HashMap<>();
         ledgerService.updateLedger(map);
@@ -91,6 +97,9 @@ public class LedgerController {
     @RequestMapping("/api/txn/ledger/selectLedgerListCount")
     @ResponseBody
     public Map<String, Object> selectLedgerListCount(@RequestBody HashMap<String, Object> map) throws Exception {
+        if (UserSessionManager.isUserLogined()) {
+            map.put("ownerId", UserSessionManager.getLoginUserVO().getUserId());
+        }
         Map<String, Object> resultMap = new HashMap<>();
         int count = ledgerService.selectLedgerListCount(map);
         resultMap.put("msg", "성공");

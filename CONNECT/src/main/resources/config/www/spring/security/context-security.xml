@@ -6,12 +6,11 @@
                http://www.springframework.org/schema/beans  http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
                http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd">
 
-    <!-- 정적 리소스 -->
     <!-- 정적 리소스 (시큐리티 필터 완전 우회) -->
     <http pattern="/static/**"    security="none"/>
     <http pattern="/webjars/**"   security="none"/>
 
-    <!-- 파일 확장자별 백업 우회(경로가 바뀌어도 안전) -->
+    <!-- 파일 확장자별 우회 -->
     <http pattern="/**/*.css"     security="none"/>
     <http pattern="/**/*.js"      security="none"/>
     <http pattern="/**/*.map"     security="none"/>
@@ -65,7 +64,7 @@
         <custom-filter ref="filterSecurityInterceptor" before="FILTER_SECURITY_INTERCEPTOR"/>
     </http>
 
-    <!-- ===== Admin 권한 메타데이터 (로그인/처리/로그아웃은 허용, 나머지는 ADMIN) -->
+    <!-- ===== Admin 권한 메타데이터 -->
     <filter-security-metadata-source id="filterSecurityMetadataSourceAdmin" use-expressions="true">
         <intercept-url pattern="/adm/mba/auth/login"      access="permitAll"/>
         <intercept-url pattern="/adm/mba/auth/loginProc"  access="permitAll"/>
@@ -79,8 +78,18 @@
         <beans:property name="securityMetadataSource" ref="filterSecurityMetadataSourceAdmin"/>
     </beans:bean>
 
-    <!-- ===== 일반 권한 메타데이터 (예시 – 기존 룰 유지) -->
+    <!-- ===== 일반 권한 메타데이터 -->
     <filter-security-metadata-source id="filterSecurityMetadataSource" use-expressions="true">
+        <!-- 로그인/로그아웃/로그인처리 허용 -->
+        <intercept-url pattern="/mba/auth/login"     access="permitAll"/>
+        <intercept-url pattern="/com/auth/loginProc" access="permitAll"/>
+        <intercept-url pattern="/mba/auth/logout"    access="permitAll"/>
+
+        <!-- ✅ 요구사항: USER 권한이 있어야 접근 -->
+        <intercept-url pattern="/txn/**" access="hasAuthority('USER')"/>
+        <intercept-url pattern="/tsk/**" access="hasAuthority('USER')"/>
+
+        <!-- 기존 룰 유지 (예시) -->
         <intercept-url pattern="/mpg/**/*" access="hasRole('EXTERNAL_AUTH')"/>
     </filter-security-metadata-source>
 
@@ -116,6 +125,7 @@
                 </beans:bean>
                 <beans:bean class="org.springframework.security.access.vote.RoleHierarchyVoter">
                     <beans:constructor-arg ref="roleHierarchy"/>
+                    <!-- 권한 prefix 미사용 -->
                     <beans:property name="rolePrefix" value=""/>
                 </beans:bean>
                 <beans:bean class="org.springframework.security.access.vote.AuthenticatedVoter"/>
@@ -131,7 +141,7 @@
 
     <!-- ====== 로그인 처리 필터 (일반/관리자) -->
     <beans:bean id="usernamePasswordAuthenticationFilter" class="org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter">
-        <!-- ★ 프론트 처리 URL을 화면 URL과 분리 -->
+        <!-- 프론트 처리 URL을 화면 URL과 분리 -->
         <beans:property name="filterProcessesUrl" value="/com/auth/loginProc"/>
         <beans:property name="usernameParameter" value="mberId"/>
         <beans:property name="passwordParameter" value="mberPw"/>
@@ -142,7 +152,7 @@
     </beans:bean>
 
     <beans:bean id="usernamePasswordAuthenticationFilterAdmin" class="org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter">
-        <!-- ★ 관리자 처리 URL을 화면 URL과 분리 -->
+        <!-- 관리자 처리 URL을 화면 URL과 분리 -->
         <beans:property name="filterProcessesUrl" value="/adm/mba/auth/loginProc"/>
         <beans:property name="usernameParameter" value="mberId"/>
         <beans:property name="passwordParameter" value="mberPw"/>
@@ -152,7 +162,7 @@
         <beans:property name="authenticationFailureHandler" ref="loginFailureHandlerAdmin"/>
     </beans:bean>
 
-    <!-- ===== 엔트리포인트 분리 (체인별 로그인 페이지 고정) -->
+    <!-- ===== 엔트리포인트 분리 -->
     <beans:bean id="adminEntryPoint" class="org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint">
         <beans:property name="loginFormUrl" value="/adm/mba/auth/login"/>
     </beans:bean>
@@ -168,7 +178,6 @@
         <beans:property name="defaultTargetUrl" value="/adm"/>
     </beans:bean>
 
-    <!-- 실패 핸들러는 기본 클래스로 (setDefaultFailureUrl 제공) -->
     <beans:bean id="loginFailureHandler"
                 class="org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler">
         <beans:property name="defaultFailureUrl" value="/mba/auth/login?failYn=Y"/>

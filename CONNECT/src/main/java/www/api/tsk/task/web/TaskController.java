@@ -21,6 +21,9 @@ public class TaskController {
     @RequestMapping("/api/tsk/task/selectTaskList")
     @ResponseBody
     public Map<String, Object> selectTaskList(@RequestBody HashMap<String, Object> map) {
+        if (UserSessionManager.isUserLogined()) {
+            map.put("ownerId", UserSessionManager.getLoginUserVO().getUserId());
+        }
         Map<String, Object> resultMap = new HashMap<>();
         List<Map<String, Object>> result = taskService.selectTaskList(map);
         resultMap.put("msg", "성공");
@@ -32,6 +35,9 @@ public class TaskController {
     @RequestMapping("/api/tsk/task/selectTaskDetail")
     @ResponseBody
     public Map<String, Object> selectTaskDetail(@RequestBody HashMap<String, Object> map) {
+        if (UserSessionManager.isUserLogined()) {
+            map.put("ownerId", UserSessionManager.getLoginUserVO().getUserId());
+        }
         Map<String, Object> resultMap = new HashMap<>();
         Map<String, Object> result = taskService.selectTaskDetail(map);
         resultMap.put("msg", "성공");
@@ -44,7 +50,7 @@ public class TaskController {
     @ResponseBody
     public Map<String, Object> insertTask(@RequestBody HashMap<String, Object> map) {
         if (UserSessionManager.isUserLogined()) {
-            map.put("createUser", UserSessionManager.getLoginUserVO().getEmail());
+            map.put("ownerId", UserSessionManager.getLoginUserVO().getUserId());
         }
         Map<String, Object> resultMap = new HashMap<>();
         taskService.insertTask(map);
@@ -57,7 +63,7 @@ public class TaskController {
     @ResponseBody
     public Map<String, Object> updateTask(@RequestBody HashMap<String, Object> map) {
         if (UserSessionManager.isUserLogined()) {
-            map.put("updateUser", UserSessionManager.getLoginUserVO().getEmail());
+            map.put("ownerId", UserSessionManager.getLoginUserVO().getUserId());
         }
         Map<String, Object> resultMap = new HashMap<>();
         taskService.updateTask(map);
@@ -79,6 +85,9 @@ public class TaskController {
     @RequestMapping("/api/tsk/task/selectTaskListCount")
     @ResponseBody
     public Map<String, Object> selectTaskListCount(@RequestBody HashMap<String, Object> map) {
+        if (UserSessionManager.isUserLogined()) {
+            map.put("ownerId", UserSessionManager.getLoginUserVO().getUserId());
+        }
         Map<String, Object> resultMap = new HashMap<>();
         int count = taskService.selectTaskListCount(map);
         resultMap.put("msg", "성공");
@@ -92,6 +101,9 @@ public class TaskController {
     @RequestMapping("/api/tsk/task/selectTaskListByDate")
     @ResponseBody
     public Map<String, Object> selectTaskListByDate(@RequestBody HashMap<String, Object> map) {
+        if (UserSessionManager.isUserLogined()) {
+            map.put("ownerId", UserSessionManager.getLoginUserVO().getUserId());
+        }
         Map<String, Object> resultMap = new HashMap<>();
         List<Map<String, Object>> result = taskService.selectTaskListByDate(map);
         resultMap.put("msg", "성공");
@@ -103,6 +115,9 @@ public class TaskController {
     @RequestMapping("/api/tsk/task/toggleTask")
     @ResponseBody
     public Map<String, Object> toggleTask(@RequestBody HashMap<String, Object> map) {
+        if (UserSessionManager.isUserLogined()) {
+            map.put("ownerId", UserSessionManager.getLoginUserVO().getUserId());
+        }
         Map<String, Object> resultMap = new HashMap<>();
         taskService.toggleTask(map);
         resultMap.put("msg", "변경 성공");

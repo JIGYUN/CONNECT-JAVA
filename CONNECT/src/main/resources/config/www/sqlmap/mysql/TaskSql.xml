@@ -2,19 +2,24 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="www.api.tsk.task.Task">
 
-    <!-- 공통 where 템플릿(필요 시 활성화) -->
+    <!-- 🔒 소유자 스코프: ownerId 없으면 접근 차단 -->
+    <sql id="ownerScope">
+        <choose>
+            <when test="ownerId != null"> AND OWNER_ID = #{ownerId} </when>
+            <otherwise> AND 1 = 0 </otherwise>
+        </choose>
+    </sql>
+
+    <!-- 공통 where (필요 시 확장) -->
     <sql id="whereTask">
+        <include refid="ownerScope"/>
         <!-- 예시
-        <if test="grpCd != null and grpCd != ''">
-            AND GRP_CD = #{grpCd}
-        </if>
-        <if test="statusCd != null and statusCd != ''">
-            AND STATUS_CD = #{statusCd}
-        </if>
+        <if test="grpCd != null and grpCd != ''"> AND GRP_CD = #{grpCd} </if>
+        <if test="statusCd != null and statusCd != ''"> AND STATUS_CD = #{statusCd} </if>
         -->
     </sql>
 
-    <!-- 목록: 시간(분) 기준 오름차순 + TODO 우선 + NULL 시간은 마지막 -->
+    <!-- 목록: 시간 오름차순 + TODO 우선 + NULL 시간 마지막 -->
     <select id="selectTaskList" parameterType="map" resultType="CamelHashMap">
         /*
          SQL ID: www.api.tsk.task.Task.selectTaskList
@@ -22,6 +27,7 @@
         */
         SELECT
             TASK_ID,
+            OWNER_ID,
             GRP_CD,
             TITLE,
             CONTENT,
@@ -37,12 +43,12 @@
         FROM TB_TASK
         <where>
             USE_AT = 'Y'
-            <include refid="whereTask" />
+            <include refid="whereTask"/>
         </where>
         ORDER BY
-            CASE WHEN STATUS_CD = 'DONE' THEN 1 ELSE 0 END ASC,   /* TODO 먼저 */
-            CASE WHEN DUE_DT IS NULL  THEN 1 ELSE 0 END ASC,      /* NULL 시간 뒤로 */
-            DUE_DT ASC,                                           /* 시간 오름차순 */
+            CASE WHEN STATUS_CD = 'DONE' THEN 1 ELSE 0 END ASC,
+            CASE WHEN DUE_DT IS NULL  THEN 1 ELSE 0 END ASC,
+            DUE_DT ASC,
             SORT_ORDR ASC,
             TASK_ID DESC
         <if test="limit != null and offset != null">
@@ -56,18 +62,19 @@
         FROM TB_TASK
         <where>
             USE_AT = 'Y'
-            <include refid="whereTask" />
+            <include refid="whereTask"/>
         </where>
     </select>
 
-    <!-- 상세: taskId 또는 taskNo(호환) 모두 수용 -->
+    <!-- 상세: taskId 또는 taskNo(호환) -->
     <select id="selectTaskDetail" parameterType="map" resultType="CamelHashMap">
         /*
          SQL ID: www.api.tsk.task.Task.selectTaskDetail
-         Description : 상세조회 Query (taskId 우선, 없으면 taskNo)
+         Description : 상세조회 Query
         */
         SELECT
             TASK_ID,
+            OWNER_ID,
             GRP_CD,
             TITLE,
             CONTENT,
@@ -93,10 +100,11 @@
                     1 = 0
                 </otherwise>
             </choose>
+            <include refid="ownerScope"/>
         </where>
     </select>
 
-    <!-- 등록: YYYY-MM-DDTHH:mm(:ss) 수용 -->
+    <!-- 등록: OWNER_ID 포함 / ISO-8601 시간 문자열 수용 -->
     <insert id="insertTask" parameterType="hashmap">
         /*
          SQL ID: www.api.tsk.task.Task.insertTask
@@ -104,12 +112,14 @@
         */
         INSERT INTO TB_TASK
         (
+            OWNER_ID,
             GRP_CD, TITLE, CONTENT, STATUS_CD, PRIORITY_CD,
             START_DT, DUE_DT, DONE_DT,
             SORT_ORDR, USE_AT, CREATED_DT, UPDATED_DT
         )
         VALUES
         (
+            #{ownerId},
             #{grpCd},
             #{title},
             <![CDATA[ #{content} ]]>,
@@ -149,11 +159,11 @@
         )
     </insert>
 
-    <!-- 수정: 시간 포함 -->
+    <!-- 수정 -->
     <update id="updateTask" parameterType="hashmap">
         /*
          SQL ID: www.api.tsk.task.Task.updateTask
-         Description : 수정 Query (TASK_ID 기준, 시간 포함)
+         Description : 수정 Query (TASK_ID + OWNER_ID)
         */
         UPDATE TB_TASK
         <set>
@@ -182,6 +192,7 @@
             UPDATED_DT = NOW()
         </set>
         WHERE TASK_ID = #{taskId}
+        <include refid="ownerScope"/>
     </update>
 
     <!-- Soft Delete -->
@@ -189,12 +200,14 @@
         UPDATE TB_TASK
         SET USE_AT = 'N', UPDATED_DT = NOW()
         WHERE TASK_ID = #{taskId}
+        <include refid="ownerScope"/>
     </update>
 
-    <!-- 하드 Delete (옵션) -->
+    <!-- 하드 Delete -->
     <delete id="deleteTask" parameterType="hashmap">
         DELETE FROM TB_TASK
         WHERE TASK_ID = #{taskId}
+        <include refid="ownerScope"/>
     </delete>
 
     <!-- 날짜별 목록: 시간 정렬 + TODO 우선 + NULL 시간 뒤로 -->
@@ -205,6 +218,7 @@
         */
         SELECT
             TASK_ID,
+            OWNER_ID,
             GRP_CD,
             TITLE,
             CONTENT,
@@ -219,6 +233,7 @@
             DATE_FORMAT(UPDATED_DT,'%Y-%m-%d %H:%i:%s') AS UPDATED_DT
         FROM TB_TASK
         WHERE USE_AT = 'Y'
+          <include refid="ownerScope"/>
           <if test="grpCd != null and grpCd != ''">
             AND GRP_CD = #{grpCd}
           </if>
@@ -247,6 +262,7 @@
             UPDATED_DT = NOW()
         WHERE TASK_ID = #{taskId}
           AND USE_AT = 'Y'
+        <include refid="ownerScope"/>
     </update>
 
-</mapper> 
+</mapper>

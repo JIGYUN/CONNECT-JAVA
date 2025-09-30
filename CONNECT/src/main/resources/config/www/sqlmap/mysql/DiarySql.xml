@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="www.api.tsk.diary.Diary">
+
+    <!-- 🔒 소유자 스코프: ownerId 없으면 무조건 0건 -->
+    <sql id="ownerScope">
+        <choose>
+            <when test="ownerId != null"> AND OWNER_ID = #{ownerId} </when>
+            <otherwise> AND 1 = 0 </otherwise>
+        </choose>
+    </sql>
+
+    <!-- 공통 where -->
+    <sql id="whereDiary">
+        <include refid="ownerScope"/>
+        <if test="grpCd != null and grpCd != ''">
+            AND GRP_CD = #{grpCd}
+        </if>
+        <if test="diaryDt != null and diaryDt != ''">
+            AND DATE(DIARY_DT) = #{diaryDt}
+        </if>
+        <if test="useAt != null and useAt != ''">
+            AND USE_AT = #{useAt}
+        </if>
+    </sql>
+
+    <!-- 목록 -->
+    <select id="selectDiaryList" parameterType="map" resultType="CamelHashMap">
+        SELECT
+            DIARY_ID,
+            OWNER_ID,
+            GRP_CD,
+            DATE_FORMAT(DIARY_DT, '%Y-%m-%d') AS DIARY_DT,
+            CONTENT,
+            FILE_GRP_ID,
+            USE_AT,
+            DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT,
+            DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+        FROM TB_DIARY
+        <where>
+            <include refid="whereDiary"/>
+        </where>
+        ORDER BY DIARY_DT DESC, DIARY_ID DESC
+        <if test="limit != null and offset != null">
+            LIMIT #{limit} OFFSET #{offset}
+        </if>
+    </select>
+
+    <!-- 카운트 -->
+    <select id="selectDiaryListCount" parameterType="hashmap" resultType="int">
+        SELECT COUNT(*) CNT
+        FROM TB_DIARY
+        <where>
+            <include refid="whereDiary"/>
+        </where>
+    </select>
+
+    <!-- 상세(ID) -->
+    <select id="selectDiaryDetail" parameterType="map" resultType="CamelHashMap">
+        SELECT
+            DIARY_ID,
+            OWNER_ID,
+            GRP_CD,
+            DATE_FORMAT(DIARY_DT, '%Y-%m-%d') AS DIARY_DT,
+            CONTENT,
+            FILE_GRP_ID,
+            USE_AT,
+            DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT,
+            DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+        FROM TB_DIARY
+        WHERE DIARY_ID = #{diaryId}
+        <include refid="ownerScope"/>
+    </select>
+
+    <!-- 날짜 단건 -->
+    <select id="selectDiaryByDate" parameterType="map" resultType="CamelHashMap">
+        SELECT
+            DIARY_ID,
+            OWNER_ID,
+            GRP_CD,
+            DATE_FORMAT(DIARY_DT, '%Y-%m-%d') AS DIARY_DT,
+            CONTENT,
+            FILE_GRP_ID,
+            USE_AT,
+            DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT,
+            DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+        FROM TB_DIARY
+        WHERE USE_AT = 'Y'
+        <include refid="ownerScope"/>
+        <if test="grpCd != null and grpCd != ''">
+            AND GRP_CD = #{grpCd}
+        </if>
+        AND DATE(DIARY_DT) = #{diaryDt}
+        ORDER BY DIARY_ID DESC
+        LIMIT 1
+    </select>
+
+    <!-- 등록 -->
+    <insert id="insertDiary" parameterType="hashmap">
+        INSERT INTO TB_DIARY
+        ( OWNER_ID, GRP_CD, DIARY_DT, CONTENT, FILE_GRP_ID, USE_AT, CREATED_DT, UPDATED_DT )
+        VALUES
+        (
+            #{ownerId},
+            #{grpCd},
+            COALESCE(STR_TO_DATE(NULLIF(#{diaryDt}, ''), '%Y-%m-%d'), CURRENT_DATE()),
+            <![CDATA[ #{content} ]]>,
+            NULLIF(#{fileGrpId}, ''),
+            COALESCE(NULLIF(#{useAt}, ''), 'Y'),
+            COALESCE(STR_TO_DATE(NULLIF(#{createdDt}, ''), '%Y-%m-%d %H:%i:%s'), NOW()),
+            COALESCE(STR_TO_DATE(NULLIF(#{updatedDt}, ''), '%Y-%m-%d %H:%i:%s'), NOW())
+        )
+    </insert>
+
+    <!-- 수정 -->
+    <update id="updateDiary" parameterType="hashmap">
+        UPDATE TB_DIARY
+        <set>
+            <if test='grpCd != null and grpCd != ""'> GRP_CD = #{grpCd}, </if>
+            <if test='diaryDt != null and diaryDt != ""'>
+                DIARY_DT = STR_TO_DATE(NULLIF(#{diaryDt}, ''), '%Y-%m-%d'),
+            </if>
+            <if test='content != null and content != ""'> CONTENT = <![CDATA[ #{content} ]]>, </if>
+            <if test='fileGrpId != null and fileGrpId != ""'> FILE_GRP_ID = #{fileGrpId}, </if>
+            <if test='useAt != null and useAt != ""'> USE_AT = #{useAt}, </if>
+            UPDATED_DT = NOW()
+        </set>
+        WHERE DIARY_ID = #{diaryId}
+        <include refid="ownerScope"/>
+    </update>
+
+    <!-- 삭제 -->
+    <delete id="deleteDiary" parameterType="hashmap">
+        DELETE FROM TB_DIARY
+        WHERE DIARY_ID = #{diaryId}
+        <include refid="ownerScope"/>
+    </delete>
+
+    <!-- 업서트(1일 1건) : (OWNER_ID, DIARY_DT) 유니크 필요 -->
+    <insert id="upsertDiary" parameterType="hashmap">
+        INSERT INTO TB_DIARY
+        ( OWNER_ID, GRP_CD, DIARY_DT, CONTENT, FILE_GRP_ID, USE_AT, CREATED_DT, UPDATED_DT )
+        VALUES
+        (
+            #{ownerId},
+            #{grpCd},
+            COALESCE(STR_TO_DATE(NULLIF(#{diaryDt}, ''), '%Y-%m-%d'), CURRENT_DATE()),
+            <![CDATA[ #{content} ]]>,
+            NULLIF(#{fileGrpId}, ''),
+            COALESCE(NULLIF(#{useAt}, ''), 'Y'),
+            NOW(), NOW()
+        )
+        ON DUPLICATE KEY UPDATE
+            CONTENT     = VALUES(CONTENT),
+            FILE_GRP_ID = VALUES(FILE_GRP_ID),
+            USE_AT      = COALESCE(VALUES(USE_AT), 'Y'),
+            UPDATED_DT  = NOW()
+    </insert>
+
+</mapper>
