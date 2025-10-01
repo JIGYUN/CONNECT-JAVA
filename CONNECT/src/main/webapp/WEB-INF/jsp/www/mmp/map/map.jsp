@@ -38,15 +38,35 @@
 
     /* 라벨(커스텀 오버레이) */
     .label-pill{
-        font-size:12px; line-height:1.2; white-space:nowrap;
+        font-size:12px; line-height:1.25; white-space:nowrap;
         background:#fff; border:1px solid #e5e7eb; border-radius:999px;
-        padding:4px 8px; box-shadow:0 2px 8px rgba(15,23,42,.08); color:#0f172a;
+        padding:6px 10px; box-shadow:0 2px 8px rgba(15,23,42,.08); color:#0f172a;
+        display:inline-block;
     }
     .label-pill .grp{ color:#64748b; }
+    .label-pill .line1{ font-weight:700; margin-bottom:2px; }
+    .label-pill .meta{ font-size:11px; color:#64748b; margin-top:2px; }
+    .label-pill .actions{ margin-top:4px; display:flex; gap:6px; }
+    .label-pill .btn-mini{
+        display:inline-block; font-size:11px; line-height:1; padding:5px 8px;
+        border:1px solid #e5e7eb; border-radius:999px; text-decoration:none; color:#0f172a;
+        background:#f8fafc;
+    }
+    .label-pill .btn-mini:hover{ background:#eef2f7; }
 
+    /* InfoWindow */
     .iw{ font-size:14px; color:#0f172a; }
     .iw .ttl{ font-weight:700; margin-bottom:4px; }
-    .iw .addr{ color:#6b7280; }
+    .iw .addr{ color:#6b7280; margin-bottom:4px; }
+    .iw .meta{ color:#64748b; font-size:12px; margin-bottom:6px; }
+    .iw .actions{ display:flex; gap:8px; }
+    .iw .btn-mini{
+        display:inline-block; font-size:12px; line-height:1; padding:6px 10px;
+        border:1px solid #e5e7eb; border-radius:999px; text-decoration:none; color:#0f172a;
+        background:#f8fafc;
+    }
+    .iw .btn-mini:hover{ background:#eef2f7; }
+
     .page-gap{ height:8px; }
 </style>
 
@@ -106,6 +126,17 @@
         return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
             .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     }
+    function fmtCnt(n){
+        if(n===0 || n==='0') return '0';
+        const v = parseFloat(n);
+        return isFinite(v) ? v.toLocaleString('ko-KR') : '';
+    }
+    function buildDetailUrl(mapId){
+        let url='/mmp/map/mapDetail?mapId='+encodeURIComponent(mapId||'');
+        const qGrp=$('#selGroup').val() || getParam('grpCd') || '';
+        if(qGrp) url+='&grpCd='+encodeURIComponent(qGrp);
+        return url;
+    }
 
     /* ===== Settings ===== */
     const API_LIST='/api/mmp/map/selectMapList';
@@ -115,8 +146,7 @@
 
     /* ===== Map state ===== */
     let map, clusterer=null, markers=[], bounds;
-    let labelOverlays=[], labelsOn=false; // 라벨 토글 상태
-    let groupsInited=false;
+    let labelOverlays=[], labelsOn=true;  // ✅ 기본 라벨 펼침
 
     $(function(){
         setHeaderOffset();
@@ -187,18 +217,16 @@
             success:function(res){
                 const list=res.result || res.list || [];
                 $('#countBadge').text((list.length||0)+'건');
-
-                if(!groupsInited){
-                    buildGroupOptions(list, grpCdParam);
-                    groupsInited=true;
-                }
+                buildGroupOptionsOnce(list, grpCdParam);
                 renderMarkers(list);
             },
             error:function(){ alert('지도 데이터 로드 실패'); }
         });
     }
 
-    function buildGroupOptions(list, initialGrpCd){
+    let groupsInited=false;
+    function buildGroupOptionsOnce(list, initialGrpCd){
+        if(groupsInited) return;
         const uniq={}; const arr=[];
         list.forEach(r=>{
             const cd=pickStr(r,['grpCd','GRP_CD','groupCd','GROUP_CD'])||'';
@@ -209,6 +237,74 @@
         arr.sort((a,b)=>String(a.nm).localeCompare(String(b.nm),'ko'));
         arr.forEach(g=> $sel.append($('<option/>').val(g.cd).text(g.nm||g.cd)));
         if(initialGrpCd && $sel.find('option[value="'+initialGrpCd+'"]').length) $sel.val(initialGrpCd);
+        groupsInited=true;
+    }
+
+    function overlayHTML(row){
+        const title = pickStr(row,['title','TITLE','name','NAME','placeName','PLACE_NAME']) || '(제목 없음)';
+        const grpNm = pickStr(row,['grpNm','GRP_NM','groupNm','GROUP_NM','grpName','GRP_NAME']);
+        const videoUrl = pickStr(row,['videoUrl','VIDEO_URL']);
+        const viewCnt  = pickNum(row,['viewCnt','VIEW_CNT','views','VIEW_COUNT']);
+        const likeCnt  = pickNum(row,['likeCnt','LIKE_CNT']);
+        const cmtCnt   = pickNum(row,['cmtCnt','CMT_CNT','commentCnt','COMMENT_CNT','commentCount','COMMENT_COUNT']);
+        const mapId    = row.mapId || row.MAP_ID;
+
+        let meta = '';
+        const metaBits=[];
+        if(isFinite(viewCnt)) metaBits.push('조회 ' + fmtCnt(viewCnt));
+        if(isFinite(likeCnt)) metaBits.push('좋아요 ' + fmtCnt(likeCnt));
+        if(isFinite(cmtCnt))  metaBits.push('댓글 ' + fmtCnt(cmtCnt));
+        if(metaBits.length) meta = '<div class="meta">'+ metaBits.join(' · ') +'</div>';
+
+        let actions = '<div class="actions">';
+        if(mapId!=null && mapId!==''){
+            actions += '<a class="btn-mini" href="'+ escapeHtml(buildDetailUrl(mapId)) +'">상세보기</a>';
+        }
+        if(videoUrl){
+            actions += '<a class="btn-mini" href="'+ escapeHtml(videoUrl) +'" target="_blank" rel="noopener">유튜브</a>';
+        }
+        actions += '</div>';
+
+        const line1 = escapeHtml(title) + (grpNm ? ' <span class="grp">- '+ escapeHtml(grpNm) +'</span>' : '');
+        return '<div class="label-pill">'
+             + '  <div class="line1">'+ line1 +'</div>'
+             +    meta
+             +    actions
+             + '</div>';
+    }
+
+    function infoHTML(row){
+        const title = pickStr(row,['title','TITLE','name','NAME','placeName','PLACE_NAME']) || '(제목 없음)';
+        const grpNm = pickStr(row,['grpNm','GRP_NM','groupNm','GROUP_NM','grpName','GRP_NAME']);
+        const addr  = pickStr(row,['addr','ADDR','address','ADDRESS','roadAddress','ROAD_ADDRESS']);
+        const videoUrl = pickStr(row,['videoUrl','VIDEO_URL']);
+        const viewCnt  = pickNum(row,['viewCnt','VIEW_CNT','views','VIEW_COUNT']);
+        const likeCnt  = pickNum(row,['likeCnt','LIKE_CNT']);
+        const cmtCnt   = pickNum(row,['cmtCnt','CMT_CNT','commentCnt','COMMENT_CNT','commentCount','COMMENT_COUNT']);
+        const mapId    = row.mapId || row.MAP_ID;
+
+        const titleLine = escapeHtml(title) + (grpNm ? ' - ' + escapeHtml(grpNm) : '');
+        const metaBits=[];
+        if(isFinite(viewCnt)) metaBits.push('조회 ' + fmtCnt(viewCnt));
+        if(isFinite(likeCnt)) metaBits.push('좋아요 ' + fmtCnt(likeCnt));
+        if(isFinite(cmtCnt))  metaBits.push('댓글 ' + fmtCnt(cmtCnt));
+        const meta = metaBits.length ? ('<div class="meta">'+ metaBits.join(' · ') +'</div>') : '';
+
+        let actions = '<div class="actions">';
+        if(mapId!=null && mapId!==''){
+            actions += '<a class="btn-mini" href="'+ escapeHtml(buildDetailUrl(mapId)) +'">상세보기</a>';
+        }
+        if(videoUrl){
+            actions += '<a class="btn-mini" href="'+ escapeHtml(videoUrl) +'" target="_blank" rel="noopener">유튜브</a>';
+        }
+        actions += '</div>';
+
+        return '<div class="iw">'
+             + '  <div class="ttl">'+ titleLine +'</div>'
+             + (addr?('<div class="addr">'+ escapeHtml(addr) +'</div>'):'')
+             +    meta
+             +    actions
+             + '</div>';
     }
 
     function renderMarkers(list){
@@ -224,25 +320,20 @@
             if(!isFinite(lat)||!isFinite(lng)) continue;
 
             const pos=new kakao.maps.LatLng(lat,lng);
-            const title=pickStr(r,['title','TITLE','name','NAME','placeName','PLACE_NAME'])||'(제목 없음)';
-            const grpNm=pickStr(r,['grpNm','GRP_NM','groupNm','GROUP_NM','grpName','GRP_NAME']);
-            const addr =pickStr(r,['addr','ADDR','address','ADDRESS','roadAddress','ROAD_ADDRESS']);
-            const mapId=r.mapId || r.MAP_ID;
-            const label = grpNm ? (title+' - '+grpNm) : title;
 
-            // 마커
-            const marker=new kakao.maps.Marker({ position:pos, title:label });
-            const iw=new kakao.maps.InfoWindow({ content: infoHTML(label, addr, mapId), removable:true });
+            // 마커 + 인포윈도우(상세/유튜브 버튼 포함)
+            const marker=new kakao.maps.Marker({ position:pos });
+            const iw=new kakao.maps.InfoWindow({ content: infoHTML(r), removable:true });
             kakao.maps.event.addListener(marker,'click', function(){ iw.open(map, marker); });
 
             markers.push(marker);
             bounds.extend(pos);
 
-            // 커스텀 라벨 오버레이 (처음에는 labelsOn 상태에 따라 표시)
+            // 커스텀 라벨 오버레이(펼친 상태에서 버튼/메타 노출)
             const ov=new kakao.maps.CustomOverlay({
                 position: pos,
-                yAnchor: 1.2,    // 마커 위쪽에 살짝 띄우기
-                content: '<div class="label-pill">'+ escapeHtml(title) + (grpNm? ' <span class="grp">- '+ escapeHtml(grpNm) +'</span>' : '') +'</div>'
+                yAnchor: 1.25,
+                content: overlayHTML(r)
             });
             labelOverlays.push(ov);
         }
@@ -251,7 +342,7 @@
         if(clusterer && clusterOn){ clusterer.addMarkers(markers); markers.forEach(m=>m.setMap(null)); }
         else { markers.forEach(m=>m.setMap(map)); }
 
-        // 라벨 표시 상태 반영
+        // 라벨 표시 상태 반영(기본 ON)
         applyLabelsVisibility();
 
         fitAll();
@@ -265,20 +356,6 @@
         if(map.setBounds.length===2) map.setBounds(bounds,24); else map.setBounds(bounds,24,24,24,24);
     }
 
-    function infoHTML(titleLine, addr, mapId){
-        let link=''; if(mapId!=null && mapId!==''){
-            let url='/mmp/map/mapDetail?mapId='+encodeURIComponent(mapId);
-            const qGrp=$('#selGroup').val() || getParam('grpCd') || '';
-            if(qGrp) url+='&grpCd='+encodeURIComponent(qGrp);
-            link='<div><a href="'+url+'">상세보기 &rsaquo;</a></div>';
-        }
-        return '<div class="iw">'
-             + '  <div class="ttl">'+ escapeHtml(titleLine) +'</div>'
-             + (addr?('<div class="addr">'+ escapeHtml(addr) +'</div>'):'')
-             + link
-             + '</div>';
-    }
-
     /* ===== Label toggle ===== */
     function setLabelsVisible(on){
         labelsOn = !!on;
@@ -289,4 +366,4 @@
         if(labelsOn){ labelOverlays.forEach(o=>o.setMap(map)); }
         else{ labelOverlays.forEach(o=>o.setMap(null)); }
     }
-</script>  
+</script>

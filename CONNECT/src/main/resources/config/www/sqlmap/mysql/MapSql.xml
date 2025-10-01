@@ -27,6 +27,10 @@
             M.LAT,
             M.LNG,
             M.CREATE_USER,
+            M.VIDEO_URL,
+			M.LIKE_CNT,
+			M.CMT_CNT,
+			M.VIEW_CNT,
             DATE_FORMAT(M.CREATE_DATE, '%Y-%m-%d %H:%i:%s') AS CREATE_DATE,
             M.UPDATE_USER,
             DATE_FORMAT(M.UPDATE_DATE, '%Y-%m-%d %H:%i:%s') AS UPDATE_DATE
@@ -63,6 +67,10 @@
             M.LAT,
             M.LNG,
             M.CREATE_USER,
+            M.VIDEO_URL,
+			M.LIKE_CNT,
+			M.CMT_CNT,
+			M.VIEW_CNT,
             DATE_FORMAT(M.CREATE_DATE, '%Y-%m-%d %H:%i:%s') AS CREATE_DATE,
             M.UPDATE_USER,
             DATE_FORMAT(M.UPDATE_DATE, '%Y-%m-%d %H:%i:%s') AS UPDATE_DATE

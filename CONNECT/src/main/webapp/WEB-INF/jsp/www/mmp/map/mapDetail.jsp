@@ -27,6 +27,8 @@
         .hero{ padding:var(--s4); margin-bottom:var(--s3); }
         .title{ font-size:30px; font-weight:800; letter-spacing:-.01em; margin:0 0 var(--s1); }
         .meta{ color:var(--muted); font-size:13px; display:flex; gap:12px; flex-wrap:wrap; }
+        .kpi{ color:#334155; font-size:13px; display:flex; gap:12px; flex-wrap:wrap; margin-top:6px; }
+        .kpi b{ color:#0f172a; }
         .grid{ display:grid; grid-template-columns: 1.1fr .9fr; gap:var(--s3); }
         @media (max-width: 992px){ .grid{ grid-template-columns: 1fr; } }
         .info-card{ padding:var(--s3); }
@@ -80,6 +82,8 @@
     <div class="card hero">
         <h1 id="title" class="title">불러오는 중…</h1>
         <div id="meta" class="meta"></div>
+        <!-- ▼ 조회/좋아요/댓글 + 유튜브 링크 -->
+        <div id="kpi" class="kpi" style="display:none;"></div>
         <div id="tags" class="mt-2"></div>
     </div>
 
@@ -91,6 +95,15 @@
             <div class="info-row"><div class="info-label">주소</div><div id="addr" class="info-value">—</div></div>
             <div class="info-row"><div class="info-label">좌표</div><div id="coord" class="info-value">—</div></div>
             <div class="info-row"><div class="info-label">메모</div><div id="memo" class="info-value text-break">—</div></div>
+            <!-- ▼ 유튜브 & 지표 행 (옵션 표시) -->
+            <div class="info-row" id="metricRow" style="display:none;">
+                <div class="info-label">지표</div>
+                <div id="metricVal" class="info-value">—</div>
+            </div>
+            <div class="info-row" id="ytRow" style="display:none;">
+                <div class="info-label">유튜브</div>
+                <div class="info-value"><a id="ytLink" href="#" target="_blank" rel="noopener">영상 바로가기</a></div>
+            </div>
         </div>
 
         <!-- 우: 지도 -->
@@ -101,6 +114,8 @@
                 <button class="btn btn-outline-secondary btn-sm" type="button" id="btnCopyAddr">주소 복사</button>
                 <button class="btn btn-outline-secondary btn-sm" type="button" id="btnCopyCoord">좌표 복사</button>
                 <a class="btn btn-outline-dark btn-sm" target="_blank" id="btnOpenKakao">카카오맵에서 보기</a>
+                <!-- ▼ 유튜브 버튼 (있을 때만 표시) -->
+                <a class="btn btn-outline-danger btn-sm" target="_blank" id="btnYouTube" style="display:none;">유튜브로 보기</a>
             </div>
         </div>
     </div>
@@ -122,10 +137,10 @@
             <div id="distSkeleton" class="skeleton"></div>
             <img id="distImg" src="" alt="분석 이미지" style="display:none;"/>
         </div>
-    </div>     
+    </div>
 
     <!-- 숨김 파라미터 -->
-    <input type="hidden" id="mapId" value="${param.mapId}"/> 
+    <input type="hidden" id="mapId" value="${param.mapId}"/>
     <input type="hidden" id="grpCd" value="${param.grpCd}"/>
 </div>
 
@@ -149,17 +164,18 @@
 <script>
 const API = '/api/mmp/map';
 const FILE_API = { list:'/api/com/file/list', download: id => '/api/com/file/download/' + id };
-const DIST_IMG_PATH = '/static/assets/img/dist_-HMjbflpVIg.png';  
+const DIST_IMG_PATH = '/static/assets/img/dist_-HMjbflpVIg.png';
 
 function copyToClipboard(text){
     const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t);
     t.select(); document.execCommand('copy'); document.body.removeChild(t);
 }
 function copyUrl(){ copyToClipboard(location.href); alert('링크가 복사되었습니다.'); }
-function fmtCoord(lat,lng){ return lat && lng ? (Number(lat).toFixed(6) + ', ' + Number(lng).toFixed(6)) : '—'; }
+function fmtCoord(lat,lng){ return (isFinite(lat) && isFinite(lng)) ? (Number(lat).toFixed(6) + ', ' + Number(lng).toFixed(6)) : '—'; }
 function safe(r, ...keys){ for (let k of keys){ if (r && r[k] != null) return r[k]; } return ''; }
 function esc(s){ return String(s||'').replace(/[&<>"]/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])); }
 function bytes(n){ if (n==null) return ''; const u=['B','KB','MB','GB']; let i=0,x=+n; while(x>=1024&&i<u.length-1){x/=1024;i++;} return (Math.round(x*10)/10)+u[i]; }
+function fmtCnt(n){ if(n===0 || n==='0') return '0'; const v = Number(n); return isFinite(v) ? v.toLocaleString('ko-KR') : ''; }
 
 let map, marker, infowindow;
 
@@ -182,13 +198,20 @@ async function loadDetail(id){
 
         const title = safe(r, 'title','TITLE') || '지도 포인트';
         const name  = safe(r, 'mapNm','MAP_NM');
-        const addr  = safe(r, 'content','CONTENT');   // 임시: 주소/메모로 사용하던 필드
+        // 주소는 별도 필드가 없다면 CONTENT를 사용하던 기존 관례 유지
+        const addr  = safe(r, 'addr','ADDR','address','ADDRESS','roadAddress','ROAD_ADDRESS','content','CONTENT');
         const lat   = Number(safe(r, 'lat','LAT'));
         const lng   = Number(safe(r, 'lng','LNG','lon','LON'));
-        const created = safe(r,'createdDt','CREATED_DT');
-        const updated = safe(r,'updatedDt','UPDATED_DT');
+        const created = safe(r,'createdDt','CREATED_DT','createDate','CREATE_DATE');
+        const updated = safe(r,'updatedDt','UPDATED_DT','updateDate','UPDATE_DATE');
         const tags    = (safe(r,'tagTxt','TAG_TXT') || '').split(',').map(s=>s.trim()).filter(Boolean);
         const fileGrpId = safe(r,'fileGrpId','FILE_GRP_ID');
+
+        // ▼ YouTube & 지표 (VIEW/LIKE/CMT)
+        const videoUrl = safe(r, 'videoUrl','VIDEO_URL','youtubeUrl','YOUTUBE_URL');
+        const viewCnt  = Number(safe(r, 'viewCnt','VIEW_CNT','views','VIEW_COUNT'));
+        const likeCnt  = Number(safe(r, 'likeCnt','LIKE_CNT'));
+        const cmtCnt   = Number(safe(r, 'cmtCnt','CMT_CNT','commentCnt','COMMENT_CNT','commentCount','COMMENT_COUNT'));
 
         $('#title').text(title);
         $('#mapNm').text(name || '—');
@@ -196,11 +219,45 @@ async function loadDetail(id){
         $('#coord').text(fmtCoord(lat,lng));
         $('#memo').text(safe(r,'memo','MEMO') || '—');
 
+        // 상단 메타(작성/수정)
         let meta=[]; if (created) meta.push('작성 ' + created); if (updated) meta.push('수정 ' + updated);
         $('#meta').text(meta.join(' · '));
 
+        // 태그
         const $tags = $('#tags').empty(); tags.forEach(t => $tags.append($('<span/>').addClass('chip').text('# ' + t)));
 
+        // ▼ KPI 라인 & 정보행
+        const kpiBits=[];
+        const metricBits=[];
+        if (isFinite(viewCnt)) { kpiBits.push('<b>조회</b> ' + fmtCnt(viewCnt)); metricBits.push('조회 ' + fmtCnt(viewCnt)); }
+        if (isFinite(likeCnt)) { kpiBits.push('<b>좋아요</b> ' + fmtCnt(likeCnt)); metricBits.push('좋아요 ' + fmtCnt(likeCnt)); }
+        if (isFinite(cmtCnt))  { kpiBits.push('<b>댓글</b> ' + fmtCnt(cmtCnt)); metricBits.push('댓글 ' + fmtCnt(cmtCnt)); }
+
+        if (videoUrl){
+            const ytA = '<a href="'+ esc(videoUrl) +'" target="_blank" rel="noopener">유튜브</a>';
+            kpiBits.push(ytA);
+            $('#ytRow').show();
+            $('#ytLink').attr('href', videoUrl).text(videoUrl);
+            $('#btnYouTube').attr('href', videoUrl).show();
+        }else{
+            $('#ytRow').hide();
+            $('#btnYouTube').hide();
+        }
+
+        if (kpiBits.length){
+            $('#kpi').html(kpiBits.join(' · ')).show();
+        }else{
+            $('#kpi').hide();
+        }
+
+        if (metricBits.length){
+            $('#metricVal').html(metricBits.join(' · '));
+            $('#metricRow').show();
+        }else{
+            $('#metricRow').hide();
+        }
+
+        // 지도 표시
         if (isFinite(lat) && isFinite(lng)){
             const ll = new kakao.maps.LatLng(lat, lng);
             marker = new kakao.maps.Marker({ position: ll }); marker.setMap(map);
@@ -218,6 +275,7 @@ async function loadDetail(id){
             $('#btnCopyCoord').off('click').on('click', ()=>{ copyToClipboard(lat + ', ' + lng); alert('좌표를 복사했습니다.'); });
         }
 
+        // 첨부
         if (fileGrpId){ renderAttach(fileGrpId); }
 
         // 분석 섹션 초기화(타이틀을 ALT에 반영)
@@ -225,6 +283,7 @@ async function loadDetail(id){
 
     }catch(e){
         $('#title').text('상세를 불러오지 못했습니다.');
+        $('#kpi').hide(); $('#metricRow').hide(); $('#ytRow').hide(); $('#btnYouTube').hide();
         initAnalysis('');
     }
 }
@@ -261,7 +320,6 @@ function initAnalysis(titleText){
       .attr('alt', (titleText ? (titleText + ' — ') : '') + '댓글 분석 분포 이미지')
       .attr('title', (titleText ? (titleText + ' · ') : '') + '댓글 분석(시연)');
 
-    // 로드/에러 핸들러
     $img.off('load error').on('load', function(){
         $skel.hide(); $img.show();
         $('#btnDownload').attr('href', DIST_IMG_PATH);
@@ -277,7 +335,7 @@ function initAnalysis(titleText){
     // 최초 로드
     $img.hide(); $skel.show(); $img.attr('src', src);
 
-    // 액션 버튼
+    // 액션 버튼(선택적으로 존재할 수 있음)
     $('#btnRefresh').off('click').on('click', function(){
         $img.hide(); $skel.show();
         $img.attr('src', DIST_IMG_PATH + '?t=' + Date.now());
@@ -286,4 +344,4 @@ function initAnalysis(titleText){
 }
 </script>
 </body>
-</html>
+</html>  
