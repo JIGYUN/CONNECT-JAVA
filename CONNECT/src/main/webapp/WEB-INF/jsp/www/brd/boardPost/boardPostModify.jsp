@@ -121,6 +121,11 @@
     const CMT_TARGET_TY = 'BOARD_POST';
     function cmtTargetId(){ return $('#postId').val(); }
 
+    function sanitizeAlt(name){  
+        if(!name) return 'image';
+        return String(name).replace(/\.[^/.]+$/, '').replace(/[\[\]()`!\\]/g,' ').trim() || 'image';
+    }
+    
     $(document).ready(function () {
         // boardId 보정: 쿼리스트링 → hidden에 주입
         var qBoard = getParam('boardId');
@@ -136,30 +141,44 @@
             height: '460px',
             initialEditType: 'markdown',
             previewStyle: 'vertical',
-            placeholder: '내용을 입력해주세요...',
+            usageStatistics: false,
             hooks: {
                 addImageBlobHook: function (blob, callback) {
                     const fd = new FormData();
-                    fd.append('file', blob);
+                    fd.append('file', blob, blob && blob.name ? blob.name : 'image.png');
+
+                    // 게시글 첨부그룹과 묶고 싶으면 전달(있으면 재사용)
+                    var gid = document.getElementById('fileGrpId')?.value;
+                    if (gid) fd.append('fileGrpId', gid);
+
                     $.ajax({
-                        url: '/api/common/file/upload',
+                        url: '/api/com/file/uploadImageForEditor',   // ⬅️ 신규(아래 B.1)
                         type: 'POST',
                         data: fd,
                         processData: false,
                         contentType: false,
-                        dataType: 'text',
-                        success: function (url) {
-                            if (!url || url === 'error') { alert('이미지 업로드 실패'); return; }
-                            var alt = (blob && blob.name ? blob.name : 'image').replace(/\.[^/.]+$/, '').replace(/[\[\]\(\)!\\]/g, ' ').trim();
-                            editor.exec('addImage', { imageUrl: url, altText: alt });
+                        success: function (res) {
+                            // 응답 형태: { ok:true, result:{ url, fileId, fileGrpId } }
+                            if (!res || res.ok !== true || !res.result || !res.result.url){
+                                alert('이미지 업로드 응답 오류');
+                                return;
+                            }
+                            if (res.result.fileGrpId && !$('#fileGrpId').val()){
+                                $('#fileGrpId').val(res.result.fileGrpId);
+                            }
+                            const alt = sanitizeAlt(blob && blob.name);
+                            callback(res.result.url, alt);
                         },
-                        error: function (xhr) { alert('이미지 업로드 실패: ' + xhr.status); }
+                        error: function (xhr) {
+                            alert('이미지 업로드 실패: ' + (xhr.responseText || xhr.status));
+                        }
                     });
-                    return false;
+                    return false; // 기본 동작 차단
                 }
             }
         });
-
+        
+        
         const id = $("#" + PK).val();
         if (id) {
             readBoardPost(id);
