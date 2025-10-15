@@ -55,6 +55,10 @@ public class AuthService extends EgovAbstractServiceImpl {
      * @return List 조회 결과
      */
     public Map<String, Object> selectLogin(Map<String, Object> params) {
+    	System.out.println("passwordHash = " + params.get("passwordHash"));
+    	Sha256 sha256 = new Sha256();
+    	params.put("passwordHash", sha256.encrypt(String.valueOf(params.get("passwordHash"))));
+    	
         return dao.selectOne(namespace + ".selectLogin", params);
     }
 

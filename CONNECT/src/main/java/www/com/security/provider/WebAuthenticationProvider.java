@@ -56,7 +56,7 @@ public class WebAuthenticationProvider implements AuthenticationProvider {
         Sha256 sha256 = new Sha256();
 
         params.put("email", mberId);
-        params.put("passwordHash", sha256.encrypt(mberPw));
+        params.put("passwordHash", mberPw);
 
         Map<String, Object> map = authService.selectLogin(params);
         if (map == null) {
