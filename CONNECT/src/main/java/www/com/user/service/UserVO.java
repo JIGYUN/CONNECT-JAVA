@@ -11,7 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 /**
  * 인증된 사용자 VO (TB_USER 매핑)
- * USER_ID -> userId, EMAIL -> email, PASSWORD_HASH -> passwordHash,
+ * USER_ID -> userId, EMAIL -> email, PASSWORD_HASH -> password,
  * USER_NM -> userNm, nickNm -> nickNm, PROFILE_IMG_URL -> profileImgUrl,
  * TELNO -> telno, AUTH_TYPE -> authType
  */
@@ -22,7 +22,7 @@ public class UserVO implements UserDetails, Serializable {
     // ====== TB_USER Columns ======
     private String userId;         // USER_ID (BIGINT)
     private String email;          // EMAIL
-    private String passwordHash;   // PASSWORD_HASH
+    private String password;   // PASSWORD_HASH
     private String userNm;         // USER_NM (실명/이름)
     private String nickNm;       // nickNm (표시용 별명)
     private String profileImgUrl;  // PROFILE_IMG_URL (아바타)
@@ -34,12 +34,12 @@ public class UserVO implements UserDetails, Serializable {
 
     public UserVO() {}
 
-    public UserVO(String userId, String email, String passwordHash,
+    public UserVO(String userId, String email, String password,
                   String userNm, String nickNm, String profileImgUrl,
                   String telno, String authType) {
         this.userId = userId;
         this.email = email;
-        this.passwordHash = passwordHash;
+        this.password = password;
         this.userNm = userNm;
         this.nickNm = nickNm;
         this.profileImgUrl = profileImgUrl;
@@ -66,7 +66,7 @@ public class UserVO implements UserDetails, Serializable {
         }
         return this.authorities;
     }
-    @Override public String getPassword() { return this.passwordHash; }
+    @Override public String getPassword() { return this.password; }
     @Override public String getUsername() { return this.email; }
     @Override public boolean isAccountNonExpired()     { return true; }
     @Override public boolean isAccountNonLocked()      { return true; }
@@ -80,8 +80,7 @@ public class UserVO implements UserDetails, Serializable {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
-    public String getPasswordHash() { return passwordHash; }
-    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
+    public void setPassword(String password) { this.password = password; }
 
     public String getUserNm() { return userNm; }
     public void setUserNm(String userNm) { this.userNm = userNm; }

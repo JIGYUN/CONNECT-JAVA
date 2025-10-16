@@ -48,18 +48,22 @@
     <url-pattern>/*</url-pattern>
   </filter-mapping>
 
-<filter>
-  <filter-name>corsFilter</filter-name>
-  <filter-class>www.com.util.SimpleCorsFilter</filter-class>
-  <!-- 운영/프리뷰 도메인 추가 -->
-  <init-param>
-    <param-name>cors.allowed.origins</param-name>
-    <param-value>
-      http://localhost:3000,
-      https://connect-react.pages.dev
-    </param-value>
-  </init-param>
-</filter>
+	<filter>
+	  <filter-name>corsFilter</filter-name>
+	  <filter-class>www.com.util.SimpleCorsFilter</filter-class>
+	  <init-param>
+	    <param-name>cors.allowed.origins</param-name>
+	    <param-value>
+	      http://localhost:3000,
+	      https://connect-react.pages.dev,
+	      https://*.connect-react.pages.dev
+	    </param-value>
+	  </init-param>
+	</filter>
+	<filter-mapping>
+	  <filter-name>corsFilter</filter-name>
+	  <url-pattern>/*</url-pattern>
+	</filter-mapping>
 <filter-mapping>
   <filter-name>corsFilter</filter-name>
   <url-pattern>/api/*</url-pattern>

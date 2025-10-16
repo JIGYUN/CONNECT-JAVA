@@ -41,7 +41,7 @@ public class AuthService extends EgovAbstractServiceImpl {
     @Transactional(propagation = Propagation.REQUIRED)
     public void insertJoin(Map<String, Object> params) {
     	Sha256 sha256 = new Sha256();
-    	params.put("passwordHash", sha256.encrypt(String.valueOf(params.get("passwordHash"))));
+    	params.put("password", sha256.encrypt(String.valueOf(params.get("password"))));
     	
         dao.insert(namespace+".insertJoin", params);  		//마스터 인서트 
     }
@@ -55,9 +55,9 @@ public class AuthService extends EgovAbstractServiceImpl {
      * @return List 조회 결과
      */
     public Map<String, Object> selectLogin(Map<String, Object> params) {
-    	System.out.println("passwordHash = " + params.get("passwordHash"));
+    	System.out.println("password = " + params.get("password"));
     	Sha256 sha256 = new Sha256();
-    	params.put("passwordHash", sha256.encrypt(String.valueOf(params.get("passwordHash"))));
+    	params.put("password", sha256.encrypt(String.valueOf(params.get("password"))));
     	
         return dao.selectOne(namespace + ".selectLogin", params);
     }

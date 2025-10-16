@@ -133,7 +133,7 @@
         VALUES
         (
             #{email}
-			,#{passwordHash}
+			,#{password}
 			,#{userNm}
 			,#{telno}
 			,#{userSttsCd}
@@ -160,8 +160,8 @@
             			<if test='email != null and email != ""'>
 				EMAIL = #{email},
 			</if>
-			<if test='passwordHash != null and passwordHash != ""'>
-				PASSWORD_HASH = #{passwordHash},
+			<if test='password != null and password != ""'>
+				PASSWORD_HASH = #{password},
 			</if>
 			<if test='userNm != null and userNm != ""'>
 				USER_NM = #{userNm},

@@ -93,8 +93,8 @@
 
             <div class="row mb-24"> 
                 <div class="col-md-6 mb-16">
-                    <label for="passwordHash">비밀번호</label>
-                    <input type="password" class="form-control" id="passwordHash" name="passwordHash" placeholder="8자 이상(영문/숫자/특수문자 2종 이상)" />
+                    <label for="password">비밀번호</label>
+                    <input type="password" class="form-control" id="password" name="password" placeholder="8자 이상(영문/숫자/특수문자 2종 이상)" />
                     <div id="pwFb" class="feedback"></div>
                 </div>
 
@@ -207,7 +207,7 @@
             }
         });
 
-        $("#passwordHash").on("input", function () {
+        $("#password").on("input", function () {
             var v = $(this).val();
 
             if (!v) {
@@ -223,7 +223,7 @@
         });
 
         $("#passwordConfirm").on("input", function () {
-            var ok = $("#passwordHash").val() && $("#passwordHash").val() === $(this).val();
+            var ok = $("#password").val() && $("#password").val() === $(this).val();
             $("#pw2Fb").removeClass().addClass("feedback " + (ok ? "ok" : "warn")).text(ok ? "비밀번호가 일치합니다." : "비밀번호가 일치하지 않습니다.");
         });
 
@@ -252,15 +252,15 @@
                 return;
             }
 
-            if ($("#passwordHash").val() === "") {
+            if ($("#password").val() === "") {
                 alert("비밀번호를 입력해주세요.");
-                $("#passwordHash").focus();
+                $("#password").focus();
                 return;
             }
 
-            if (!checkPw($("#passwordHash").val())) {
+            if (!checkPw($("#password").val())) {
                 alert("8자 이상, 영문/숫자/특수문자 2종 이상 조합을 권장합니다.");
-                $("#passwordHash").focus();
+                $("#password").focus();
                 return;
             }
 
@@ -270,7 +270,7 @@
                 return;
             }
 
-            if ($("#passwordHash").val() !== $("#passwordConfirm").val()) {
+            if ($("#password").val() !== $("#passwordConfirm").val()) {
                 alert("비밀번호가 일치하지 않습니다.");
                 $("#passwordConfirm").focus();
                 return;

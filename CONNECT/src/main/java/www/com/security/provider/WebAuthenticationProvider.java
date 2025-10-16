@@ -56,7 +56,7 @@ public class WebAuthenticationProvider implements AuthenticationProvider {
         Sha256 sha256 = new Sha256();
 
         params.put("email", mberId);
-        params.put("passwordHash", mberPw);
+        params.put("password", mberPw);
 
         Map<String, Object> map = authService.selectLogin(params);
         if (map == null) {
@@ -66,7 +66,7 @@ public class WebAuthenticationProvider implements AuthenticationProvider {
         UserVO userVO = new UserVO(
             String.valueOf(map.get("userId")),
             String.valueOf(map.get("email")), 
-            String.valueOf(map.get("passwordHash")),
+            String.valueOf(map.get("password")),
             String.valueOf(map.get("userNm")),
             String.valueOf(map.get("nickNm")),
             String.valueOf(map.get("profileImgUrl")),
