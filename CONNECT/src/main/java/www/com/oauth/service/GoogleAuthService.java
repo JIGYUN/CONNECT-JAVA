@@ -67,7 +67,7 @@ public class GoogleAuthService {
         UserVO vo = new UserVO();
         vo.setUserId(asStr(m.get("userId")));
         vo.setEmail(asStr(m.get("email")));
-        vo.setpassword(asStr(m.get("password")));
+        vo.setPassword(asStr(m.get("password")));
         vo.setUserNm(asStr(m.get("userNm")));
         vo.setNickNm(asStr(m.get("nickNm")));
         vo.setProfileImgUrl(asStr(m.get("profileImgUrl")));
