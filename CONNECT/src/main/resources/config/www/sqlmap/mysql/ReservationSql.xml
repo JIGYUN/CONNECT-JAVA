@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.rsv.reservation.Reservation">
+
+    <sql id="whereReservation">
+        <!-- 
+        동적 검색 조건 템플릿 (필요 시 활성화)
+
+        <choose>
+            <when test='id != null and id != "" '>
+
+            </when>
+            <otherwise>
+
+            </otherwise>
+        </choose>
+
+        <if test="searchField != null and searchText != null and searchField != '' and searchText != ''">
+            <choose>
+                <when test='searchField == "title"'>
+                    AND TITLE LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "content"'>
+                    AND CONTENT LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "writer"'>
+                    AND WRITER LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        -->
+    </sql> 
+
+    <select id="selectReservationList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.rsv.reservation.Reservation.selectReservationList
+         Description : 목록 Query 
+        */
+        SELECT
+            RESERVATION_ID
+			,GRP_CD
+			,OWNER_ID
+			,TITLE
+			,CONTENT
+			,RESOURCE_NM
+			,CAPACITY_CNT
+			,DATE_FORMAT(RESV_START_DT, '%Y-%m-%d %H:%i:%s') AS RESV_START_DT
+			,DATE_FORMAT(RESV_END_DT, '%Y-%m-%d %H:%i:%s') AS RESV_END_DT
+			,STATUS_CD
+			,ALERT_BEFORE_MIN
+			,USE_AT
+			,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+			,CREATED_BY
+			,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+			,UPDATED_BY
+
+        FROM TB_RESERVATION
+        <where>
+            <include refid="whereReservation" />
+        </where>
+        ORDER BY RESERVATION_ID DESC
+        <if test="limit != null and offset != null">
+            /*  페이징 하단 시작  */
+            LIMIT #{limit} OFFSET #{offset}
+            /*  페이징 하단 끝  */
+        </if>
+    </select>
+
+    <select id="selectReservationListCount" parameterType="hashmap" resultType="int">
+        /*
+         SQL ID: www.api.rsv.reservation.Reservation.selectReservationListCount
+         Description : 목록에서 레코드수 Query 
+        */
+        SELECT
+            COUNT(*) CNT
+        FROM TB_RESERVATION
+        <where>
+            <include refid="whereReservation" />
+        </where> 
+    </select>
+    
+	<select id="selectReservationListByDate" parameterType="map" resultType="CamelHashMap">
+	    /*
+	        SQL ID        : www.api.rsv.reservation.Reservation.selectReservationListByDate
+	        Description   : 특정 grpCd + 특정 날짜(resvDate) 기준 예약 목록
+	                        - resvDate: 'YYYY-MM-DD'
+	                        - grpCd   : 그룹 코드(멀티테넌트 키)
+	                        - USE_AT = 'Y' (soft delete 제외)
+	    */
+	    SELECT
+	        RESERVATION_ID
+	        ,GRP_CD
+	        ,OWNER_ID
+	        ,TITLE
+	        ,CONTENT
+	        ,RESOURCE_NM
+	        ,CAPACITY_CNT
+	        ,DATE_FORMAT(RESV_START_DT, '%Y-%m-%d %H:%i:%s')   AS RESV_START_DT
+	        ,DATE_FORMAT(RESV_END_DT,   '%Y-%m-%d %H:%i:%s')   AS RESV_END_DT
+	        ,STATUS_CD
+	        ,ALERT_BEFORE_MIN
+	        ,USE_AT
+	        ,DATE_FORMAT(CREATED_DT,    '%Y-%m-%d %H:%i:%s')   AS CREATED_DT
+	        ,CREATED_BY
+	        ,DATE_FORMAT(UPDATED_DT,    '%Y-%m-%d %H:%i:%s')   AS UPDATED_DT
+	        ,UPDATED_BY
+	    FROM TB_RESERVATION
+	    <where>
+	        USE_AT = 'Y'
+	        <choose>
+	            <when test="ownerId != null"> AND OWNER_ID = #{ownerId} </when>
+	            <otherwise> AND 1 = 0 </otherwise>
+	        </choose>
+	        <if test="grpCd != null and grpCd != ''">
+	            AND GRP_CD = #{grpCd}
+	        </if>
+	        <if test="resvDate != null and resvDate != ''">
+	            AND DATE_FORMAT(RESV_START_DT, '%Y-%m-%d') = #{resvDate}
+	        </if>
+	    </where>
+	    ORDER BY RESV_START_DT ASC
+	</select>
+	
+	<update id="updateReservationStatus" parameterType="hashmap">
+	    /*
+	        SQL ID      : www.api.rsv.reservation.Reservation.updateReservationStatus
+	        Description : 예약 상태 코드 업데이트
+	                      예) SCHEDULED → CANCELLED, APPROVED → DONE 등
+	                      - USE_AT='Y'인 행만 업데이트
+	                      - grpCd/ownerId로 접근 제한 (reservationScope)
+	    */
+	    UPDATE TB_RESERVATION
+	    <set>
+	        STATUS_CD   = #{statusCd}
+	        ,UPDATED_DT = NOW()
+	        <if test="updatedBy != null">
+	            ,UPDATED_BY = #{updatedBy}
+	        </if>
+	    </set>
+	    WHERE RESERVATION_ID = #{reservationId}
+	      AND USE_AT = 'Y'
+	    <include refid="reservationScope"/>
+	</update>
+
+	<sql id="reservationScope">
+	    <!--
+	        grpCd 와 ownerId 로 접근 제한
+	        - grpCd       : 멀티 테넌트 구분 (예: sikyung)
+	        - ownerId : 이 예약을 생성한 주체. 없으면 조건 생략
+	    -->
+	    <if test="grpCd != null and grpCd != ''">
+	        AND GRP_CD = #{grpCd}
+	    </if>
+	    <if test="ownerId != null">
+	        AND OWNER_ID = #{ownerId}
+	    </if>
+	</sql>
+
+    <select id="selectReservationDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.rsv.reservation.Reservation.selectReservationDetail
+         Description : 상세조회 Query 
+        */  
+        SELECT
+            RESERVATION_ID
+			,GRP_CD
+			,OWNER_ID
+			,TITLE
+			,CONTENT
+			,RESOURCE_NM
+			,CAPACITY_CNT
+			,DATE_FORMAT(RESV_START_DT, '%Y-%m-%d %H:%i:%s') AS RESV_START_DT
+			,DATE_FORMAT(RESV_END_DT, '%Y-%m-%d %H:%i:%s') AS RESV_END_DT
+			,STATUS_CD
+			,ALERT_BEFORE_MIN
+			,USE_AT
+			,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+			,CREATED_BY
+			,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+			,UPDATED_BY
+
+        FROM TB_RESERVATION
+        WHERE RESERVATION_ID = #{reservationId}
+    </select>
+
+    <insert id="insertReservation" parameterType="hashmap">
+        /*
+         SQL ID: www.api.rsv.reservation.Reservation.insertReservation
+         Description : 등록 Query 
+        */
+        INSERT INTO TB_RESERVATION
+        (
+            GRP_CD
+			,OWNER_ID
+			,TITLE
+			,CONTENT
+			,RESOURCE_NM
+			,CAPACITY_CNT
+			,RESV_START_DT
+			,RESV_END_DT
+			,STATUS_CD
+			,ALERT_BEFORE_MIN
+			,USE_AT
+			,CREATED_DT
+			,CREATED_BY
+			,UPDATED_DT
+			,UPDATED_BY
+
+        )
+        VALUES
+        (
+            #{grpCd}
+			,#{ownerId}
+			,#{title}
+			,#{content}
+			,#{resourceNm}
+			,#{capacityCnt}
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{resvStartDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{resvStartDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{resvEndDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{resvEndDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+			,#{statusCd}
+			,#{alertBeforeMin}
+			,'Y'
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+			,#{createdBy}
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+			,#{updatedBy}
+
+        )
+    </insert>
+
+    <update id="updateReservation" parameterType="hashmap">
+        /*
+         SQL ID: www.api.rsv.reservation.Reservation.updateReservation
+         Description : 수정 Query 
+        */
+        UPDATE TB_RESERVATION
+        <set>
+            			<if test='grpCd != null and grpCd != ""'>
+				GRP_CD = #{grpCd},
+			</if>
+			<if test='ownerId != null and ownerId != ""'>
+				OWNER_ID = #{ownerId},
+			</if>
+			<if test='title != null and title != ""'>
+				TITLE = #{title},
+			</if>
+			<if test='content != null and content != ""'>
+				CONTENT = #{content},
+			</if>
+			<if test='resourceNm != null and resourceNm != ""'>
+				RESOURCE_NM = #{resourceNm},
+			</if>
+			<if test='capacityCnt != null and capacityCnt != ""'>
+				CAPACITY_CNT = #{capacityCnt},
+			</if>
+			<if test='resvStartDt != null and resvStartDt != ""'>
+				RESV_START_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{resvStartDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{resvStartDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='resvEndDt != null and resvEndDt != ""'>
+				RESV_END_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{resvEndDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{resvEndDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='statusCd != null and statusCd != ""'>
+				STATUS_CD = #{statusCd},
+			</if>
+			<if test='alertBeforeMin != null and alertBeforeMin != ""'>
+				ALERT_BEFORE_MIN = #{alertBeforeMin},
+			</if>
+			<if test='useAt != null and useAt != ""'>
+				USE_AT = #{useAt},
+			</if>
+			<if test='createdDt != null and createdDt != ""'>
+				CREATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='createdBy != null and createdBy != ""'>
+				CREATED_BY = #{createdBy},
+			</if>
+			<if test='updatedDt != null and updatedDt != ""'>
+				UPDATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='updatedBy != null and updatedBy != ""'>
+				UPDATED_BY = #{updatedBy},
+			</if>
+
+        </set>
+        WHERE RESERVATION_ID = #{reservationId}
+    </update>
+
+    <delete id="deleteReservation" parameterType="hashmap">
+        /*
+         SQL ID: www.api.rsv.reservation.Reservation.deleteReservation
+         Description : 삭제 Query 
+        */
+        DELETE FROM TB_RESERVATION
+        WHERE RESERVATION_ID = #{reservationId}
+    </delete>
+
+</mapper>

@@ -62,6 +62,7 @@
             <param-name>cors.allowed.origins</param-name>
             <param-value>
                 http://localhost:3000,
+                http://192.168.26.28:3000,
                 https://connect-react.pages.dev,
                 https://*.connect-react.pages.dev
             </param-value>
