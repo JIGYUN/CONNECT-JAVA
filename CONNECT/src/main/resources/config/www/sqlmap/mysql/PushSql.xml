@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.psh.push.Push">
+
+    <sql id="wherePush">
+        <!-- 
+        동적 검색 조건 템플릿 (필요 시 활성화)
+
+        <choose>
+            <when test='id != null and id != "" '>
+
+            </when>
+            <otherwise>
+
+            </otherwise>
+        </choose>
+
+        <if test="searchField != null and searchText != null and searchField != '' and searchText != ''">
+            <choose>
+                <when test='searchField == "title"'>
+                    AND TITLE LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "content"'>
+                    AND CONTENT LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "writer"'>
+                    AND WRITER LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        -->
+    </sql> 
+
+    <select id="selectPushList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.psh.push.Push.selectPushList
+         Description : 목록 Query 
+        */
+        SELECT
+            MSG_ID
+			,GRP_CD
+			,TITLE
+			,BODY_TXT
+			,IMAGE_URL
+			,CLICK_URL
+			,TARGET_TYPE_CD
+			,TARGET_USER_ID
+			,TARGET_GRP_CD
+			,TOPIC_NAME
+			,TOKENS_JSON
+			,DATA_JSON
+			,PRIORITY_CD
+			,TTL_SEC
+			,DATE_FORMAT(SCHEDULE_DT, '%Y-%m-%d %H:%i:%s') AS SCHEDULE_DT
+			,STATUS_CD
+			,TARGET_CNT
+			,SUCCESS_CNT
+			,FAIL_CNT
+			,DATE_FORMAT(SEND_START_DT, '%Y-%m-%d %H:%i:%s') AS SEND_START_DT
+			,DATE_FORMAT(SEND_END_DT, '%Y-%m-%d %H:%i:%s') AS SEND_END_DT
+			,LAST_ERROR_SUMMARY
+			,RESP_SUMMARY_JSON
+			,USE_AT
+			,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+			,CREATED_BY
+			,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+			,UPDATED_BY
+
+        FROM TB_PUSH
+        <where>
+            <include refid="wherePush" />
+        </where>
+        ORDER BY MSG_ID DESC
+        <if test="limit != null and offset != null">
+            /*  페이징 하단 시작  */
+            LIMIT #{limit} OFFSET #{offset}
+            /*  페이징 하단 끝  */
+        </if>
+    </select>
+    
+        <!-- 대상 디바이스 토큰 조회 예시 -->
+    <select id="selectPushTargetTokens" parameterType="map" resultType="map">
+        SELECT
+            T.FCM_TOKEN AS token
+        FROM TB_USER T
+        WHERE T.USE_AT = 'Y'
+        AND T.FCM_TOKEN IS NOT NULL
+          <if test="userId != null">
+            AND T.USER_ID = #{userId}
+          </if>
+    </select>
+
+    <select id="selectPushListCount" parameterType="hashmap" resultType="int">
+        /*
+         SQL ID: www.api.psh.push.Push.selectPushListCount
+         Description : 목록에서 레코드수 Query 
+        */
+        SELECT
+            COUNT(*) CNT
+        FROM TB_PUSH
+        <where>
+            <include refid="wherePush" />
+        </where> 
+    </select>
+
+    <select id="selectPushDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.psh.push.Push.selectPushDetail
+         Description : 상세조회 Query 
+        */  
+        SELECT
+            MSG_ID
+			,GRP_CD
+			,TITLE
+			,BODY_TXT
+			,IMAGE_URL
+			,CLICK_URL
+			,TARGET_TYPE_CD
+			,TARGET_USER_ID
+			,TARGET_GRP_CD
+			,TOPIC_NAME
+			,TOKENS_JSON
+			,DATA_JSON
+			,PRIORITY_CD
+			,TTL_SEC
+			,DATE_FORMAT(SCHEDULE_DT, '%Y-%m-%d %H:%i:%s') AS SCHEDULE_DT
+			,STATUS_CD
+			,TARGET_CNT
+			,SUCCESS_CNT
+			,FAIL_CNT
+			,DATE_FORMAT(SEND_START_DT, '%Y-%m-%d %H:%i:%s') AS SEND_START_DT
+			,DATE_FORMAT(SEND_END_DT, '%Y-%m-%d %H:%i:%s') AS SEND_END_DT
+			,LAST_ERROR_SUMMARY
+			,RESP_SUMMARY_JSON
+			,USE_AT
+			,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+			,CREATED_BY
+			,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+			,UPDATED_BY
+
+        FROM TB_PUSH
+        WHERE MSG_ID = #{msgId}
+    </select>
+
+    <insert id="insertPush" parameterType="hashmap">
+        /*
+         SQL ID: www.api.psh.push.Push.insertPush
+         Description : 등록 Query 
+        */
+        INSERT INTO TB_PUSH
+        (
+            MSG_ID
+			,GRP_CD
+			,TITLE
+			,BODY_TXT
+			,IMAGE_URL
+			,CLICK_URL
+			,TARGET_TYPE_CD
+			,TARGET_USER_ID
+			,TARGET_GRP_CD
+			,TOPIC_NAME
+			,TOKENS_JSON
+			,DATA_JSON
+			,PRIORITY_CD
+			,TTL_SEC
+			,SCHEDULE_DT
+			,STATUS_CD
+			,TARGET_CNT
+			,SUCCESS_CNT
+			,FAIL_CNT
+			,SEND_START_DT
+			,SEND_END_DT
+			,LAST_ERROR_SUMMARY
+			,RESP_SUMMARY_JSON
+			,USE_AT
+			,CREATED_DT
+			,CREATED_BY
+			,UPDATED_DT
+			,UPDATED_BY
+
+        )
+        VALUES
+        (
+            #{msgId}
+			,#{grpCd}
+			,#{title}
+			,#{bodyTxt}
+			,#{imageUrl}
+			,#{clickUrl}
+			,#{targetTypeCd}
+			,#{targetUserId}
+			,#{targetGrpCd}
+			,#{topicName}
+			,#{tokensJson}
+			,#{dataJson}
+			,#{priorityCd}
+			,#{ttlSec}
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{scheduleDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{scheduleDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+			,#{statusCd}
+			,#{targetCnt}
+			,#{successCnt}
+			,#{failCnt}
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{sendStartDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{sendStartDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{sendEndDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{sendEndDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+			,#{lastErrorSummary}
+			,#{respSummaryJson}
+			,#{useAt}
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+			,#{createdBy}
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+			,#{updatedBy}
+
+        )
+    </insert>
+
+    <update id="updatePush" parameterType="hashmap">
+        /*
+         SQL ID: www.api.psh.push.Push.updatePush
+         Description : 수정 Query 
+        */
+        UPDATE TB_PUSH
+        <set>
+            			<if test='msgId != null and msgId != ""'>
+				MSG_ID = #{msgId},
+			</if>
+			<if test='grpCd != null and grpCd != ""'>
+				GRP_CD = #{grpCd},
+			</if>
+			<if test='title != null and title != ""'>
+				TITLE = #{title},
+			</if>
+			<if test='bodyTxt != null and bodyTxt != ""'>
+				BODY_TXT = #{bodyTxt},
+			</if>
+			<if test='imageUrl != null and imageUrl != ""'>
+				IMAGE_URL = #{imageUrl},
+			</if>
+			<if test='clickUrl != null and clickUrl != ""'>
+				CLICK_URL = #{clickUrl},
+			</if>
+			<if test='targetTypeCd != null and targetTypeCd != ""'>
+				TARGET_TYPE_CD = #{targetTypeCd},
+			</if>
+			<if test='targetUserId != null and targetUserId != ""'>
+				TARGET_USER_ID = #{targetUserId},
+			</if>
+			<if test='targetGrpCd != null and targetGrpCd != ""'>
+				TARGET_GRP_CD = #{targetGrpCd},
+			</if>
+			<if test='topicName != null and topicName != ""'>
+				TOPIC_NAME = #{topicName},
+			</if>
+			<if test='tokensJson != null and tokensJson != ""'>
+				TOKENS_JSON = #{tokensJson},
+			</if>
+			<if test='dataJson != null and dataJson != ""'>
+				DATA_JSON = #{dataJson},
+			</if>
+			<if test='priorityCd != null and priorityCd != ""'>
+				PRIORITY_CD = #{priorityCd},
+			</if>
+			<if test='ttlSec != null and ttlSec != ""'>
+				TTL_SEC = #{ttlSec},
+			</if>
+			<if test='scheduleDt != null and scheduleDt != ""'>
+				SCHEDULE_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{scheduleDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{scheduleDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='statusCd != null and statusCd != ""'>
+				STATUS_CD = #{statusCd},
+			</if>
+			<if test='targetCnt != null and targetCnt != ""'>
+				TARGET_CNT = #{targetCnt},
+			</if>
+			<if test='successCnt != null and successCnt != ""'>
+				SUCCESS_CNT = #{successCnt},
+			</if>
+			<if test='failCnt != null and failCnt != ""'>
+				FAIL_CNT = #{failCnt},
+			</if>
+			<if test='sendStartDt != null and sendStartDt != ""'>
+				SEND_START_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{sendStartDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{sendStartDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='sendEndDt != null and sendEndDt != ""'>
+				SEND_END_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{sendEndDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{sendEndDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='lastErrorSummary != null and lastErrorSummary != ""'>
+				LAST_ERROR_SUMMARY = #{lastErrorSummary},
+			</if>
+			<if test='respSummaryJson != null and respSummaryJson != ""'>
+				RESP_SUMMARY_JSON = #{respSummaryJson},
+			</if>
+			<if test='useAt != null and useAt != ""'>
+				USE_AT = #{useAt},
+			</if>
+			<if test='createdDt != null and createdDt != ""'>
+				CREATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='createdBy != null and createdBy != ""'>
+				CREATED_BY = #{createdBy},
+			</if>
+			<if test='updatedDt != null and updatedDt != ""'>
+				UPDATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='updatedBy != null and updatedBy != ""'>
+				UPDATED_BY = #{updatedBy},
+			</if>
+
+        </set>
+        WHERE MSG_ID = #{msgId}
+    </update>
+
+    <delete id="deletePush" parameterType="hashmap">
+        /*
+         SQL ID: www.api.psh.push.Push.deletePush
+         Description : 삭제 Query 
+        */
+        DELETE FROM TB_PUSH
+        WHERE MSG_ID = #{msgId}
+    </delete>
+
+</mapper>

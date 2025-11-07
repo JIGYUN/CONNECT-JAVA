@@ -358,7 +358,12 @@
 		    <artifactId>guava</artifactId>
 		    <version>32.0.1-jre</version>
 		</dependency>
-
+		
+		<dependency>
+		    <groupId>com.google.firebase</groupId>
+		    <artifactId>firebase-admin</artifactId>
+		    <version>9.2.0</version><!-- 최신으로 교체 가능 -->
+		</dependency>
 
 	</dependencies>
 

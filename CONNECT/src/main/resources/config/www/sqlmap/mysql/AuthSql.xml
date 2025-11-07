@@ -54,6 +54,20 @@
 	    LIMIT 1
     </select>
     
+    <update id="updateToken" parameterType="hashmap">
+        /*
+         SQL ID: www.api.usr.user.User.updateUser
+         Description : 수정 Query 
+        */
+        UPDATE TB_USER
+        <set>
+			<if test='fcmToken != null and fcmToken != ""'>
+				FCM_TOKEN = #{fcmToken},
+			</if>
+        </set>
+        WHERE USER_ID = #{userId}
+    </update>
+    
     
         <!-- 로그인 -->
     <select id="duplicateId" parameterType="map" resultType="CamelHashMap">

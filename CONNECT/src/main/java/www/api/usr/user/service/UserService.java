@@ -59,7 +59,10 @@ public class UserService {
     @Transactional
     public void updateUser(Map<String, Object> paramMap) {
     	Sha256 sha256 = new Sha256();
-    	paramMap.put("password", sha256.encrypt(String.valueOf(paramMap.get("password"))));
+    	if (paramMap.get("password") != null && paramMap.get("password") != "") {
+    		paramMap.put("password", sha256.encrypt(String.valueOf(paramMap.get("password"))));
+    	}
+    	
         dao.update(namespace + ".updateUser", paramMap);
     }
 

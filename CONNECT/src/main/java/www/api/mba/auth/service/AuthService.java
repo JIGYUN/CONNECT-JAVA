@@ -48,18 +48,46 @@ public class AuthService extends EgovAbstractServiceImpl {
 
     /**
      * 로그인
-     *
-     * @author 정지균
-     * @since 2024.01.12
-     * @param Map 조회 조건
-     * @return List 조회 결과
+     * - 비밀번호 해시 → 사용자 조회
+     * - 조회 성공(=로그인 성공)이고 fcmToken 파라미터가 있을 때만 TB_USER 토큰 업데이트
      */
     public Map<String, Object> selectLogin(Map<String, Object> params) {
-    	System.out.println("password = " + params.get("password"));
-    	Sha256 sha256 = new Sha256();
-    	params.put("password", sha256.encrypt(String.valueOf(params.get("password"))));
-    	
-        return dao.selectOne(namespace + ".selectLogin", params);
+        // 1) 비밀번호 해시
+        Sha256 sha256 = new Sha256();
+        params.put("password", sha256.encrypt(String.valueOf(params.get("password"))));
+
+        // 2) 로그인 시도
+        Map<String, Object> user = dao.selectOne(namespace + ".selectLogin", params);
+
+        // 3) 로그인 성공 시에만 토큰 업데이트
+        if (user != null) {
+            // 프론트가 보낸 fcmToken 키가 "존재"할 때만 동작 (값이 null이면 DB를 NULL로 클리어)
+        	// fcmToken이 비어있지 않을 때만 토큰 업데이트 수행
+        	Object t = params.get("fcmToken");
+        	String token = (t == null) ? null : String.valueOf(t).trim();
+        	if (token != null && !token.isEmpty()) {
+        	    // USER_ID 추출(대소문자 혼용 대비)
+        	    Object uidObj = user.containsKey("USER_ID") ? user.get("USER_ID") : user.get("userId");
+        	    Long userId = (uidObj == null) ? null : Long.valueOf(String.valueOf(uidObj));
+
+        	    if (userId != null) {
+        	        Map<String, Object> up = new HashMap<>();
+        	        up.put("userId", userId);
+        	        up.put("fcmToken", token); // 빈값 아님(위에서 검증)
+
+        	        // 선택: 플랫폼 정보가 있을 때만 반영(빈문자면 미포함)
+        	        Object p = params.get("platformInfo");
+        	        String platformInfo = (p == null) ? null : String.valueOf(p).trim();
+        	        if (platformInfo != null && !platformInfo.isEmpty()) {
+        	            up.put("platformInfo", platformInfo);
+        	        }
+
+        	        dao.update(namespace + ".updateToken", up);
+        	    }
+        	}
+        }
+
+        return user;
     }
 
     /**
