@@ -91,6 +91,7 @@
 
         <!-- 기존 룰 유지 (예시) -->
         <intercept-url pattern="/mpg/**/*" access="hasRole('EXTERNAL_AUTH')"/>
+        <intercept-url pattern="/cht/**/*" access="hasRole('EXTERNAL_AUTH')"/>
     </filter-security-metadata-source>
 
     <beans:bean id="filterSecurityInterceptor" class="org.springframework.security.web.access.intercept.FilterSecurityInterceptor">

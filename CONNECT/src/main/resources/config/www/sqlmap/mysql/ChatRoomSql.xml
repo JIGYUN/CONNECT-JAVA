@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.cht.chat.ChatRoom">
+
+    <!-- 소유자 스코프 (ownerId 없으면 차단) -->
+    <sql id="ownerScope">
+        <choose>
+            <when test="ownerId != null">
+                AND OWNER_ID = #{ownerId}
+            </when>
+            <otherwise>
+                AND 1 = 0
+            </otherwise>
+        </choose>
+    </sql>
+
+    <!-- 공통 where -->
+    <sql id="whereChatRoom">
+        USE_AT = 'Y'
+        <include refid="ownerScope" />
+        <if test="grpCd != null and grpCd != ''">
+            AND GRP_CD = #{grpCd}
+        </if>
+    </sql>
+
+    <!-- 목록 -->
+    <select id="selectChatRoomList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.cht.chat.ChatRoom.selectChatRoomList
+         Description : 채팅방 목록
+        */
+        SELECT
+            ROOM_ID
+            ,GRP_CD
+            ,OWNER_ID
+            ,ROOM_NM
+            ,ROOM_TYPE
+            ,ROOM_DESC
+            ,LAST_MSG_CONTENT
+            ,DATE_FORMAT(LAST_MSG_SENT_DT, '%Y-%m-%d %H:%i:%s') AS LAST_MSG_SENT_DT
+            ,USE_AT
+            ,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+            ,CREATED_BY
+            ,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+            ,UPDATED_BY
+        FROM TB_CHAT_ROOM
+        ORDER BY
+            CASE WHEN LAST_MSG_SENT_DT IS NULL THEN 1 ELSE 0 END ASC,
+            LAST_MSG_SENT_DT DESC,
+            ROOM_ID DESC
+        <if test="limit != null and offset != null">
+            LIMIT #{limit} OFFSET #{offset}
+        </if>
+    </select>
+
+    <!-- 목록 Count -->
+    <select id="selectChatRoomListCount" parameterType="hashmap" resultType="int">
+        /*
+         SQL ID: www.api.cht.chat.ChatRoom.selectChatRoomListCount
+         Description : 채팅방 목록 수
+        */
+        SELECT
+            COUNT(*) CNT
+        FROM TB_CHAT_ROOM
+        <where>
+            <include refid="whereChatRoom" />
+        </where>
+    </select>
+
+    <!-- 상세 -->
+    <select id="selectChatRoomDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.cht.chat.ChatRoom.selectChatRoomDetail
+         Description : 채팅방 상세조회
+        */
+        SELECT
+            ROOM_ID
+            ,GRP_CD
+            ,OWNER_ID
+            ,ROOM_NM
+            ,ROOM_TYPE
+            ,ROOM_DESC
+            ,LAST_MSG_CONTENT
+            ,DATE_FORMAT(LAST_MSG_SENT_DT, '%Y-%m-%d %H:%i:%s') AS LAST_MSG_SENT_DT
+            ,USE_AT
+            ,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+            ,CREATED_BY
+            ,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+            ,UPDATED_BY
+        FROM TB_CHAT_ROOM
+        WHERE ROOM_ID = #{roomId}
+        <include refid="ownerScope" />
+    </select>
+
+    <!-- 등록 -->
+    <insert id="insertChatRoom" parameterType="hashmap">
+        /*
+         SQL ID: www.api.cht.chat.ChatRoom.insertChatRoom
+         Description : 채팅방 등록
+        */
+        INSERT INTO TB_CHAT_ROOM
+        (
+            GRP_CD
+            ,OWNER_ID
+            ,ROOM_NM
+            ,ROOM_TYPE
+            ,ROOM_DESC
+            ,LAST_MSG_CONTENT
+            ,LAST_MSG_SENT_DT
+            ,USE_AT
+            ,CREATED_DT
+            ,CREATED_BY
+            ,UPDATED_DT
+            ,UPDATED_BY
+        )
+        VALUES
+        (
+            #{grpCd}
+            ,#{ownerId}
+            ,#{roomNm}
+            ,COALESCE(NULLIF(#{roomType}, ''), 'DIRECT')
+            ,#{roomDesc}
+            ,#{lastMsgContent}
+            ,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{lastMsgSentDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                   CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{lastMsgSentDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NULL)
+            ,COALESCE(NULLIF(#{useAt}, ''), 'Y')
+            ,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                   CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+            ,#{createdBy}
+            ,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                   CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+            ,#{updatedBy}
+        )
+    </insert>
+
+    <!-- 수정 -->
+    <update id="updateChatRoom" parameterType="hashmap">
+        /*
+         SQL ID: www.api.cht.chat.ChatRoom.updateChatRoom
+         Description : 채팅방 수정
+        */
+        UPDATE TB_CHAT_ROOM
+        <set>
+            <if test='grpCd != null and grpCd != ""'>
+                GRP_CD = #{grpCd},
+            </if>
+            <if test='ownerId != null and ownerId != ""'>
+                OWNER_ID = #{ownerId},
+            </if>
+            <if test='roomNm != null and roomNm != ""'>
+                ROOM_NM = #{roomNm},
+            </if>
+            <if test='roomType != null and roomType != ""'>
+                ROOM_TYPE = #{roomType},
+            </if>
+            <if test='roomDesc != null and roomDesc != ""'>
+                ROOM_DESC = #{roomDesc},
+            </if>
+            <if test='lastMsgContent != null and lastMsgContent != ""'>
+                LAST_MSG_CONTENT = #{lastMsgContent},
+            </if>
+            <if test='lastMsgSentDt != null and lastMsgSentDt != ""'>
+                LAST_MSG_SENT_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{lastMsgSentDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                                CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{lastMsgSentDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+            </if>
+            <if test='useAt != null and useAt != ""'>
+                USE_AT = #{useAt},
+            </if>
+            <if test='createdDt != null and createdDt != ""'>
+                CREATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                                CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+            </if>
+            <if test='createdBy != null and createdBy != ""'>
+                CREATED_BY = #{createdBy},
+            </if>
+            <if test='updatedBy != null and updatedBy != ""'>
+                UPDATED_BY = #{updatedBy},
+            </if>
+            UPDATED_DT = NOW()
+        </set>
+        WHERE ROOM_ID = #{roomId}
+        <include refid="ownerScope" />
+    </update>
+
+    <!-- Soft Delete (USE_AT='N') -->
+    <update id="deleteChatRoom" parameterType="hashmap">
+        /*
+         SQL ID: www.api.cht.chat.ChatRoom.deleteChatRoom
+         Description : 채팅방 Soft Delete
+        */
+        UPDATE TB_CHAT_ROOM
+        SET
+            USE_AT = 'N',
+            UPDATED_DT = NOW(),
+            UPDATED_BY = #{updatedBy}
+        WHERE ROOM_ID = #{roomId}
+        <include refid="ownerScope" />
+    </update>
+
+    <!-- 마지막 메시지 캐시 업데이트 (메시지 insert 후 호출) -->
+    <update id="updateChatRoomLastMessage" parameterType="hashmap">
+        /*
+         SQL ID: www.api.cht.chat.ChatRoom.updateChatRoomLastMessage
+         Description : 마지막 메시지 내용/시간 갱신
+        */
+        UPDATE TB_CHAT_ROOM
+        SET
+            LAST_MSG_CONTENT = #{content},
+            LAST_MSG_SENT_DT = COALESCE(
+                STR_TO_DATE(
+                    NULLIF(
+                        REPLACE(SUBSTRING_INDEX(#{sentDt}, '.', 1), 'T', ' '),
+                        ''
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+                NOW()
+            ),
+            UPDATED_DT = NOW()
+        WHERE ROOM_ID = #{roomId}
+    </update>
+
+</mapper>

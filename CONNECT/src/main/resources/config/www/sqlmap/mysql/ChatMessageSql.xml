@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.cht.chat.ChatMessage">
+
+    <!-- 메시지용 소유자 스코프: TB_CHAT_ROOM과 JOIN해서 OWNER_ID 체크 -->
+    <sql id="ownerScope">
+        <if test="ownerId != null">
+            AND R.OWNER_ID = #{ownerId}
+        </if>
+    </sql>
+
+    <!-- roomId, USE_AT 등의 공통 where -->
+    <sql id="whereChatMessage">
+        M.USE_AT = 'Y'
+        <if test="roomId != null">
+            AND M.ROOM_ID = #{roomId}
+        </if>
+    </sql>
+
+    <!-- 목록: 특정 방 메시지 (최근 N개, MSG_ID DESC) -->
+    <select id="selectChatMessageList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.cht.chat.ChatMessage.selectChatMessageList
+         Description : 메시지 목록 (ROOM 기준)
+        */
+        SELECT
+            M.MSG_ID
+            ,M.ROOM_ID
+            ,M.SENDER_ID
+            ,M.SENDER_NM
+            ,M.CONTENT
+            ,M.CONTENT_TYPE
+            ,DATE_FORMAT(M.SENT_DT, '%Y-%m-%d %H:%i:%s') AS SENT_DT
+            ,M.READ_CNT
+            ,M.USE_AT
+            ,DATE_FORMAT(M.CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+            ,M.CREATED_BY
+            ,DATE_FORMAT(M.UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+            ,M.UPDATED_BY
+        FROM TB_CHAT_MESSAGE M
+        JOIN TB_CHAT_ROOM R ON M.ROOM_ID = R.ROOM_ID
+        <where>
+            <include refid="whereChatMessage" />
+        </where>
+        ORDER BY M.MSG_ID DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- Count -->
+    <select id="selectChatMessageListCount" parameterType="hashmap" resultType="int">
+        /*
+         SQL ID: www.api.cht.chat.ChatMessage.selectChatMessageListCount
+         Description : 메시지 수
+        */
+        SELECT
+            COUNT(*) CNT
+        FROM TB_CHAT_MESSAGE M
+        JOIN TB_CHAT_ROOM R ON M.ROOM_ID = R.ROOM_ID
+        <where>
+            <include refid="whereChatMessage" />
+        </where>
+    </select>
+
+    <!-- 상세 -->
+    <select id="selectChatMessageDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.cht.chat.ChatMessage.selectChatMessageDetail
+         Description : 메시지 단건
+        */
+        SELECT
+            M.MSG_ID
+            ,M.ROOM_ID
+            ,M.SENDER_ID
+            ,M.SENDER_NM
+            ,M.CONTENT
+            ,M.CONTENT_TYPE
+            ,DATE_FORMAT(M.SENT_DT, '%Y-%m-%d %H:%i:%s') AS SENT_DT
+            ,M.READ_CNT
+            ,M.USE_AT
+            ,DATE_FORMAT(M.CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+            ,M.CREATED_BY
+            ,DATE_FORMAT(M.UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+            ,M.UPDATED_BY
+        FROM TB_CHAT_MESSAGE M
+        JOIN TB_CHAT_ROOM R ON M.ROOM_ID = R.ROOM_ID
+        WHERE M.MSG_ID = #{msgId}
+        <include refid="ownerScope" />
+    </select>
+
+    <!-- 등록 -->
+    <insert id="insertChatMessage" parameterType="hashmap">
+        /*
+         SQL ID: www.api.cht.chat.ChatMessage.insertChatMessage
+         Description : 메시지 등록
+        */
+        INSERT INTO TB_CHAT_MESSAGE
+        (
+            ROOM_ID
+            ,SENDER_ID
+            ,SENDER_NM
+            ,CONTENT
+            ,CONTENT_TYPE
+            ,SENT_DT
+            ,READ_CNT
+            ,USE_AT
+            ,CREATED_DT
+            ,CREATED_BY
+            ,UPDATED_DT
+            ,UPDATED_BY
+        )
+        VALUES
+        (
+            #{roomId}
+            ,#{senderId}
+            ,#{senderNm}
+            ,<![CDATA[ #{content} ]]>
+            ,COALESCE(NULLIF(#{contentType}, ''), 'TEXT')
+            ,IFNULL(
+                STR_TO_DATE(
+                    NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{sentDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                           CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{sentDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),
+                           ''
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+                NOW()
+            )
+            ,COALESCE(#{readCnt}, 0)
+            ,COALESCE(NULLIF(#{useAt}, ''), 'Y')
+            ,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                   CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+            ,#{createdBy}
+            ,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                   CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+            ,#{updatedBy}
+        )
+    </insert>
+
+    <!-- 수정 -->
+    <update id="updateChatMessage" parameterType="hashmap">
+        /*
+         SQL ID: www.api.cht.chat.ChatMessage.updateChatMessage
+         Description : 메시지 수정
+        */
+        UPDATE TB_CHAT_MESSAGE
+        <set>
+            <if test='roomId != null and roomId != ""'>
+                ROOM_ID = #{roomId},
+            </if>
+            <if test='senderId != null and senderId != ""'>
+                SENDER_ID = #{senderId},
+            </if>
+            <if test='senderNm != null and senderNm != ""'>
+                SENDER_NM = #{senderNm},
+            </if>
+            <if test='content != null and content != ""'>
+                CONTENT = <![CDATA[ #{content} ]]>,
+            </if>
+            <if test='contentType != null and contentType != ""'>
+                CONTENT_TYPE = #{contentType},
+            </if>
+            <if test='sentDt != null and sentDt != ""'>
+                SENT_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{sentDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                            CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{sentDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+            </if>
+            <if test='readCnt != null and readCnt != ""'>
+                READ_CNT = #{readCnt},
+            </if>
+            <if test='useAt != null and useAt != ""'>
+                USE_AT = #{useAt},
+            </if>
+            <if test='createdDt != null and createdDt != ""'>
+                CREATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                            CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+            </if>
+            <if test='createdBy != null and createdBy != ""'>
+                CREATED_BY = #{createdBy},
+            </if>
+            <if test='updatedBy != null and updatedBy != ""'>
+                UPDATED_BY = #{updatedBy},
+            </if>
+            UPDATED_DT = NOW()
+        </set>
+        WHERE MSG_ID = #{msgId}
+    </update>
+
+    <!-- Soft Delete -->
+    <update id="deleteChatMessage" parameterType="hashmap">
+        /*
+         SQL ID: www.api.cht.chat.ChatMessage.deleteChatMessage
+         Description : 메시지 Soft Delete
+        */
+        UPDATE TB_CHAT_MESSAGE
+        SET
+            USE_AT = 'N',
+            UPDATED_DT = NOW(),
+            UPDATED_BY = #{updatedBy}
+        WHERE MSG_ID = #{msgId}
+    </update>
+
+</mapper>
