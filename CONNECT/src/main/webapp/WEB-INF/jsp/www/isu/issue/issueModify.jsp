@@ -6,19 +6,19 @@
 <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
 
 <section>
-    <h2 class="mb-3">예약 <span id="pageTitle">수정</span></h2>
+    <h2 class="mb-3">이슈 <span id="pageTitle">수정</span></h2>
 
     <div class="mb-3">
-        <button class="btn btn-primary" type="button" onclick="saveChatMessage()">저장</button>
-		<c:if test="${not empty param.msgId}">
-	        <button class="btn btn-outline-danger" type="button" onclick="deleteChatMessage()">삭제</button>
+        <button class="btn btn-primary" type="button" onclick="saveIssue()">저장</button>
+		<c:if test="${not empty param.issueId}">
+	        <button class="btn btn-outline-danger" type="button" onclick="deleteIssue()">삭제</button>
 	    </c:if>
-        <a class="btn btn-outline-secondary" href="/cht/chatMessage/chatMessageList">목록</a>
+        <a class="btn btn-outline-secondary" href="/isu/issue/issueList">목록</a>
     </div>
  
-    <form id="chatMessageForm">
+    <form id="issueForm">
         <!-- PK 파라미터 (치환 대상) -->
-        <input type="hidden" name="msgId" id="msgId" value="${param.msgId}"/>
+        <input type="hidden" name="issueId" id="issueId" value="${param.issueId}"/>
 
         <div class="form-group" style="max-width: 640px;">
             <label for="title">제목</label>
@@ -36,8 +36,8 @@
 </section>
 
 <script>
-    const API_BASE = '/api/cht/chatMessage';
-    const PK = 'msgId';
+    const API_BASE = '/api/isu/issue';
+    const PK = 'issueId';
     let editor;
 
     $(document).ready(function () {
@@ -52,25 +52,25 @@
 
         const id = $("#" + PK).val();
         if (id && id !== "") {
-            readChatMessage(id);
+            readIssue(id);
             $("#pageTitle").text("수정");
         } else {
             $("#pageTitle").text("등록");
         }
     });
 
-    function readChatMessage(id) {
+    function readIssue(id) {
         const sendData = {};
         sendData[PK] = id;
 
         $.ajax({
-            url: API_BASE + "/selectChatMessageDetail",
+            url: API_BASE + "/selectIssueDetail",
             type: "post",
             contentType: "application/json",
             dataType: "json",
             data: JSON.stringify(sendData),
             success: function (map) {
-                const result = map.result || map.chatMessage || map;
+                const result = map.result || map.issue || map;
                 if (!result) return;
 
                 $("#title").val(result.title || "");
@@ -82,11 +82,11 @@
         });
     }
 
-    function saveChatMessage() {
+    function saveIssue() {
         const id = $("#" + PK).val();
         const url = id && id !== ""
-            ? (API_BASE + "/updateChatMessage")
-            : (API_BASE + "/insertChatMessage");
+            ? (API_BASE + "/updateIssue")
+            : (API_BASE + "/insertIssue");
 
         if ($("#title").val() === "") {
             alert("제목을 입력해주세요.");
@@ -100,7 +100,7 @@
         // Editor 값 hidden input에 동기화
         $("#content").val(editor.getHTML());
 
-        const formData = $("#chatMessageForm").serializeObject();
+        const formData = $("#issueForm").serializeObject();
 
         $.ajax({
             url: url,
@@ -109,7 +109,7 @@
             dataType: "json",
             data: JSON.stringify(formData),
             success: function () {
-                location.href = "/cht/chatMessage/chatMessageList";
+                location.href = "/isu/issue/issueList";
             },
             error: function () {
                 alert("저장 중 오류 발생");
@@ -117,7 +117,7 @@
         });
     }
 
-    function deleteChatMessage() {
+    function deleteIssue() {
         const id = $("#" + PK).val();
         if (!id || id === "") {
             alert("삭제할 대상의 PK가 없습니다.");
@@ -129,14 +129,14 @@
         sendData[PK] = id;
 
         $.ajax({
-            url: API_BASE + "/deleteChatMessage",
+            url: API_BASE + "/deleteIssue",
             type: "post",
             contentType: "application/json",
             dataType: "json",
             data: JSON.stringify(sendData),
             success: function () {
                 alert("삭제 완료되었습니다.");
-                location.href = "/cht/chatMessage/chatMessageList";
+                location.href = "/isu/issue/issueList";
             },
             error: function () {
                 alert("삭제 중 오류 발생");

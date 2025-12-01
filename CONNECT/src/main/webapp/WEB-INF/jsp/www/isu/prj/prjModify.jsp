@@ -6,19 +6,19 @@
 <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
 
 <section>
-    <h2 class="mb-3">예약 <span id="pageTitle">수정</span></h2>
+    <h2 class="mb-3">이슈 <span id="pageTitle">수정</span></h2>
 
     <div class="mb-3">
-        <button class="btn btn-primary" type="button" onclick="saveChatRoom()">저장</button>
-		<c:if test="${not empty param.roomId}">
-	        <button class="btn btn-outline-danger" type="button" onclick="deleteChatRoom()">삭제</button>
+        <button class="btn btn-primary" type="button" onclick="saveprj()">저장</button>
+		<c:if test="${not empty param.prjId}">
+	        <button class="btn btn-outline-danger" type="button" onclick="deleteprj()">삭제</button>
 	    </c:if>
-        <a class="btn btn-outline-secondary" href="/cht/chatRoom/chatRoomList">목록</a>
+        <a class="btn btn-outline-secondary" href="/isu/prj/prjList">목록</a>
     </div>
  
-    <form id="chatRoomForm">
+    <form id="prjForm">
         <!-- PK 파라미터 (치환 대상) -->
-        <input type="hidden" name="roomId" id="roomId" value="${param.roomId}"/>
+        <input type="hidden" name="prjId" id="prjId" value="${param.prjId}"/>
 
         <div class="form-group" style="max-width: 640px;">
             <label for="title">제목</label>
@@ -36,8 +36,8 @@
 </section>
 
 <script>
-    const API_BASE = '/api/cht/chatRoom';
-    const PK = 'roomId';
+    const API_BASE = '/api/isu/prj';
+    const PK = 'prjId';
     let editor;
 
     $(document).ready(function () {
@@ -52,25 +52,25 @@
 
         const id = $("#" + PK).val();
         if (id && id !== "") {
-            readChatRoom(id);
+            readprj(id);
             $("#pageTitle").text("수정");
         } else {
             $("#pageTitle").text("등록");
         }
     });
 
-    function readChatRoom(id) {
+    function readprj(id) {
         const sendData = {};
         sendData[PK] = id;
 
         $.ajax({
-            url: API_BASE + "/selectChatRoomDetail",
+            url: API_BASE + "/selectprjDetail",
             type: "post",
             contentType: "application/json",
             dataType: "json",
             data: JSON.stringify(sendData),
             success: function (map) {
-                const result = map.result || map.chatRoom || map;
+                const result = map.result || map.prj || map;
                 if (!result) return;
 
                 $("#title").val(result.title || "");
@@ -82,11 +82,11 @@
         });
     }
 
-    function saveChatRoom() {
+    function saveprj() {
         const id = $("#" + PK).val();
         const url = id && id !== ""
-            ? (API_BASE + "/updateChatRoom")
-            : (API_BASE + "/insertChatRoom");
+            ? (API_BASE + "/updateprj")
+            : (API_BASE + "/insertprj");
 
         if ($("#title").val() === "") {
             alert("제목을 입력해주세요.");
@@ -100,7 +100,7 @@
         // Editor 값 hidden input에 동기화
         $("#content").val(editor.getHTML());
 
-        const formData = $("#chatRoomForm").serializeObject();
+        const formData = $("#prjForm").serializeObject();
 
         $.ajax({
             url: url,
@@ -109,7 +109,7 @@
             dataType: "json",
             data: JSON.stringify(formData),
             success: function () {
-                location.href = "/cht/chatRoom/chatRoomList";
+                location.href = "/isu/prj/prjList";
             },
             error: function () {
                 alert("저장 중 오류 발생");
@@ -117,7 +117,7 @@
         });
     }
 
-    function deleteChatRoom() {
+    function deleteprj() {
         const id = $("#" + PK).val();
         if (!id || id === "") {
             alert("삭제할 대상의 PK가 없습니다.");
@@ -129,14 +129,14 @@
         sendData[PK] = id;
 
         $.ajax({
-            url: API_BASE + "/deleteChatRoom",
+            url: API_BASE + "/deleteprj",
             type: "post",
             contentType: "application/json",
             dataType: "json",
             data: JSON.stringify(sendData),
             success: function () {
                 alert("삭제 완료되었습니다.");
-                location.href = "/cht/chatRoom/chatRoomList";
+                location.href = "/isu/prj/prjList";
             },
             error: function () {
                 alert("삭제 중 오류 발생");

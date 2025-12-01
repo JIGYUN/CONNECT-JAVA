@@ -124,6 +124,84 @@ public class PushService {
         dao.delete(namespace + ".deletePush", paramMap);
     }
 
+    /* =================== 채팅 전용 헬퍼 =================== */
+
+    /**
+     * ✅ 채팅 메시지용 푸시 발송
+     * - chatPayload: ChatStompController에서 넘겨준 payload 그대로 사용
+     *   (roomId, senderId, senderNm, content 필수)
+     * - TB_CHAT_ROOM_USER + 디바이스 토큰 테이블 기준으로
+     *   selectPushTargetTokens 에서 roomId, excludeUserId 로 대상 조회.
+     */
+    @Transactional
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> sendChatPushForRoom(Map<String, Object> chatPayload) {
+
+        Long roomId = toLong(chatPayload.get("roomId"));
+        Long senderId = toLong(chatPayload.get("senderId"));
+        String senderNm = str(chatPayload, "senderNm");
+        String content = str(chatPayload, "content");
+
+        if (!hasText(content)) {
+            content = "(메시지 없음)";
+        }
+
+        // 1) 푸시 템플릿 paramMap 구성
+        Map<String, Object> paramMap = new HashMap<>();
+
+        // ■ 제목 / 본문
+        String title;
+        if (hasText(senderNm)) {
+            title = senderNm + "님의 새 메시지";
+        } else {
+            title = "새 채팅 메시지";
+        }
+        paramMap.put("title", title);
+        paramMap.put("body", content);
+
+        // ■ 클릭 시 이동 경로 (웹 기준, 필요에 따라 앱 딥링크로 바꾸면 됨)
+        if (roomId != null) {
+            paramMap.put("clickAction", "/cht/chatMessage/chatMessageList?roomId=" + roomId);
+        }
+
+        // ■ 우선순위
+        paramMap.put("highPriority", true);
+
+        // ■ data payload (앱에서 분기 처리용)
+        Map<String, String> data = new HashMap<>();
+        data.put("type", "CHAT_MESSAGE");
+        if (roomId != null) {
+            data.put("roomId", String.valueOf(roomId));
+        }
+        if (senderId != null) {
+            data.put("senderId", String.valueOf(senderId));
+        }
+        if (hasText(senderNm)) {
+            data.put("senderNm", senderNm);
+        }
+        paramMap.put("data", data);
+
+        // ■ 대상 조회용 파라미터
+        //  - selectPushTargetTokens 에서 roomId 기준으로 방 참여자 토큰을 조회
+        //  - excludeUserId 는 보낸 사람 제외용
+        if (roomId != null) {
+            paramMap.put("roomId", roomId);
+        }
+        if (senderId != null) {
+            paramMap.put("excludeUserId", senderId);
+        }
+
+        // 2) 공통 insertPush 로 템플릿 저장 + FCM 발송
+        insertPush(paramMap);
+
+        // 3) insertPush 에서 채워넣은 발송 결과 반환
+        Object resultObj = paramMap.get("_sendResult");
+        if (resultObj instanceof Map) {
+            return (Map<String, Object>) resultObj;
+        }
+        return Collections.emptyMap();
+    }
+
     /* ====================== helpers ====================== */
 
     @SuppressWarnings("unchecked")
@@ -165,21 +243,21 @@ public class PushService {
         if (tokensObj instanceof List) {
             List<?> raw = (List<?>) tokensObj;
             return raw.stream()
-                      .filter(Objects::nonNull)
-                      .map(x -> String.valueOf(x).trim())
-                      .filter(this::hasText)
-                      .collect(Collectors.toList());
+                    .filter(Objects::nonNull)
+                    .map(x -> String.valueOf(x).trim())
+                    .filter(this::hasText)
+                    .collect(Collectors.toList());
         } else if (tokensObj instanceof String) {
             String s = ((String) tokensObj).trim();
             if (!s.isEmpty()) {
                 return Arrays.stream(s.split(","))
-                             .map(String::trim)
-                             .filter(this::hasText)
-                             .collect(Collectors.toList());
+                        .map(String::trim)
+                        .filter(this::hasText)
+                        .collect(Collectors.toList());
             }
         }
 
-        // 3) DB 조회 (예: grpCd/ownerId 등으로 대상 디바이스 토큰 조회)
+        // 3) DB 조회 (예: roomId / excludeUserId 등으로 대상 디바이스 토큰 조회)
         List<Map<String, Object>> rows = dao.list(namespace + ".selectPushTargetTokens", p);
         if (rows == null) return Collections.emptyList();
         List<String> fromDb = new ArrayList<>();
@@ -205,5 +283,17 @@ public class PushService {
 
     private boolean hasText(String s) {
         return s != null && !s.trim().isEmpty();
+    }
+
+    private Long toLong(Object v) {
+        if (v == null) return null;
+        if (v instanceof Number) {
+            return ((Number) v).longValue();
+        }
+        try {
+            return Long.parseLong(v.toString());
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 }

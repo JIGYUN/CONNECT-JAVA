@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.isu.issueComment.issueComment">
+
+    <sql id="whereissueComment">
+        <!-- 
+        동적 검색 조건 템플릿 (필요 시 활성화)
+
+        <choose>
+            <when test='id != null and id != "" '>
+
+            </when>
+            <otherwise>
+
+            </otherwise>
+        </choose>
+
+        <if test="searchField != null and searchText != null and searchField != '' and searchText != ''">
+            <choose>
+                <when test='searchField == "title"'>
+                    AND TITLE LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "content"'>
+                    AND CONTENT LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "writer"'>
+                    AND WRITER LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        -->
+    </sql> 
+
+    <select id="selectissueCommentList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.isu.issueComment.issueComment.selectissueCommentList
+         Description : 목록 Query 
+        */
+        SELECT
+            COMMENT_ID
+			,GRP_CD
+			,ISSUE_ID
+			,CONTENT
+			,WRITER_ID
+			,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+			,CREATED_BY
+			,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+			,UPDATED_BY
+			,USE_AT
+
+        FROM TB_ISSUE_COMMENT
+        <where>
+        	AND ISSUE_ID = #{issueId}
+            <include refid="whereissueComment" />
+        </where>
+        ORDER BY COMMENT_ID DESC
+        <if test="limit != null and offset != null">
+            /*  페이징 하단 시작  */
+            LIMIT #{limit} OFFSET #{offset}
+            /*  페이징 하단 끝  */
+        </if>
+    </select>
+
+    <select id="selectissueCommentListCount" parameterType="hashmap" resultType="int">
+        /*
+         SQL ID: www.api.isu.issueComment.issueComment.selectissueCommentListCount
+         Description : 목록에서 레코드수 Query 
+        */
+        SELECT
+            COUNT(*) CNT
+        FROM TB_ISSUE_COMMENT
+        <where>
+            <include refid="whereissueComment" />
+        </where> 
+    </select>
+
+    <select id="selectissueCommentDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.isu.issueComment.issueComment.selectissueCommentDetail
+         Description : 상세조회 Query 
+        */  
+        SELECT
+            COMMENT_ID
+			,GRP_CD
+			,ISSUE_ID
+			,CONTENT
+			,WRITER_ID
+			,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+			,CREATED_BY
+			,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+			,UPDATED_BY
+			,USE_AT
+
+        FROM TB_ISSUE_COMMENT
+        WHERE COMMENT_ID = #{commentId}
+    </select>
+
+    <insert id="insertissueComment" parameterType="hashmap">
+        /*
+         SQL ID: www.api.isu.issueComment.issueComment.insertissueComment
+         Description : 등록 Query 
+        */
+        INSERT INTO TB_ISSUE_COMMENT
+        (
+            GRP_CD
+			,ISSUE_ID
+			,CONTENT
+			,WRITER_ID
+			,CREATED_DT
+			,CREATED_BY
+			,UPDATED_DT
+			,UPDATED_BY
+			,USE_AT
+
+        )
+        VALUES
+        (
+            #{grpCd}
+			,#{issueId}
+			,#{content}
+			,#{writerId}
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+			,#{createdBy}
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+			,#{updatedBy}
+			,#{useAt}
+
+        )
+    </insert>
+
+    <update id="updateissueComment" parameterType="hashmap">
+        /*
+         SQL ID: www.api.isu.issueComment.issueComment.updateissueComment
+         Description : 수정 Query 
+        */
+        UPDATE TB_ISSUE_COMMENT
+        <set>
+            			<if test='grpCd != null and grpCd != ""'>
+				GRP_CD = #{grpCd},
+			</if>
+			<if test='issueId != null and issueId != ""'>
+				ISSUE_ID = #{issueId},
+			</if>
+			<if test='content != null and content != ""'>
+				CONTENT = #{content},
+			</if>
+			<if test='writerId != null and writerId != ""'>
+				WRITER_ID = #{writerId},
+			</if>
+			<if test='createdDt != null and createdDt != ""'>
+				CREATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='createdBy != null and createdBy != ""'>
+				CREATED_BY = #{createdBy},
+			</if>
+			<if test='updatedDt != null and updatedDt != ""'>
+				UPDATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='updatedBy != null and updatedBy != ""'>
+				UPDATED_BY = #{updatedBy},
+			</if>
+			<if test='useAt != null and useAt != ""'>
+				USE_AT = #{useAt},
+			</if>
+
+        </set>
+        WHERE COMMENT_ID = #{commentId}
+    </update>
+
+    <delete id="deleteissueComment" parameterType="hashmap">
+        /*
+         SQL ID: www.api.isu.issueComment.issueComment.deleteissueComment
+         Description : 삭제 Query 
+        */
+        DELETE FROM TB_ISSUE_COMMENT
+        WHERE COMMENT_ID = #{commentId}
+    </delete>
+
+</mapper>

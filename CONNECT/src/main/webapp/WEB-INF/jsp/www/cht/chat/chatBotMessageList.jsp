@@ -14,7 +14,7 @@
 
     <div class="d-flex align-items-center justify-content-between mb-3">
         <div>
-            <h2 class="mb-0">메시지</h2>
+            <h2 class="mb-0">Qwen 챗봇</h2>
             <small class="text-muted d-block">
                 roomId:
                 <span id="roomIdLabel"><c:out value="${param.roomId}" /></span>
@@ -22,11 +22,14 @@
             <small class="text-muted d-block mt-1">
                 로그인: <c:out value="${authEmail}" /> (ID: <c:out value="${authUserId}" />)
             </small>
+            <small class="text-muted d-block mt-1">
+                엔진: QWEN-CHATBOT (일반 대화 모드)
+            </small>
         </div>
         <a class="btn btn-outline-secondary btn-sm" href="/cht/chatRoom/chatRoomList">채팅방 목록</a>
     </div>
 
-    <!-- roomId 이동 컨트롤 -->
+    <!-- roomId 이동 컨트롤 (원하면 봇과 여러 방 개념으로 쓰기 위해 유지) -->
     <div class="mb-3" style="max-width: 420px;">
         <div class="input-group">
             <span class="input-group-text">roomId</span>
@@ -39,15 +42,17 @@
             />
             <button class="btn btn-outline-primary" type="button" id="btnChangeRoom">이동</button>
         </div>
-        <small class="text-muted">방 번호 변경 후 [이동]을 누르면 해당 roomId로 다시 조회합니다.</small>
+        <small class="text-muted">
+            방 번호 변경 후 [이동]을 누르면 해당 roomId로 다시 조회합니다. (봇도 방별로 대화 기록 분리)
+        </small>
     </div>
 
-    <!-- ✅ senderId / senderNm 입력 제거 → 로그인 정보로 자동 사용 -->
+    <!-- senderId / senderNm 는 로그인 정보로 자동 사용 -->
     <div class="mb-3" style="max-width: 640px;">
         <div class="row g-2">
             <div class="col-12 col-md-4">
                 <div class="form-group mb-0">
-                    <label class="form-label mb-0">senderId</label>
+                    <label class="form-label mb-0">내 ID (senderId)</label>
                     <div class="form-control-plaintext fw-semibold">
                         <c:out value="${authUserId}" />
                     </div>
@@ -55,7 +60,7 @@
             </div>
             <div class="col-12 col-md-8">
                 <div class="form-group mb-0">
-                    <label class="form-label mb-0">senderNm (email)</label>
+                    <label class="form-label mb-0">내 이메일 (senderNm)</label>
                     <div class="form-control-plaintext fw-semibold">
                         <c:out value="${authEmail}" />
                     </div>
@@ -63,8 +68,7 @@
             </div>
         </div>
         <small class="text-muted">
-            서버에서는 sec:authentication을 통해 userId / email을 사용하고,<br />
-            React 모바일에서도 동일 키(senderId, senderNm)를 JSON payload에 넣어 전송합니다.
+            이 페이지는 "일반 Qwen 챗봇" 전용입니다. 번역 모듈은 사용하지 않습니다.
         </small>
     </div>
 
@@ -81,7 +85,7 @@
                 type="text"
                 id="msgInput"
                 class="form-control"
-                placeholder="메시지 입력 후 Enter"
+                placeholder="질문을 입력 후 Enter"
                 aria-label="메시지 내용 입력"
             />
             <button class="btn btn-primary" type="button" id="btnSendMsg">보내기</button>
@@ -193,12 +197,12 @@
     let stompConnected = false;
 
     (function () {
-        initAuthInfo();               // ✅ 로그인 정보 세팅
+        initAuthInfo();
         initRoomIdFromParam();
-        joinChatRoomUserOnEnter();    // ✅ 방 입장 시 TB_CHAT_ROOM_USER upsert
+        joinChatRoomUserOnEnter(); // TB_CHAT_ROOM_USER upsert (사람↔사람과 동일 로직)
         bindHandlers();
-        selectChatMessageList();      // 최초 REST 조회
-        connectStomp();               // STOMP 연결
+        selectChatMessageList();   // 기존 대화 기록 조회
+        connectStomp();            // STOMP 연결
     })();
 
     function initAuthInfo() {
@@ -210,7 +214,6 @@
         const senderId = authEl.getAttribute('data-sender-id');
         const senderNm = authEl.getAttribute('data-sender-nm') || '';
 
-        // 세션 스토리지에도 같이 넣어둠 (React 페이지에서도 동일 키 사용)
         if (senderId) {
             sessionStorage.setItem('senderId', senderId);
         }
@@ -246,17 +249,20 @@
             if (qRoom) {
                 input.value = qRoom;
                 document.getElementById('roomIdLabel').textContent = qRoom;
+            } else {
+                // roomId 파라미터가 없으면 기본값 1로 설정
+                input.value = '1';
+                document.getElementById('roomIdLabel').textContent = '1';
             }
         }
     }
 
-    // ✅ 채팅방 입장 시 TB_CHAT_ROOM_USER에 upsert
+    // 채팅방 입장 시 TB_CHAT_ROOM_USER에 upsert (사람↔사람 채팅과 동일 패턴)
     function joinChatRoomUserOnEnter() {
         const roomIdVal = currentRoomId();
         const senderIdNum = getAuthSenderId();
 
         if (roomIdVal === null || senderIdNum === null) {
-            // roomId 또는 로그인 정보 없으면 스킵
             return;
         }
 
@@ -271,10 +277,7 @@
             contentType: 'application/json',
             dataType: 'json',
             data: JSON.stringify(payload),
-            success: function (res) {
-                // 필요하면 res.result 로 roomUser 정보 활용 가능
-                // console.log('joinRoomUser ok:', res);
-            },
+            success: function () {},
             error: function (xhr) {
                 console.error('채팅방 입장 처리 실패', xhr);
             }
@@ -298,7 +301,7 @@
                 alert('roomId는 숫자만 가능합니다.');
                 return;
             }
-            location.href = '/cht/chatMessage/chatMessageList?roomId=' + encodeURIComponent(n);
+            location.href = '/cht/chatMessage/chatBotMessageList?roomId=' + encodeURIComponent(n);
         });
 
         roomInput.addEventListener('keydown', function (e) {
@@ -331,7 +334,6 @@
     function connectStomp() {
         const roomIdVal = currentRoomId();
         if (roomIdVal === null) {
-            // roomId 없으면 일단 STOMP 연결 보류
             return;
         }
 
@@ -341,7 +343,7 @@
 
         stompClient.connect({}, function () {
             stompConnected = true;
-            subscribeRoom(roomIdVal);
+            subscribeRoom(roomIdVal); // Qwen 챗봇 전용 채널
         }, function (error) {
             console.error('STOMP 연결 실패:', error);
             stompConnected = false;
@@ -351,7 +353,7 @@
     function subscribeRoom(roomIdVal) {
         if (!stompClient || !stompConnected) return;
 
-        stompClient.subscribe('/topic/chat/' + roomIdVal, function (frame) {
+        stompClient.subscribe('/topic/chat-bot/' + roomIdVal, function (frame) {
             try {
                 const body = JSON.parse(frame.body);
                 appendOneMessage(body);
@@ -431,7 +433,8 @@
             return;
         }
 
-        stompClient.send('/app/chat/' + roomIdVal, {}, JSON.stringify(payload));
+        // ★ Qwen 챗봇 전용 엔드포인트
+        stompClient.send('/app/chat-bot/' + roomIdVal, {}, JSON.stringify(payload));
         msgInput.value = '';
         msgInput.focus();
     }
@@ -457,8 +460,8 @@
         const ul = document.getElementById('chatMessageListBody');
         if (!ul) return;
         const li = document.createElement('li');
-        li.innerHTML = buildMessageInnerHtml(r);
         li.className = getMessageItemClass(r);
+        li.innerHTML = buildMessageInnerHtml(r);
         ul.appendChild(li);
     }
 
@@ -484,7 +487,7 @@
     }
 
     function buildMessageInnerHtml(r) {
-        const id = r.msgId;
+        const id = r[msgIdKey];
         const senderNm = r.senderNm || '';
         const content = r.content || '';
         let sentDt = r.sentDt || '';
@@ -496,10 +499,21 @@
         const safeSender = escapeHtml(senderNm || '익명');
         const safeDt = escapeHtml(sentDt || '');
         const safeContent = escapeHtml(content);
+        const msgIdStr = (id !== null && id !== undefined) ? String(id) : '';
 
         let html = '';
-        html += "<div class='chat-meta'>" + safeSender + " · " + safeDt + "</div>";
-        html += "<div class='chat-bubble' title='ID: " + (id ?? '') + "'>" + safeContent + "</div>";
+
+        // 상단 메타
+        html += "<div class='chat-meta'>";
+        html += safeSender;
+        if (safeDt) {
+            html += " · " + safeDt;
+        }
+        html += "</div>";
+
+        // 본문
+        html += "<div class='chat-bubble' title='ID: " + (msgIdStr || '') + "'>" + safeContent + "</div>";
+
         return html;
     }
 

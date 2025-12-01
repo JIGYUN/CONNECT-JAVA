@@ -44,7 +44,7 @@
         <where>
             <include refid="whereChatMessage" />
         </where>
-        ORDER BY M.MSG_ID DESC
+        ORDER BY M.MSG_ID ASC
         <if test="limit != null">
             LIMIT #{limit}
         </if>

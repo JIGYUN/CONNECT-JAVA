@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.cht.chatRoomUser.ChatRoomUser">
+
+    <sql id="whereChatRoomUser">
+        <!-- 검색 조건 필요 시 사용 -->
+    </sql> 
+
+    <select id="selectChatRoomUserList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.cht.chatRoomUser.ChatRoomUser.selectChatRoomUserList
+         Description : 목록 Query 
+        */
+        SELECT
+            ROOM_USER_ID
+            ,ROOM_ID
+            ,USER_ID
+            ,ROLE_CD
+            ,DATE_FORMAT(JOIN_DT, '%Y-%m-%d %H:%i:%s') AS JOIN_DT
+            ,DATE_FORMAT(LEAVE_DT, '%Y-%m-%d %H:%i:%s') AS LEAVE_DT
+            ,USE_AT
+            ,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+            ,CREATED_BY
+            ,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+            ,UPDATED_BY
+        FROM TB_CHAT_ROOM_USER
+        <where>
+            <include refid="whereChatRoomUser" />
+        </where>
+        ORDER BY ROOM_USER_ID DESC
+        <if test="limit != null and offset != null">
+            /*  페이징 하단 시작  */
+            LIMIT #{limit} OFFSET #{offset}
+            /*  페이징 하단 끝  */
+        </if>
+    </select>
+
+    <select id="selectChatRoomUserListCount" parameterType="hashmap" resultType="int">
+        /*
+         SQL ID: www.api.cht.chatRoomUser.ChatRoomUser.selectChatRoomUserListCount
+         Description : 목록에서 레코드수 Query 
+        */
+        SELECT
+            COUNT(*) CNT
+        FROM TB_CHAT_ROOM_USER
+        <where>
+            <include refid="whereChatRoomUser" />
+        </where> 
+    </select>
+
+    <select id="selectChatRoomUserDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.cht.chatRoomUser.ChatRoomUser.selectChatRoomUserDetail
+         Description : 상세조회 Query 
+        */  
+        SELECT
+            ROOM_USER_ID
+            ,ROOM_ID
+            ,USER_ID
+            ,ROLE_CD
+            ,DATE_FORMAT(JOIN_DT, '%Y-%m-%d %H:%i:%s') AS JOIN_DT
+            ,DATE_FORMAT(LEAVE_DT, '%Y-%m-%d %H:%i:%s') AS LEAVE_DT
+            ,USE_AT
+            ,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+            ,CREATED_BY
+            ,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+            ,UPDATED_BY
+        FROM TB_CHAT_ROOM_USER
+        WHERE ROOM_USER_ID = #{roomUserId}
+    </select>
+
+    <insert id="insertChatRoomUser" parameterType="hashmap">
+        /*
+         SQL ID: www.api.cht.chatRoomUser.ChatRoomUser.insertChatRoomUser
+         Description : 등록 Query (일반용 - javagen 기본)
+        */
+        INSERT INTO TB_CHAT_ROOM_USER
+        (
+            ROOM_ID
+            ,USER_ID
+            ,ROLE_CD
+            ,JOIN_DT
+            ,LEAVE_DT
+            ,USE_AT
+            ,CREATED_DT
+            ,CREATED_BY
+            ,UPDATED_DT
+            ,UPDATED_BY
+        )
+        VALUES
+        (
+            #{roomId}
+            ,#{userId}
+            ,#{roleCd}
+            ,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{joinDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{joinDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+            ,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{leaveDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{leaveDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+            ,#{useAt}
+            ,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+            ,#{createdBy}
+            ,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+            ,#{updatedBy}
+        )
+    </insert>
+
+    <update id="updateChatRoomUser" parameterType="hashmap">
+        /*
+         SQL ID: www.api.cht.chatRoomUser.ChatRoomUser.updateChatRoomUser
+         Description : 수정 Query 
+        */
+        UPDATE TB_CHAT_ROOM_USER
+        <set>
+            <if test='roomId != null and roomId != ""'>
+                ROOM_ID = #{roomId},
+            </if>
+            <if test='userId != null and userId != ""'>
+                USER_ID = #{userId},
+            </if>
+            <if test='roleCd != null and roleCd != ""'>
+                ROLE_CD = #{roleCd},
+            </if>
+            <if test='joinDt != null and joinDt != ""'>
+                JOIN_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{joinDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{joinDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+            </if>
+            <if test='leaveDt != null and leaveDt != ""'>
+                LEAVE_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{leaveDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{leaveDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+            </if>
+            <if test='useAt != null and useAt != ""'>
+                USE_AT = #{useAt},
+            </if>
+            <if test='createdDt != null and createdDt != ""'>
+                CREATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+            </if>
+            <if test='createdBy != null and createdBy != ""'>
+                CREATED_BY = #{createdBy},
+            </if>
+            <if test='updatedDt != null and updatedDt != ""'>
+                UPDATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+            </if>
+            <if test='updatedBy != null and updatedBy != ""'>
+                UPDATED_BY = #{updatedBy},
+            </if>
+        </set>
+        WHERE ROOM_USER_ID = #{roomUserId}
+    </update>
+
+    <delete id="deleteChatRoomUser" parameterType="hashmap">
+        /*
+         SQL ID: www.api.cht.chatRoomUser.ChatRoomUser.deleteChatRoomUser
+         Description : 삭제 Query 
+        */
+        DELETE FROM TB_CHAT_ROOM_USER
+        WHERE ROOM_USER_ID = #{roomUserId}
+    </delete>
+
+    <!-- ✅ join용: roomId + userId 기준 1건 조회 -->
+    <select id="selectOneByRoomIdAndUserId" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.cht.chatRoomUser.ChatRoomUser.selectOneByRoomIdAndUserId
+         Description : roomId + userId 기준 최근 1건
+        */
+        SELECT
+            ROOM_USER_ID
+            ,ROOM_ID
+            ,USER_ID
+            ,ROLE_CD
+            ,DATE_FORMAT(JOIN_DT, '%Y-%m-%d %H:%i:%s') AS JOIN_DT
+            ,DATE_FORMAT(LEAVE_DT, '%Y-%m-%d %H:%i:%s') AS LEAVE_DT
+            ,USE_AT
+            ,CREATED_DT
+            ,CREATED_BY
+            ,UPDATED_DT
+            ,UPDATED_BY
+        FROM TB_CHAT_ROOM_USER
+        WHERE ROOM_ID = #{roomId}
+          AND USER_ID = #{userId}
+        ORDER BY ROOM_USER_ID DESC
+        LIMIT 1
+    </select>
+
+    <!-- ✅ join용: 최초 입장 INSERT (LEAVE_DT NULL 고정) -->
+    <insert id="insertChatRoomUserForJoin" parameterType="hashmap">
+        /*
+         SQL ID: www.api.cht.chatRoomUser.ChatRoomUser.insertChatRoomUserForJoin
+         Description : 채팅방 최초 입장용 INSERT
+        */
+        INSERT INTO TB_CHAT_ROOM_USER (
+            ROOM_ID,
+            USER_ID,
+            ROLE_CD,
+            JOIN_DT,
+            LEAVE_DT,
+            USE_AT,
+            CREATED_DT,
+            CREATED_BY,
+            UPDATED_DT,
+            UPDATED_BY
+        ) VALUES (
+            #{roomId},
+            #{userId},
+            #{roleCd},
+            NOW(),
+            NULL,
+            #{useAt},
+            NOW(),
+            #{createdBy},
+            NOW(),
+            #{updatedBy}
+        )
+    </insert>
+
+    <!-- ✅ join용: 재입장 (USE_AT='Y', LEAVE_DT=NULL) -->
+    <update id="rejoinChatRoomUser" parameterType="hashmap">
+        /*
+         SQL ID: www.api.cht.chatRoomUser.ChatRoomUser.rejoinChatRoomUser
+         Description : 채팅방 재입장 처리
+        */
+        UPDATE TB_CHAT_ROOM_USER
+        SET
+            USE_AT    = 'Y',
+            JOIN_DT   = NOW(),
+            LEAVE_DT  = NULL,
+            UPDATED_DT = NOW(),
+            UPDATED_BY = #{updatedBy}
+        WHERE ROOM_ID = #{roomId}
+          AND USER_ID = #{userId}
+    </update>
+
+</mapper>

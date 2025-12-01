@@ -1,10 +1,10 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 
 <section>
-    <h2 class="mb-3">예약</h2>
+    <h2 class="mb-3">이슈</h2>
 
     <div class="mb-3">
-        <a class="btn btn-outline-secondary" href="/cht/chatMessage/chatMessageList">목록</a>
+        <a class="btn btn-outline-secondary" href="/isu/prj/prjList">목록</a>
     </div>
 
     <div class="mb-3" style="max-width: 640px;">
@@ -27,18 +27,18 @@
                     <th style="width: 90px; text-align:center;">관리</th>
                 </tr>
             </thead>
-            <tbody id="chatMessageListBody"></tbody>
+            <tbody id="prjListBody"></tbody>
         </table>
     </div>
 </section>
 
 <script>
     // ▼ JavaGen 치환 포인트 유지
-    const API_BASE = '/api/cht/chatMessage';
-    const msgId = 'chatMessageIdx';
+    const API_BASE = '/api/isu/prj';
+    const prjId = 'prjIdx';
 
     (function () {
-        selectChatMessageList();
+        selectprjList();
 
         const input = document.getElementById('titleInput');
         input.addEventListener('keydown', function (e) {
@@ -49,9 +49,9 @@
         });
     })();
 
-    function selectChatMessageList() {
+    function selectprjList() {
         $.ajax({
-            url: API_BASE + '/selectChatMessageList',
+            url: API_BASE + '/selectprjList',
             type: 'post',
             contentType: 'application/json',
             data: JSON.stringify({}),
@@ -69,20 +69,20 @@
                             createDate = (createDate.value || String(createDate));
                         }
 
-                        html += "<tr onclick=\"goToChatMessageModify('" + (r.chatMessageIdx) + "')\">";
-                        html += "  <td class='text-right'>" + (r.chatMessageIdx ?? '') + "</td>";
+                        html += "<tr onclick=\"goToprjModify('" + (r.prjIdx) + "')\">";
+                        html += "  <td class='text-right'>" + (r.prjIdx ?? '') + "</td>";
                         html += "  <td>" + (escapeHtml(r.title ?? '')) + "</td>";
                         html += "  <td>" + (escapeHtml(createDate ?? '')) + "</td>";
                         html += "  <td class='text-center'>";
                         html += "    <button type='button' class='btn btn-outline-danger btn-sm'";
-                        html += "            aria-label='항목 " + (r.chatMessageIdx ?? '') + " 삭제'";
-                        html += "            onclick=\"event.stopPropagation(); deleteRow('" + (r.chatMessageIdx) + "')\">삭제</button>";
+                        html += "            aria-label='항목 " + (r.prjIdx ?? '') + " 삭제'";
+                        html += "            onclick=\"event.stopPropagation(); deleteRow('" + (r.prjIdx) + "')\">삭제</button>";
                         html += "  </td>";
                         html += "</tr>";
                     }
                 }
 
-                $('#chatMessageListBody').html(html);
+                $('#prjListBody').html(html);
             },
             error: function () {
                 alert('목록 조회 중 오류 발생');
@@ -94,14 +94,14 @@
         const payload = { title: title };
 
         $.ajax({
-            url: API_BASE + '/insertChatMessage',
+            url: API_BASE + '/insertprj',
             type: 'post',
             contentType: 'application/json',
             dataType: 'json',
             data: JSON.stringify(payload),
             success: function () {
                 document.getElementById('titleInput').value = '';
-                selectChatMessageList();
+                selectprjList();
             },
             error: function (xhr) {
                 alert('등록 실패: ' + (xhr.responseText || xhr.status));
@@ -113,16 +113,16 @@
         if (!id) return;
 
         const sendData = {};
-        sendData[msgId] = id;
+        sendData[prjId] = id;
 
         $.ajax({
-            url: API_BASE + '/deleteChatMessage',
+            url: API_BASE + '/deleteprj',
             type: 'post',
             contentType: 'application/json',
             dataType: 'json',
             data: JSON.stringify(sendData),
             success: function () {
-                selectChatMessageList();
+                selectprjList();
             },
             error: function (xhr) {
                 alert('삭제 실패: ' + (xhr.responseText || xhr.status));
@@ -130,9 +130,9 @@
         });
     }
 
-    function goToChatMessageModify(id) {
-        let url = '/cht/chatMessage/chatMessageModify';
-        if (id) url += '?' + msgId + '=' + encodeURIComponent(id);
+    function goToprjModify(id) {
+        let url = '/isu/prj/prjModify';
+        if (id) url += '?' + prjId + '=' + encodeURIComponent(id);
         location.href = url;
     }
 
@@ -142,7 +142,7 @@
         });
     }
 
-    function goToChatMessageList() {
-        location.href = '/cht/chatMessage/chatMessageList';
+    function goToprjList() {
+        location.href = '/isu/prj/prjList';
     }
 </script>

@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.isu.issue.Issue">
+
+    <!-- 공통 where: grpCd, prjId, statusCd, useAt -->
+    <sql id="whereIssue">
+        <if test="grpCd != null and grpCd != ''">
+            AND GRP_CD = #{grpCd}
+        </if>
+        <if test="prjId != null and prjId != ''">
+            AND PRJ_ID = #{prjId}
+        </if>
+        <if test="statusCd != null and statusCd != ''">
+            AND STATUS_CD = #{statusCd}
+        </if>
+        <if test="useAt != null and useAt != ''">
+            AND USE_AT = #{useAt}
+        </if>
+    </sql>
+
+    <select id="selectIssueList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.isu.issue.Issue.selectIssueList
+         Description : 목록 Query
+        */
+        SELECT
+            ISSUE_ID
+            ,GRP_CD
+            ,PRJ_ID
+            ,ISSUE_NO
+            ,ISSUE_KEY
+            ,ISSUE_TYPE_CD
+            ,SUMMARY
+            ,DESCRIPTION
+            ,PRIORITY_CD
+            ,STATUS_CD
+            ,REPORTER_ID
+            ,ASSIGNEE_ID
+            ,PARENT_ISSUE_ID
+            ,DATE_FORMAT(START_DT, '%Y-%m-%d %H:%i:%s') AS START_DT
+            ,DATE_FORMAT(DUE_DT, '%Y-%m-%d %H:%i:%s')   AS DUE_DT
+            ,ESTIMATE_MIN
+            ,SPENT_MIN
+            ,ORDER_IN_PRJ
+            ,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+            ,CREATED_BY
+            ,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+            ,UPDATED_BY
+            ,USE_AT
+        FROM TB_ISSUE
+        <where>
+            <include refid="whereIssue" />
+        </where>
+        ORDER BY ISSUE_ID DESC
+        <if test="limit != null and offset != null">
+            LIMIT #{limit} OFFSET #{offset}
+        </if>
+    </select>
+
+    <select id="selectIssueListCount" parameterType="hashmap" resultType="int">
+        /*
+         SQL ID: www.api.isu.issue.Issue.selectIssueListCount
+         Description : 목록에서 레코드수 Query
+        */
+        SELECT
+            COUNT(*) CNT
+        FROM TB_ISSUE
+        <where>
+            <include refid="whereIssue" />
+        </where>
+    </select>
+
+    <select id="selectIssueDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.isu.issue.Issue.selectIssueDetail
+         Description : 상세조회 Query
+        */
+        SELECT
+            ISSUE_ID
+            ,GRP_CD
+            ,PRJ_ID
+            ,ISSUE_NO
+            ,ISSUE_KEY
+            ,ISSUE_TYPE_CD
+            ,SUMMARY
+            ,DESCRIPTION
+            ,PRIORITY_CD
+            ,STATUS_CD
+            ,REPORTER_ID
+            ,ASSIGNEE_ID
+            ,PARENT_ISSUE_ID
+            ,DATE_FORMAT(START_DT, '%Y-%m-%d %H:%i:%s') AS START_DT
+            ,DATE_FORMAT(DUE_DT, '%Y-%m-%d %H:%i:%s')   AS DUE_DT
+            ,ESTIMATE_MIN
+            ,SPENT_MIN
+            ,ORDER_IN_PRJ
+            ,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+            ,CREATED_BY
+            ,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+            ,UPDATED_BY
+            ,USE_AT
+        FROM TB_ISSUE
+        WHERE ISSUE_ID = #{issueId}
+    </select>
+
+    <insert id="insertIssue" parameterType="hashmap">
+        /*
+         SQL ID: www.api.isu.issue.Issue.insertIssue
+         Description : 등록 Query
+        */
+        INSERT INTO TB_ISSUE
+        (
+            GRP_CD
+            ,PRJ_ID
+            ,ISSUE_NO
+            ,ISSUE_KEY
+            ,ISSUE_TYPE_CD
+            ,SUMMARY
+            ,DESCRIPTION
+            ,PRIORITY_CD
+            ,STATUS_CD
+            ,REPORTER_ID
+            ,ASSIGNEE_ID
+            ,PARENT_ISSUE_ID
+            ,START_DT
+            ,DUE_DT
+            ,ESTIMATE_MIN
+            ,SPENT_MIN
+            ,ORDER_IN_PRJ
+            ,CREATED_DT
+            ,CREATED_BY
+            ,UPDATED_DT
+            ,UPDATED_BY
+            ,USE_AT
+        )
+        VALUES
+        (
+            #{grpCd}
+            ,#{prjId}
+            ,#{issueNo}
+            ,#{issueKey}
+            ,#{issueTypeCd}
+            ,#{summary}
+            ,#{description}
+            ,#{priorityCd}
+            ,#{statusCd}
+            ,#{reporterId}
+            ,#{assigneeId}
+            ,#{parentIssueId}
+            ,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{startDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{startDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+            ,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{dueDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{dueDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+            ,#{estimateMin}
+            ,#{spentMin}
+            ,#{orderInPrj}
+            ,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+            ,#{createdBy}
+            ,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+            ,#{updatedBy}
+            ,#{useAt}
+        )
+    </insert>
+
+    <update id="updateIssue" parameterType="hashmap">
+        /*
+         SQL ID: www.api.isu.issue.Issue.updateIssue
+         Description : 수정 Query
+        */
+        UPDATE TB_ISSUE
+        <set>
+            <if test='grpCd != null and grpCd != ""'>
+                GRP_CD = #{grpCd},
+            </if>
+            <if test='prjId != null and prjId != ""'>
+                PRJ_ID = #{prjId},
+            </if>
+            <if test='issueNo != null and issueNo != ""'>
+                ISSUE_NO = #{issueNo},
+            </if>
+            <if test='issueKey != null and issueKey != ""'>
+                ISSUE_KEY = #{issueKey},
+            </if>
+            <if test='issueTypeCd != null and issueTypeCd != ""'>
+                ISSUE_TYPE_CD = #{issueTypeCd},
+            </if>
+            <if test='summary != null and summary != ""'>
+                SUMMARY = #{summary},
+            </if>
+            <if test='description != null and description != ""'>
+                DESCRIPTION = #{description},
+            </if>
+            <if test='priorityCd != null and priorityCd != ""'>
+                PRIORITY_CD = #{priorityCd},
+            </if>
+            <if test='statusCd != null and statusCd != ""'>
+                STATUS_CD = #{statusCd},
+            </if>
+            <if test='reporterId != null and reporterId != ""'>
+                REPORTER_ID = #{reporterId},
+            </if>
+            <if test='assigneeId != null and assigneeId != ""'>
+                ASSIGNEE_ID = #{assigneeId},
+            </if>
+            <if test='parentIssueId != null and parentIssueId != ""'>
+                PARENT_ISSUE_ID = #{parentIssueId},
+            </if>
+            <if test='startDt != null and startDt != ""'>
+                START_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{startDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{startDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+            </if>
+            <if test='dueDt != null and dueDt != ""'>
+                DUE_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{dueDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{dueDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+            </if>
+            <if test='estimateMin != null and estimateMin != ""'>
+                ESTIMATE_MIN = #{estimateMin},
+            </if>
+            <if test='spentMin != null and spentMin != ""'>
+                SPENT_MIN = #{spentMin},
+            </if>
+            <if test='orderInPrj != null and orderInPrj != ""'>
+                ORDER_IN_PRJ = #{orderInPrj},
+            </if>
+            <if test='createdDt != null and createdDt != ""'>
+                CREATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+            </if>
+            <if test='createdBy != null and createdBy != ""'>
+                CREATED_BY = #{createdBy},
+            </if>
+            <if test='updatedDt != null and updatedDt != ""'>
+                UPDATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+            </if>
+            <if test='updatedBy != null and updatedBy != ""'>
+                UPDATED_BY = #{updatedBy},
+            </if>
+            <if test='useAt != null and useAt != ""'>
+                USE_AT = #{useAt},
+            </if>
+        </set>
+        WHERE ISSUE_ID = #{issueId}
+    </update>
+
+    <delete id="deleteIssue" parameterType="hashmap">
+        /*
+         SQL ID: www.api.isu.issue.Issue.deleteIssue
+         Description : 삭제 Query
+        */
+        DELETE FROM TB_ISSUE
+        WHERE ISSUE_ID = #{issueId}
+    </delete>
+
+    <!-- ▼ 칸반 보드용 목록 -->
+    <select id="selectIssueBoardList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.isu.issue.Issue.selectIssueBoardList
+         Description : 칸반 보드용 전체 이슈 목록
+        */
+        SELECT
+            ISSUE_ID
+            ,GRP_CD
+            ,PRJ_ID
+            ,ISSUE_NO
+            ,ISSUE_KEY
+            ,ISSUE_TYPE_CD
+            ,SUMMARY
+            ,PRIORITY_CD
+            ,STATUS_CD
+            ,ASSIGNEE_ID
+            ,DATE_FORMAT(DUE_DT, '%Y-%m-%d %H:%i:%s') AS DUE_DT
+            ,ORDER_IN_PRJ
+        FROM TB_ISSUE
+        <where>
+            USE_AT = 'Y'
+            <if test="grpCd != null and grpCd != ''">
+                AND GRP_CD = #{grpCd}
+            </if>
+            <if test="prjId != null and prjId != ''">
+                AND PRJ_ID = #{prjId}
+            </if>
+        </where>
+        ORDER BY STATUS_CD, ORDER_IN_PRJ ASC, PRIORITY_CD DESC, ISSUE_NO ASC
+    </select>
+
+    <!-- ▼ 칸반 보드용 상태 변경 -->
+    <update id="updateIssueStatus" parameterType="hashmap">
+        /*
+         SQL ID: www.api.isu.issue.Issue.updateIssueStatus
+         Description : 칸반 보드에서 상태만 변경
+        */
+        UPDATE TB_ISSUE
+        SET STATUS_CD  = #{statusCd},
+            UPDATED_DT = NOW(),
+            UPDATED_BY = #{updatedBy}
+        WHERE ISSUE_ID = #{issueId}
+          AND USE_AT   = 'Y'
+    </update>
+
+</mapper>

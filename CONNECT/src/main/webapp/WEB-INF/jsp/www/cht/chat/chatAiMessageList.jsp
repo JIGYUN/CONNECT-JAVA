@@ -14,7 +14,7 @@
 
     <div class="d-flex align-items-center justify-content-between mb-3">
         <div>
-            <h2 class="mb-0">메시지</h2>
+            <h2 class="mb-0">메시지 (AI 자동번역)</h2>
             <small class="text-muted d-block">
                 roomId:
                 <span id="roomIdLabel"><c:out value="${param.roomId}" /></span>
@@ -42,7 +42,7 @@
         <small class="text-muted">방 번호 변경 후 [이동]을 누르면 해당 roomId로 다시 조회합니다.</small>
     </div>
 
-    <!-- ✅ senderId / senderNm 입력 제거 → 로그인 정보로 자동 사용 -->
+    <!-- senderId / senderNm + 번역 엔진 선택 -->
     <div class="mb-3" style="max-width: 640px;">
         <div class="row g-2">
             <div class="col-12 col-md-4">
@@ -62,7 +62,24 @@
                 </div>
             </div>
         </div>
-        <small class="text-muted">
+
+        <!-- 번역 엔진 선택 영역 -->
+        <div class="row g-2 mt-2">
+            <div class="col-12 col-md-6">
+                <div class="form-group mb-0">
+                    <label for="engineSelect" class="form-label mb-1">번역 엔진</label>
+                    <select id="engineSelect" class="form-control form-control-sm">
+                        <option value="LT">LibreTranslate 엔진</option>
+                        <option value="QWEN">Qwen 엔진</option>
+                    </select>
+                    <small class="text-muted">
+                        메시지 전송 시 사용할 번역 모듈을 선택합니다. (LT: LibreTranslate, QWEN: Qwen)
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <small class="text-muted d-block mt-2">
             서버에서는 sec:authentication을 통해 userId / email을 사용하고,<br />
             React 모바일에서도 동일 키(senderId, senderNm)를 JSON payload에 넣어 전송합니다.
         </small>
@@ -183,6 +200,13 @@
         border-radius: 999px;
         white-space: nowrap;
     }
+
+    /* 번역 결과 */
+    .chat-translation {
+        font-size: 11px;
+        color: var(--chat-muted);
+        margin-top: 2px;
+    }
 </style>
 
 <script>
@@ -192,13 +216,21 @@
     let stompClient = null;
     let stompConnected = false;
 
+    // 기본 번역 옵션
+    const DEFAULT_TARGET_LANG = 'ko'; // 예: 상대가 한국인일 때
+    const DEFAULT_ENGINE = 'LT';      // 초기값: LibreTranslate
+
+    // 현재 선택된 엔진 (화면에서 변경 가능)
+    let currentEngine = DEFAULT_ENGINE;
+
     (function () {
-        initAuthInfo();               // ✅ 로그인 정보 세팅
+        initAuthInfo();
         initRoomIdFromParam();
-        joinChatRoomUserOnEnter();    // ✅ 방 입장 시 TB_CHAT_ROOM_USER upsert
+        joinChatRoomUserOnEnter();
         bindHandlers();
-        selectChatMessageList();      // 최초 REST 조회
-        connectStomp();               // STOMP 연결
+        initEngineSelect();         // ★ 번역 엔진 선택 초기화
+        selectChatMessageList();    // 과거 기록 (번역 필드는 없으면 안 나옴)
+        connectStomp();
     })();
 
     function initAuthInfo() {
@@ -210,7 +242,6 @@
         const senderId = authEl.getAttribute('data-sender-id');
         const senderNm = authEl.getAttribute('data-sender-nm') || '';
 
-        // 세션 스토리지에도 같이 넣어둠 (React 페이지에서도 동일 키 사용)
         if (senderId) {
             sessionStorage.setItem('senderId', senderId);
         }
@@ -250,13 +281,31 @@
         }
     }
 
-    // ✅ 채팅방 입장 시 TB_CHAT_ROOM_USER에 upsert
+    // 번역 엔진 선택 초기화
+    function initEngineSelect() {
+        const el = document.getElementById('engineSelect');
+        if (!el) return;
+
+        // 초기값 세팅
+        el.value = DEFAULT_ENGINE;
+        currentEngine = el.value || DEFAULT_ENGINE;
+
+        el.addEventListener('change', function () {
+            const val = el.value;
+            if (val === 'LT' || val === 'QWEN') {
+                currentEngine = val;
+            } else {
+                currentEngine = DEFAULT_ENGINE;
+            }
+        });
+    }
+
+    // 채팅방 입장 시 TB_CHAT_ROOM_USER에 upsert
     function joinChatRoomUserOnEnter() {
         const roomIdVal = currentRoomId();
         const senderIdNum = getAuthSenderId();
 
         if (roomIdVal === null || senderIdNum === null) {
-            // roomId 또는 로그인 정보 없으면 스킵
             return;
         }
 
@@ -271,10 +320,7 @@
             contentType: 'application/json',
             dataType: 'json',
             data: JSON.stringify(payload),
-            success: function (res) {
-                // 필요하면 res.result 로 roomUser 정보 활용 가능
-                // console.log('joinRoomUser ok:', res);
-            },
+            success: function () {},
             error: function (xhr) {
                 console.error('채팅방 입장 처리 실패', xhr);
             }
@@ -298,7 +344,8 @@
                 alert('roomId는 숫자만 가능합니다.');
                 return;
             }
-            location.href = '/cht/chatMessage/chatMessageList?roomId=' + encodeURIComponent(n);
+            // 이 JSP에 대응하는 URL로 맞춰서 수정
+            location.href = '/cht/chatMessage/chatMessageAiList?roomId=' + encodeURIComponent(n);
         });
 
         roomInput.addEventListener('keydown', function (e) {
@@ -318,7 +365,6 @@
         });
     }
 
-    // 현재 roomId
     function currentRoomId() {
         const v = document.getElementById('roomIdInput').value;
         if (v === null || v === '') return null;
@@ -331,7 +377,6 @@
     function connectStomp() {
         const roomIdVal = currentRoomId();
         if (roomIdVal === null) {
-            // roomId 없으면 일단 STOMP 연결 보류
             return;
         }
 
@@ -341,7 +386,7 @@
 
         stompClient.connect({}, function () {
             stompConnected = true;
-            subscribeRoom(roomIdVal);
+            subscribeRoom(roomIdVal); // AI 파이프라인 전용
         }, function (error) {
             console.error('STOMP 연결 실패:', error);
             stompConnected = false;
@@ -351,7 +396,8 @@
     function subscribeRoom(roomIdVal) {
         if (!stompClient || !stompConnected) return;
 
-        stompClient.subscribe('/topic/chat/' + roomIdVal, function (frame) {
+        // ✅ AI 파이프라인 채널
+        stompClient.subscribe('/topic/chat-ai/' + roomIdVal, function (frame) {
             try {
                 const body = JSON.parse(frame.body);
                 appendOneMessage(body);
@@ -423,7 +469,10 @@
             senderId: senderIdNum,
             senderNm: senderNmVal,
             content: content,
-            contentType: 'TEXT'
+            contentType: 'TEXT',
+            // AI 번역 옵션 (화면에서 선택된 엔진 사용)
+            targetLang: DEFAULT_TARGET_LANG,
+            engine: currentEngine
         };
 
         if (!stompClient || !stompConnected) {
@@ -431,7 +480,9 @@
             return;
         }
 
-        stompClient.send('/app/chat/' + roomIdVal, {}, JSON.stringify(payload));
+        // ✅ AI 파이프라인 엔드포인트
+        stompClient.send('/app/chat-ai/' + roomIdVal, {}, JSON.stringify(payload));
+
         msgInput.value = '';
         msgInput.focus();
     }
@@ -457,15 +508,23 @@
         const ul = document.getElementById('chatMessageListBody');
         if (!ul) return;
         const li = document.createElement('li');
-        li.innerHTML = buildMessageInnerHtml(r);
         li.className = getMessageItemClass(r);
+        const msgId = r && r[msgIdKey];
+        if (msgId !== null && msgId !== undefined) {
+            li.setAttribute('data-msg-id', String(msgId));
+        }
+        li.innerHTML = buildMessageInnerHtml(r);
         ul.appendChild(li);
     }
 
     function buildMessageItemHtml(r) {
         const inner = buildMessageInnerHtml(r);
         const cls = getMessageItemClass(r);
-        return "<li class='" + cls + "'>" + inner + "</li>";
+        const msgId = r && r[msgIdKey];
+        const dataAttr = (msgId !== null && msgId !== undefined)
+            ? " data-msg-id='" + String(msgId) + "'"
+            : '';
+        return "<li class='" + cls + "'" + dataAttr + ">" + inner + "</li>";
     }
 
     function getMessageItemClass(r) {
@@ -484,7 +543,7 @@
     }
 
     function buildMessageInnerHtml(r) {
-        const id = r.msgId;
+        const id = r[msgIdKey];
         const senderNm = r.senderNm || '';
         const content = r.content || '';
         let sentDt = r.sentDt || '';
@@ -493,13 +552,38 @@
             sentDt = sentDt.value || String(sentDt);
         }
 
+        const translatedText = r.translatedText || '';
+        const translateErrorMsg = r.translateErrorMsg || '';
+        const engineUsed = r.engine || ''; // 서버에서 그대로 echo 해주면 표시 가능
+
         const safeSender = escapeHtml(senderNm || '익명');
         const safeDt = escapeHtml(sentDt || '');
         const safeContent = escapeHtml(content);
+        const msgIdStr = (id !== null && id !== undefined) ? String(id) : '';
 
         let html = '';
-        html += "<div class='chat-meta'>" + safeSender + " · " + safeDt + "</div>";
-        html += "<div class='chat-bubble' title='ID: " + (id ?? '') + "'>" + safeContent + "</div>";
+
+        // 상단 메타
+        html += "<div class='chat-meta'>";
+        html += safeSender;
+        if (safeDt) {
+            html += " · " + safeDt;
+        }
+        if (engineUsed) {
+            html += " · 엔진: " + escapeHtml(engineUsed);
+        }
+        html += "</div>";
+
+        // 본문 (원문)
+        html += "<div class='chat-bubble' title='ID: " + (msgIdStr || '') + "'>" + safeContent + "</div>";
+
+        // 번역 결과
+        if (translatedText) {
+            html += "<div class='chat-translation'>" + escapeHtml(translatedText) + "</div>";
+        } else if (translateErrorMsg) {
+            html += "<div class='chat-translation'>번역 실패: " + escapeHtml(translateErrorMsg) + "</div>";
+        }
+
         return html;
     }
 
