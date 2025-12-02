@@ -31,7 +31,7 @@ public class AiEngineManager {
     private static final String LIBRE_BASE_URL = "http://localhost:5000";
 
     /** Qwen 서버 기본 URL (예: Ollama / LM Studio / 직접 띄운 서버) */
-    private static final String QWEN_BASE_URL = "http://localhost:11434";
+    private static final String QWEN_BASE_URL = "https://obtained-radio-socks-sounds.trycloudflare.com";
 
     /**
      * Qwen 모델명 (Ollama 사용 예: "qwen2.5:7b-instruct")
