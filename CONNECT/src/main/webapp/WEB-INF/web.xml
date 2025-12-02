@@ -34,6 +34,10 @@
     <filter>
         <filter-name>encodingFilter</filter-name>
         <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+
+        <!-- ★ Async 지원 -->
+        <async-supported>true</async-supported>
+
         <init-param>
             <param-name>encoding</param-name>
             <param-value>utf-8</param-value>
@@ -50,14 +54,14 @@
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
-    <!-- 2-2. CORS 필터
-         - Cloudflare Pages 등 프론트 도메인에서 오는 cross-origin 요청 허용
-         - credentials(쿠키) 포함 허용
-         - OPTIONS 프리플라이트는 여기서 204/403으로 바로 응답
-    -->
+    <!-- 2-2. CORS 필터 -->
     <filter>
         <filter-name>corsFilter</filter-name>
         <filter-class>www.com.util.SimpleCorsFilter</filter-class>
+
+        <!-- ★ Async 지원 -->
+        <async-supported>true</async-supported>
+
         <init-param>
             <param-name>cors.allowed.origins</param-name>
             <param-value>
@@ -77,6 +81,9 @@
     <filter>
         <filter-name>xssEscapeServletFilter</filter-name>
         <filter-class>com.navercorp.lucy.security.xss.servletfilter.XssEscapeServletFilter</filter-class>
+
+        <!-- ★ Async 지원 -->
+        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>xssEscapeServletFilter</filter-name>
@@ -87,6 +94,9 @@
     <filter>
         <filter-name>deviceResolverRequestFilter</filter-name>
         <filter-class>org.springframework.mobile.device.DeviceResolverRequestFilter</filter-class>
+
+        <!-- ★ Async 지원 -->
+        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>deviceResolverRequestFilter</filter-name>
@@ -99,6 +109,9 @@
     <filter>
         <filter-name>springSecurityFilterChain</filter-name>
         <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+
+        <!-- ★ Async 지원 -->
+        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>springSecurityFilterChain</filter-name>
@@ -134,6 +147,9 @@
             <param-value>classpath*:config/www/springmvc/*-servlet.xml</param-value>
         </init-param>
         <load-on-startup>1</load-on-startup>
+
+        <!-- ★ WebSocket용 Async 활성화 -->
+        <async-supported>true</async-supported>
     </servlet>
 
     <servlet-mapping>
@@ -158,6 +174,9 @@
             <param-value>false</param-value>
         </init-param>
         <load-on-startup>1</load-on-startup>
+        <!-- (필요하면)
+        <async-supported>true</async-supported>
+        -->
     </servlet>
 
     <servlet-mapping>
