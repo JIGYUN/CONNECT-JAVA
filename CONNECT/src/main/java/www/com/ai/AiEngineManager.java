@@ -136,6 +136,20 @@ public class AiEngineManager {
         return s;
     }
 
+    // 언어 코드 → 사람이 읽을 수 있는 라벨 (프롬프트용)
+    private static String langLabel(String code, String fallback) {
+        if (code == null) {
+            return fallback;
+        }
+        String c = code.trim().toLowerCase();
+        if (c.isEmpty() || "auto".equals(c)) return fallback;
+        if ("ko".equals(c) || "kr".equals(c) || "kor".equals(c)) return "Korean";
+        if ("en".equals(c) || "eng".equals(c)) return "English";
+        if ("ja".equals(c) || "jp".equals(c)) return "Japanese";
+        if ("zh".equals(c) || "zh-cn".equals(c) || "zh-hans".equals(c)) return "Chinese";
+        return c;
+    }
+
     // ========================================================================
     // LibreTranslate 클라이언트
     // ========================================================================
@@ -241,20 +255,12 @@ public class AiEngineManager {
      *     "messages": [
      *       {"role": "system", "content": "..."},
      *       {"role": "user",   "content": "..."}
-     *     ]
-     *   }
-     *
-     * 응답 예시:
-     *   {
-     *     "model": "...",
-     *     "created_at": "...",
-     *     "message": {
-     *       "role": "assistant",
-     *       "content": "..."
+     *     ],
+     *     "options": {
+     *       "temperature": 0.1,
+     *       "top_p": 0.8
      *     }
      *   }
-     *
-     * 만약 네 환경이 다르다면, 아래 chat()/translate() 내부만 적절히 고치면 된다.
      */
     private static class QwenClient {
 
@@ -269,6 +275,65 @@ public class AiEngineManager {
         }
 
         /**
+         * 공통 응답 파서.
+         * Ollama 스타일 응답:
+         *   { "message": { "role": "assistant", "content": "..." }, ... }
+         */
+        private static String parseAssistantContent(Map respBody) throws Exception {
+            Object messageObj = respBody.get("message");
+            if (!(messageObj instanceof Map)) {
+                throw new Exception("Qwen 응답의 message 필드가 Map 이 아닙니다.");
+            }
+
+            Map messageMap = (Map) messageObj;
+            Object contentObj = messageMap.get("content");
+            if (contentObj == null) {
+                throw new Exception("Qwen 응답의 content 필드가 없습니다.");
+            }
+
+            String raw = contentObj.toString();
+            return normalizeContent(raw);
+        }
+
+        /**
+         * 모델이 ``` 블럭, 따옴표, "Translation:" 같은 접두어를 둘러싸서 주는 경우를 정리.
+         */
+        private static String normalizeContent(String s) {
+            if (s == null) return "";
+            String out = s.trim();
+
+            // ```xxx``` 형태 제거
+            if (out.startsWith("```")) {
+                // 첫 줄의 ```... 제거
+                int firstNewLine = out.indexOf('\n');
+                if (firstNewLine > 0) {
+                    out = out.substring(firstNewLine + 1);
+                }
+                // 마지막 ``` 제거
+                int lastFence = out.lastIndexOf("```");
+                if (lastFence >= 0) {
+                    out = out.substring(0, lastFence);
+                }
+                out = out.trim();
+            }
+
+            // "Translation:" / "Translated text:" 접두어 제거
+            String lower = out.toLowerCase();
+            if (lower.startsWith("translation:")) {
+                out = out.substring("translation:".length()).trim();
+            } else if (lower.startsWith("translated text:")) {
+                out = out.substring("translated text:".length()).trim();
+            }
+
+            // 앞뒤 큰 따옴표만 감싸져 있으면 제거
+            if (out.length() >= 2 && out.startsWith("\"") && out.endsWith("\"")) {
+                out = out.substring(1, out.length() - 1).trim();
+            }
+
+            return out;
+        }
+
+        /**
          * 일반 챗봇 모드.
          * - 한국어로 물어보면 한국어로,
          * - 영어로 물어보면 영어로 답하도록 system 프롬프트를 설계.
@@ -278,7 +343,8 @@ public class AiEngineManager {
 
             Map<String, Object> systemMsg = new HashMap<String, Object>();
             systemMsg.put("role", "system");
-            systemMsg.put("content",
+            systemMsg.put(
+                "content",
                 "You are a helpful general-purpose assistant in a 1:1 chat room.\n"
                     + "- NEVER just translate the user's message.\n"
                     + "- Always answer the question or respond naturally.\n"
@@ -291,10 +357,15 @@ public class AiEngineManager {
             userMsg.put("role", "user");
             userMsg.put("content", userText);
 
+            Map<String, Object> options = new HashMap<String, Object>();
+            options.put("temperature", 0.3); // 챗봇은 약간 더 자유롭게
+            options.put("top_p", 0.9);
+
             Map<String, Object> body = new HashMap<String, Object>();
             body.put("model", modelName);
             body.put("stream", Boolean.FALSE);
             body.put("messages", new Map[]{systemMsg, userMsg});
+            body.put("options", options);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -318,18 +389,7 @@ public class AiEngineManager {
                     throw new Exception("Qwen(chat) 응답 body가 null 입니다.");
                 }
 
-                Object messageObj = respBody.get("message");
-                if (!(messageObj instanceof Map)) {
-                    throw new Exception("Qwen(chat) 응답의 message 필드가 Map 이 아닙니다.");
-                }
-
-                Map messageMap = (Map) messageObj;
-                Object contentObj = messageMap.get("content");
-                if (contentObj == null) {
-                    throw new Exception("Qwen(chat) 응답의 content 필드가 없습니다.");
-                }
-
-                return contentObj.toString();
+                return parseAssistantContent(respBody);
 
             } catch (RestClientException e) {
                 throw new Exception("Qwen(chat) 호출 실패: " + e.getMessage(), e);
@@ -339,6 +399,8 @@ public class AiEngineManager {
         /**
          * Qwen을 "번역기"로 사용하는 모드.
          * - system 프롬프트로 번역 역할을 강제.
+         * - 온도 낮게, 설명/라벨/JSON 금지.
+         * - 한국어/일본어/영어/중국어 위주 정교 번역.
          */
         String translate(String text, String sourceLang, String targetLang) throws Exception {
             String url = baseUrl + "/api/chat";
@@ -348,23 +410,44 @@ public class AiEngineManager {
             String tgt = (targetLang != null && !targetLang.trim().isEmpty())
                 ? targetLang.trim() : "ko";
 
+            String srcLabel = langLabel(src, "auto-detect");
+            String tgtLabel = langLabel(tgt, "Korean");
+
             Map<String, Object> systemMsg = new HashMap<String, Object>();
             systemMsg.put("role", "system");
-            systemMsg.put("content",
-                "You are a translation engine.\n"
-                    + "- Detect the source language if needed.\n"
-                    + "- Translate the user's message from '" + src + "' to '" + tgt + "'.\n"
-                    + "- Return ONLY the translated sentence, no explanations, no quotes.\n"
+            systemMsg.put(
+                "content",
+                "You are a professional human-level translator for Korean, Japanese, English and Chinese.\n"
+                    + "- Your ONLY job is to translate the user's text into the TARGET language.\n"
+                    + "- TARGET language: " + tgtLabel + ".\n"
+                    + "- Detect the source language from the text (" + srcLabel + ").\n"
+                    + "- Preserve the emotional nuance, psychological state, and relationship context.\n"
+                    + "- Preserve line breaks and sentence boundaries as much as possible.\n"
+                    + "- If the input is already in the target language, rewrite it naturally in the same language (do not echo the source exactly).\n"
+                    + "- OUTPUT RULE: Return ONLY the translated text in " + tgtLabel + ".\n"
+                    + "- Do NOT add explanations, comments, labels, language tags, JSON, quotes, or any extra text.\n"
+                    + "- Do NOT mix multiple languages in the output; use ONLY the target language.\n"
             );
+
+            StringBuilder userBuilder = new StringBuilder();
+            userBuilder.append("Source language (may be auto): ").append(srcLabel).append("\n");
+            userBuilder.append("Target language: ").append(tgtLabel).append("\n\n");
+            userBuilder.append("TEXT TO TRANSLATE:\n");
+            userBuilder.append(text);
 
             Map<String, Object> userMsg = new HashMap<String, Object>();
             userMsg.put("role", "user");
-            userMsg.put("content", text);
+            userMsg.put("content", userBuilder.toString());
+
+            Map<String, Object> options = new HashMap<String, Object>();
+            options.put("temperature", 0.15); // 번역은 거의 고정
+            options.put("top_p", 0.8);
 
             Map<String, Object> body = new HashMap<String, Object>();
             body.put("model", modelName);
             body.put("stream", Boolean.FALSE);
             body.put("messages", new Map[]{systemMsg, userMsg});
+            body.put("options", options);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -388,18 +471,7 @@ public class AiEngineManager {
                     throw new Exception("Qwen(translate) 응답 body가 null 입니다.");
                 }
 
-                Object messageObj = respBody.get("message");
-                if (!(messageObj instanceof Map)) {
-                    throw new Exception("Qwen(translate) 응답의 message 필드가 Map 이 아닙니다.");
-                }
-
-                Map messageMap = (Map) messageObj;
-                Object contentObj = messageMap.get("content");
-                if (contentObj == null) {
-                    throw new Exception("Qwen(translate) 응답의 content 필드가 없습니다.");
-                }
-
-                return contentObj.toString();
+                return parseAssistantContent(respBody);
 
             } catch (RestClientException e) {
                 throw new Exception("Qwen(translate) 호출 실패: " + e.getMessage(), e);

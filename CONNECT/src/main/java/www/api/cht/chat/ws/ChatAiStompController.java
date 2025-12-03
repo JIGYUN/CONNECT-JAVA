@@ -96,29 +96,31 @@ public class ChatAiStompController {
             payload.put("updatedBy", senderId);
         }
 
-        // 5.5) 번역 기본값 (없으면 auto/ko/LT)
+        // 5.5) 번역 관련 기본값 (없으면 auto / ko / QWEN)
         if (!payload.containsKey("sourceLang") || payload.get("sourceLang") == null) {
             payload.put("sourceLang", "auto");
         }
         if (!payload.containsKey("targetLang") || payload.get("targetLang") == null) {
-            payload.put("targetLang", "ko"); // 필요하면 프론트에서 en 등으로 변경
+            payload.put("targetLang", "ko"); // 프론트에서 en, ja, zh-CN 등으로 변경 가능
         }
         if (!payload.containsKey("engine") || payload.get("engine") == null) {
-            payload.put("engine", "LT"); // "LT" or "QWEN"
+            payload.put("engine", "QWEN"); // 기본은 QWEN (프론트에서도 QWEN 고정)
         }
 
-        // 6) DB 저장 (XML에서 날짜는 NOW() 처리)
-        chatMessageService.insertChatMessage(payload);
-
-        // 7) AI 번역 호출 (동일 payload 기반)
+        // 6) AI 번역 호출 → 결과를 payload에 미리 세팅
         try {
             String translated = aiEngineManager.translate(payload);
             payload.put("translatedText", translated);
             payload.remove("translateErrorMsg");
         } catch (Exception e) {
-            // 번역 실패해도 채팅은 그대로 흘려보냄
+            // 번역 실패해도 채팅은 그대로 DB 저장 + 브로드캐스트
             payload.put("translateErrorMsg", e.getMessage());
+            payload.remove("translatedText");
         }
+
+        // 7) DB 저장 (XML에서 날짜는 NOW() 처리)
+        //    TRANSLATED_TEXT / TRANSLATE_ERROR_MSG / ENGINE / TARGET_LANG 컬럼까지 같이 insert
+        chatMessageService.insertChatMessage(payload);
 
         // 8) 같은 roomId 구독자에게 브로드캐스트 (원문 + 번역 결과 포함)
         messagingTemplate.convertAndSend("/topic/chat-ai/" + roomId, payload);

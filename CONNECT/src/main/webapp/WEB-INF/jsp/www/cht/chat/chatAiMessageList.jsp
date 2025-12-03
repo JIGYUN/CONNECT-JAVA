@@ -42,7 +42,7 @@
         <small class="text-muted">방 번호 변경 후 [이동]을 누르면 해당 roomId로 다시 조회합니다.</small>
     </div>
 
-    <!-- senderId / senderNm + 번역 엔진 선택 -->
+    <!-- senderId / senderNm + 대상 언어 선택 -->
     <div class="mb-3" style="max-width: 640px;">
         <div class="row g-2">
             <div class="col-12 col-md-4">
@@ -63,17 +63,19 @@
             </div>
         </div>
 
-        <!-- 번역 엔진 선택 영역 -->
+        <!-- 대상 언어 선택 영역 (엔진은 QWEN 고정) -->
         <div class="row g-2 mt-2">
             <div class="col-12 col-md-6">
                 <div class="form-group mb-0">
-                    <label for="engineSelect" class="form-label mb-1">번역 엔진</label>
-                    <select id="engineSelect" class="form-control form-control-sm">
-                        <option value="LT">LibreTranslate 엔진</option>
-                        <option value="QWEN">Qwen 엔진</option>
+                    <label for="targetLangSelect" class="form-label mb-1">대상 언어</label>
+                    <select id="targetLangSelect" class="form-control form-control-sm">
+                        <option value="ko">한국어 (ko)</option>
+                        <option value="en">영어 (en)</option>
+                        <option value="ja">일본어 (ja)</option>
+                        <option value="zh-CN">중국어 간체 (zh-CN)</option>
                     </select>
                     <small class="text-muted">
-                        메시지 전송 시 사용할 번역 모듈을 선택합니다. (LT: LibreTranslate, QWEN: Qwen)
+                        메시지 전송 시 번역될 언어를 선택합니다. 엔진은 Qwen으로 고정됩니다.
                     </small>
                 </div>
             </div>
@@ -217,18 +219,19 @@
     let stompConnected = false;
 
     // 기본 번역 옵션
-    const DEFAULT_TARGET_LANG = 'ko'; // 예: 상대가 한국인일 때
-    const DEFAULT_ENGINE = 'LT';      // 초기값: LibreTranslate
+    const DEFAULT_TARGET_LANG = 'ko'; // 대상 언어 기본값
+    // 엔진은 QWEN 고정
+    const FIXED_ENGINE = 'QWEN';
 
-    // 현재 선택된 엔진 (화면에서 변경 가능)
-    let currentEngine = DEFAULT_ENGINE;
+    // 현재 선택된 대상 언어
+    let currentTargetLang = DEFAULT_TARGET_LANG;
 
     (function () {
         initAuthInfo();
         initRoomIdFromParam();
         joinChatRoomUserOnEnter();
         bindHandlers();
-        initEngineSelect();         // ★ 번역 엔진 선택 초기화
+        initTargetLangSelect();     // ★ 대상 언어 선택 초기화
         selectChatMessageList();    // 과거 기록 (번역 필드는 없으면 안 나옴)
         connectStomp();
     })();
@@ -281,21 +284,21 @@
         }
     }
 
-    // 번역 엔진 선택 초기화
-    function initEngineSelect() {
-        const el = document.getElementById('engineSelect');
+    // 대상 언어 선택 초기화
+    function initTargetLangSelect() {
+        const el = document.getElementById('targetLangSelect');
         if (!el) return;
 
         // 초기값 세팅
-        el.value = DEFAULT_ENGINE;
-        currentEngine = el.value || DEFAULT_ENGINE;
+        el.value = DEFAULT_TARGET_LANG;
+        currentTargetLang = el.value || DEFAULT_TARGET_LANG;
 
         el.addEventListener('change', function () {
             const val = el.value;
-            if (val === 'LT' || val === 'QWEN') {
-                currentEngine = val;
+            if (val === 'ko' || val === 'en' || val === 'ja' || val === 'zh-CN') {
+                currentTargetLang = val;
             } else {
-                currentEngine = DEFAULT_ENGINE;
+                currentTargetLang = DEFAULT_TARGET_LANG;
             }
         });
     }
@@ -470,9 +473,9 @@
             senderNm: senderNmVal,
             content: content,
             contentType: 'TEXT',
-            // AI 번역 옵션 (화면에서 선택된 엔진 사용)
-            targetLang: DEFAULT_TARGET_LANG,
-            engine: currentEngine
+            // AI 번역 옵션
+            targetLang: currentTargetLang,
+            engine: FIXED_ENGINE
         };
 
         if (!stompClient || !stompConnected) {
@@ -554,7 +557,8 @@
 
         const translatedText = r.translatedText || '';
         const translateErrorMsg = r.translateErrorMsg || '';
-        const engineUsed = r.engine || ''; // 서버에서 그대로 echo 해주면 표시 가능
+        const engineUsed = r.engine || '';
+        const targetLangUsed = r.targetLang || '';
 
         const safeSender = escapeHtml(senderNm || '익명');
         const safeDt = escapeHtml(sentDt || '');
@@ -571,6 +575,9 @@
         }
         if (engineUsed) {
             html += " · 엔진: " + escapeHtml(engineUsed);
+        }
+        if (targetLangUsed) {
+            html += " · target: " + escapeHtml(targetLangUsed);
         }
         html += "</div>";
 

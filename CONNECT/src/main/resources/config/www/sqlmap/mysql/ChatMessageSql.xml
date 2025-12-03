@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8" ?> 
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
@@ -32,6 +32,10 @@
             ,M.SENDER_NM
             ,M.CONTENT
             ,M.CONTENT_TYPE
+            ,M.TRANSLATED_TEXT
+            ,M.TRANSLATE_ERROR_MSG
+            ,M.ENGINE
+            ,M.TARGET_LANG
             ,DATE_FORMAT(M.SENT_DT, '%Y-%m-%d %H:%i:%s') AS SENT_DT
             ,M.READ_CNT
             ,M.USE_AT
@@ -78,6 +82,10 @@
             ,M.SENDER_NM
             ,M.CONTENT
             ,M.CONTENT_TYPE
+            ,M.TRANSLATED_TEXT
+            ,M.TRANSLATE_ERROR_MSG
+            ,M.ENGINE
+            ,M.TARGET_LANG
             ,DATE_FORMAT(M.SENT_DT, '%Y-%m-%d %H:%i:%s') AS SENT_DT
             ,M.READ_CNT
             ,M.USE_AT
@@ -104,6 +112,10 @@
             ,SENDER_NM
             ,CONTENT
             ,CONTENT_TYPE
+            ,TRANSLATED_TEXT
+            ,TRANSLATE_ERROR_MSG
+            ,ENGINE
+            ,TARGET_LANG
             ,SENT_DT
             ,READ_CNT
             ,USE_AT
@@ -119,6 +131,10 @@
             ,#{senderNm}
             ,<![CDATA[ #{content} ]]>
             ,COALESCE(NULLIF(#{contentType}, ''), 'TEXT')
+            ,<![CDATA[ #{translatedText} ]]>
+            ,#{translateErrorMsg}
+            ,COALESCE(NULLIF(#{engine}, ''), 'QWEN')
+            ,COALESCE(NULLIF(#{targetLang}, ''), 'ko')
             ,IFNULL(
                 STR_TO_DATE(
                     NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{sentDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
@@ -162,6 +178,18 @@
             </if>
             <if test='contentType != null and contentType != ""'>
                 CONTENT_TYPE = #{contentType},
+            </if>
+            <if test='translatedText != null and translatedText != ""'>
+                TRANSLATED_TEXT = <![CDATA[ #{translatedText} ]]>,
+            </if>
+            <if test='translateErrorMsg != null and translateErrorMsg != ""'>
+                TRANSLATE_ERROR_MSG = #{translateErrorMsg},
+            </if>
+            <if test='engine != null and engine != ""'>
+                ENGINE = #{engine},
+            </if>
+            <if test='targetLang != null and targetLang != ""'>
+                TARGET_LANG = #{targetLang},
             </if>
             <if test='sentDt != null and sentDt != ""'>
                 SENT_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{sentDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
