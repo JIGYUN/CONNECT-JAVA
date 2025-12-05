@@ -8,14 +8,16 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import javax.annotation.Resource;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.net.URLEncoder;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Map;
 
-// ★ 핵심: SecurityContext 직접 생성/저장에 필요한 import
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,74 +27,278 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 @Controller
 public class GoogleAuthController {
 
-    @Resource private GoogleAuthService googleAuthService;
+    private static final String SESSION_KEY_STATE = "GOOGLE_STATE_NONCE";
+    private static final String COOKIE_STATE      = "GOOGLE_STATE_NONCE";
+
+    // state = "<nonce>.<base64url(redirect)>"
+    private static final String STATE_SEP = ".";
+
+    @Resource
+    private GoogleAuthService googleAuthService;
+
     private final SecureRandom rnd = new SecureRandom();
 
-    @RequestMapping("/auth/google/login")
-    public void login(HttpServletRequest req, HttpServletResponse res) throws Exception {
-        String state = genState();
-        req.getSession(true).setAttribute("GOOGLE_STATE", state);
-        res.sendRedirect(googleAuthService.buildAuthUrl(state));
+    /**
+     * 애플리케이션 컨텍스트 경로 (URL 조합용)
+     * - 루트 컨텍스트면 "" 반환 → "//..." 방지
+     */
+    private String appCtx(HttpServletRequest req) {
+        String ctx = req.getContextPath();
+        if (ctx == null || "/".equals(ctx) || ctx.isEmpty()) {
+            return "";
+        }
+        return ctx;
     }
 
+    /**
+     * 쿠키 path 용
+     * - 루트 컨텍스트면 "/"
+     * - 서브 컨텍스트면 해당 경로 그대로
+     */
+    private String cookiePath(HttpServletRequest req) {
+        String ctx = appCtx(req);
+        return ctx.isEmpty() ? "/" : ctx;
+    }
+
+    /** state 문자열 생성: "<nonce>.<base64url(redirect)>" */
+    private String buildState(String nonce, String redirect) {
+        if (redirect == null) {
+            redirect = "";
+        } else {
+            redirect = redirect.trim();
+        }
+
+        if (redirect.isEmpty()) {
+            // redirect 없으면 nonce만
+            return nonce;
+        }
+
+        String encodedRedirect = Base64.getUrlEncoder()
+                                       .withoutPadding()
+                                       .encodeToString(redirect.getBytes(StandardCharsets.UTF_8));
+        return nonce + STATE_SEP + encodedRedirect;
+    }
+
+    /** state 파싱 결과 구조체 */
+    private static final class StateInfo {
+        final String nonce;
+        final String redirect;
+
+        StateInfo(String nonce, String redirect) {
+            this.nonce = nonce;
+            this.redirect = redirect;
+        }
+    }
+
+    /** state 문자열 파싱: "<nonce>.<base64url(redirect)>" */
+    private StateInfo parseState(String rawState) {
+        if (rawState == null || rawState.isEmpty()) {
+            return new StateInfo(null, null);
+        }
+
+        int idx = rawState.indexOf(STATE_SEP);
+        if (idx < 0) {
+            // redirect 포함 안 된 state
+            return new StateInfo(rawState, null);
+        }
+
+        String nonce = rawState.substring(0, idx);
+        String encodedRedirect = rawState.substring(idx + 1);
+
+        if (encodedRedirect.isEmpty()) {
+            return new StateInfo(nonce, null);
+        }
+
+        try {
+            byte[] decoded = Base64.getUrlDecoder().decode(encodedRedirect);
+            String redirect = new String(decoded, StandardCharsets.UTF_8);
+            return new StateInfo(nonce, redirect);
+        } catch (Exception e) {
+            // 디코드 실패하면 redirect 는 무시
+            return new StateInfo(nonce, null);
+        }
+    }
+
+    /** 1단계: 우리 서버 -> 구글 로그인 */
+    @RequestMapping("/auth/google/login")
+    public void login(HttpServletRequest req, HttpServletResponse res) throws Exception {
+        // React에서 encodeURIComponent 로 줬기 때문에 한 번 더 디코드해도 안전
+        String redirect = req.getParameter("redirect");
+        if (redirect != null && !redirect.trim().isEmpty()) {
+            redirect = URLDecoder.decode(redirect.trim(), "UTF-8");
+        } else {
+            redirect = null;
+        }
+
+        String nonce = genState();
+        String state = buildState(nonce, redirect);
+
+        // 세션에 nonce 저장 (state 전체 X)
+        req.getSession(true).setAttribute(SESSION_KEY_STATE, nonce);
+        System.out.println("[GAuth] LOGIN sessionId=" + req.getSession().getId());
+        System.out.println("[GAuth] login: nonce=" + nonce);
+        System.out.println("[GAuth] login: redirect=" + redirect);
+
+        // nonce 쿠키 저장 (세션 유실 시 참고용)
+        Cookie c = new Cookie(COOKIE_STATE, nonce);
+        c.setHttpOnly(true);
+        c.setPath(cookiePath(req));
+        c.setMaxAge(5 * 60);
+        res.addCookie(c);
+
+        String authUrl = googleAuthService.buildAuthUrl(state);
+        System.out.println("[GAuth] AUTH_URL=" + authUrl);
+
+        res.sendRedirect(authUrl);
+    }
+
+    /** 2단계: 구글 콜백 */
     @RequestMapping("/auth/google/callback")
     public void callback(HttpServletRequest req, HttpServletResponse res) throws Exception {
+        System.out.println("[GAuth] >>> callback ENTER");
+        System.out.println("[GAuth] CALLBACK session=" +
+                (req.getSession(false) != null ? req.getSession(false).getId() : "null"));
+
         String error = req.getParameter("error");
         if (error != null) {
-            res.sendRedirect(req.getContextPath()+"/mba/auth/login?err="+URLEncoder.encode(error, "UTF-8"));
+            System.out.println("[GAuth] error from google = " + error);
+            redirectWithError(req, res, "google_error=" + URLEncoder.encode(error, "UTF-8"));
             return;
         }
 
-        String state = req.getParameter("state");
-        String expected = (String) req.getSession().getAttribute("GOOGLE_STATE");
-        if (expected == null || !expected.equals(state)) {
-            res.sendRedirect(req.getContextPath()+"/mba/auth/login?err=state_mismatch");
-            return;
+        String rawState = req.getParameter("state");
+        StateInfo stateInfo = parseState(rawState);
+        String stateNonce = stateInfo.nonce;
+        String redirectFromState = stateInfo.redirect;
+
+        // ----- 기대 nonce 로드 (세션 -> 쿠키 순서) -----
+        String expectedNonce = null;
+        if (req.getSession(false) != null) {
+            expectedNonce = (String) req.getSession(false).getAttribute(SESSION_KEY_STATE);
+        }
+        if (expectedNonce == null && req.getCookies() != null) {
+            for (Cookie ck : req.getCookies()) {
+                if (COOKIE_STATE.equals(ck.getName())) {
+                    expectedNonce = ck.getValue();
+                    break;
+                }
+            }
+        }
+
+        System.out.println("[GAuth] stateRaw=" + rawState
+                + ", stateNonce=" + stateNonce
+                + ", redirectFromState=" + redirectFromState
+                + ", expectedNonce=" + expectedNonce);
+
+        // ----- 로컬 환경 여부 판별 -----
+        String host = req.getServerName();
+        boolean isLocalHost =
+                "localhost".equalsIgnoreCase(host) ||
+                        "127.0.0.1".equals(host);
+
+        // ----- nonce 검증 -----
+        if (stateNonce == null || expectedNonce == null || !expectedNonce.equals(stateNonce)) {
+            if (isLocalHost) {
+                System.out.println("[GAuth] LOCAL DEV: nonce mismatch지만 체크 생략하고 진행");
+            } else {
+                System.out.println("[GAuth] NONCE_MISMATCH (PROD)");
+                redirectWithError(req, res, "state_mismatch");
+                return;
+            }
         }
 
         String code = req.getParameter("code");
-        Map<String,String> token  = googleAuthService.exchangeCodeForToken(code);
+        System.out.println("[GAuth] code=" + code);
+
+        Map<String, String> token = googleAuthService.exchangeCodeForToken(code);
+        System.out.println("[GAuth] tokenResp=" + token);
+
         String accessToken = token.get("access_token");
         if (accessToken == null) {
-            res.sendRedirect(req.getContextPath()+"/mba/auth/login?err=token_null");
+            System.out.println("[GAuth] access_token null");
+            redirectWithError(req, res, "token_null");
             return;
         }
 
-        Map<String,String> uinfo  = googleAuthService.fetchUserInfo(accessToken);
+        Map<String, String> uinfo = googleAuthService.fetchUserInfo(accessToken);
+        System.out.println("[GAuth] uinfo=" + uinfo);
+
         googleAuthService.upsertUserFromGoogle(uinfo);
 
         UserVO loginVo = googleAuthService.loadSessionUser(uinfo.get("email"));
+        System.out.println("[GAuth] loginVo=" + loginVo);
         if (loginVo == null) {
-            res.sendRedirect(req.getContextPath()+"/mba/auth/login?err=user_not_found");
+            redirectWithError(req, res, "user_not_found");
             return;
         }
 
-        // ---------- 핵심: 시큐리티 컨텍스트를 '명시적으로' 세션에 저장 ----------
-        // 1) 빈 컨텍스트 생성
+        // ----- Spring Security 인증 컨텍스트 구성 -----
         SecurityContext context = SecurityContextHolder.createEmptyContext();
-
-        // 2) 인증 토큰 구성 (+ 요청 정보 details 세팅 권장)
         UsernamePasswordAuthenticationToken auth =
-            new UsernamePasswordAuthenticationToken(loginVo, loginVo.getPassword(), loginVo.getAuthorities());
+                new UsernamePasswordAuthenticationToken(
+                        loginVo,
+                        loginVo.getPassword(),
+                        loginVo.getAuthorities()
+                );
         auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
-
-        // 3) 컨텍스트에 인증 주입
         context.setAuthentication(auth);
         SecurityContextHolder.setContext(context);
 
-        // 4) 리파지토리로 세션에 강제 저장
         HttpSessionSecurityContextRepository repo = new HttpSessionSecurityContextRepository();
-        repo.setAllowSessionCreation(true);                 // 세션 생성 허용
-        repo.saveContext(context, req, res);                // ★ 저장 트리거
+        repo.setAllowSessionCreation(true);
+        repo.saveContext(context, req, res);
 
-        // (선택) 세션 고정화 방지
-        try { req.changeSessionId(); } catch (Throwable ignore) {}
+        try {
+            req.changeSessionId();
+        } catch (Throwable ignore) {
+        }
 
-        // 우리 유틸에서도 병행 저장 원하면 유지
         UserSessionManager.setLoginUserVO(loginVo, req);
 
-        req.getSession().removeAttribute("GOOGLE_STATE");
-        res.sendRedirect(req.getContextPath()+"/");
+        // ----- nonce 정리 -----
+        if (req.getSession(false) != null) {
+            req.getSession(false).removeAttribute(SESSION_KEY_STATE);
+        }
+
+        // nonce 쿠키 삭제
+        Cookie clear = new Cookie(COOKIE_STATE, "");
+        clear.setPath(cookiePath(req));
+        clear.setMaxAge(0);
+        clear.setHttpOnly(true);
+        res.addCookie(clear);
+
+        // ----- 최종 이동 위치 결정 -----
+        String target;
+        if (redirectFromState != null && !redirectFromState.trim().isEmpty()) {
+            target = redirectFromState.trim();   // 예: http://localhost:3000/login/google/success...
+        } else {
+            String ctx = appCtx(req);
+            target = ctx.isEmpty() ? "/" : ctx + "/";
+        }
+
+        System.out.println("[GAuth] redirecting to: " + target);
+        res.sendRedirect(target);
+    }
+
+    private void redirectWithError(HttpServletRequest req, HttpServletResponse res, String err) throws Exception {
+        // state 에서 redirect 우선 복구
+        String rawState = req.getParameter("state");
+        StateInfo stateInfo = parseState(rawState);
+        String redirect = stateInfo.redirect;
+
+        String ctx = appCtx(req);
+        if (redirect != null && !redirect.trim().isEmpty()) {
+            String base = redirect.trim();
+            String sep = base.contains("?") ? "&" : "?";
+            String target = base + sep + "err=" + URLEncoder.encode(err, "UTF-8");
+            System.out.println("[GAuth] redirectWithError -> " + target);
+            res.sendRedirect(target);
+        } else {
+            String target = (ctx.isEmpty() ? "" : ctx)
+                    + "/mba/auth/login?err=" + URLEncoder.encode(err, "UTF-8");
+            System.out.println("[GAuth] redirectWithError(fallback) -> " + target);
+            res.sendRedirect(target);
+        }
     }
 
     private String genState() {

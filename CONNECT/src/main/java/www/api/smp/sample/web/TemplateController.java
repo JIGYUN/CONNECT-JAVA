@@ -50,7 +50,7 @@ public class TemplateController {
     @ResponseBody
     public Map<String, Object> insertTemplate(@RequestBody HashMap<String, Object> map) throws Exception {
         if (UserSessionManager.isUserLogined()) {   	
-        	map.put("createUser", UserSessionManager.getLoginUserVO().getEmail());
+        	map.put("createUser", UserSessionManager.getLoginUserVO().getUserId());
         }
         Map<String, Object> resultMap = new HashMap<>();
         templateService.insertTemplate(map);
@@ -65,7 +65,7 @@ public class TemplateController {
     @ResponseBody
     public Map<String, Object> updateTemplate(@RequestBody HashMap<String, Object> map) throws Exception {
         if (UserSessionManager.isUserLogined()) {   	
-        	map.put("updateUser", UserSessionManager.getLoginUserVO().getEmail());
+        	map.put("updateUser", UserSessionManager.getLoginUserVO().getUserId());
         }
         Map<String, Object> resultMap = new HashMap<>();
         templateService.updateTemplate(map);

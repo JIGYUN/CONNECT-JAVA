@@ -1,0 +1,408 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.ord.order.Order">
+
+    <!-- 공통 WHERE 절 -->
+    <sql id="whereOrder">
+        <!-- 기본적으로 USE_AT = 'Y' -->
+        <choose>
+            <when test="useAt != null and useAt != ''">
+                AND USE_AT = #{useAt}
+            </when>
+            <otherwise>
+                AND USE_AT = 'Y'
+            </otherwise>
+        </choose>
+
+        <if test="userId != null and userId != ''">
+            AND USER_ID = #{userId}
+        </if>
+
+        <if test="orderNo != null and orderNo != ''">
+            AND ORDER_NO = #{orderNo}
+        </if>
+    </sql>
+
+	<select id="selectOrderList" parameterType="map" resultType="CamelHashMap">
+	    /*
+	     SQL ID: www.api.ord.order.Order.selectOrderList
+	     Description : 주문 목록 Query (사용자 주문내역 + 관리자 공용)
+	    */
+	    SELECT
+	        /* 목록 화면용 번호/PK */
+	        o.ORDER_ID                                         AS orderIdx
+	        ,o.ORDER_ID                                        AS orderId
+	
+	        /* 기본 주문 정보 */
+	        ,o.ORDER_NO
+	        ,o.USER_ID
+	        ,o.ORDER_STATUS_CD                                 AS orderStatusCd
+	        ,o.PAY_STATUS_CD
+	        ,o.PAY_METHOD_CD
+	
+	        /* 금액 정보 */
+	        ,o.TOTAL_PRODUCT_AMT
+	        ,o.TOTAL_DISCOUNT_AMT
+	        ,o.DELIVERY_AMT
+	        ,o.ORDER_AMT
+	        ,o.POINT_USE_AMT
+	        ,o.POINT_SAVE_AMT
+	        ,o.COUPON_USE_AMT
+	        ,o.PAY_AMT
+	
+	        /* 목록에서 쓰는 대표 금액 */
+	        ,o.ORDER_AMT                                       AS totalAmt
+	
+	        /* 수령인 / 배송 정보 */
+	        ,o.RECEIVER_NM
+	        ,o.RECEIVER_PHONE
+	        ,o.ZIP_CODE
+	        ,o.ADDR1
+	        ,o.ADDR2
+	        ,o.DELIVERY_MEMO
+	
+	        ,o.USE_AT
+	
+	        /* 일시 */
+	        ,DATE_FORMAT(o.CREATED_DT, '%Y-%m-%d %H:%i:%s')    AS orderDt
+	        ,DATE_FORMAT(o.CREATED_DT, '%Y-%m-%d %H:%i:%s')    AS createdDt
+	        ,o.CREATED_BY
+	        ,DATE_FORMAT(o.UPDATED_DT, '%Y-%m-%d %H:%i:%s')    AS updatedDt
+	        ,o.UPDATED_BY
+	
+	        /* 주문 상품 요약 (첫 상품명 + ' 외 N건') */
+	        ,(
+	            SELECT
+	                CASE
+	                    WHEN COUNT(*) = 0 THEN '(상품 정보 없음)'
+	                    WHEN COUNT(*) = 1 THEN
+	                        MAX(COALESCE(p2.TITLE, '(상품 정보 없음)'))
+	                    ELSE CONCAT(
+	                        MAX(COALESCE(p2.TITLE, '(상품 정보 없음)')),
+	                        ' 외 ',
+	                        COUNT(*) - 1,
+	                        '건'
+	                    )
+	                END
+	            FROM TB_ORDER_ITEM oi2
+	            LEFT JOIN TB_PRODUCT p2
+	                ON p2.PRODUCT_ID = oi2.PRODUCT_ID
+	            WHERE oi2.ORDER_ID = o.ORDER_ID
+	              AND oi2.USE_AT = 'Y'
+	        )                                                  AS productSummary
+	    FROM TB_ORDER o
+	    <where>
+	        <include refid="whereOrder" />
+	    </where>
+	    ORDER BY o.ORDER_ID DESC
+	    <if test="limit != null and offset != null">
+	        /*  페이징 하단 시작  */
+	        LIMIT #{limit} OFFSET #{offset}
+	        /*  페이징 하단 끝  */
+	    </if>
+	</select>
+
+
+    <!-- 주문 목록 카운트 -->
+    <select id="selectOrderListCount" parameterType="hashmap" resultType="hashmap">
+        /*
+         SQL ID: www.api.ord.order.Order.selectOrderListCount
+         Description : 주문 목록 레코드수 Query
+        */
+        SELECT
+            COUNT(*) cnt
+        FROM TB_ORDER
+        <where>
+            <include refid="whereOrder" />
+        </where>
+    </select>
+
+    <!-- 주문 상세 -->
+    <select id="selectOrderDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.ord.order.Order.selectOrderDetail
+         Description : 주문 상세조회 Query
+        */
+        SELECT
+            ORDER_ID                                        AS orderIdx
+            ,ORDER_ID                                       AS orderId
+            ,ORDER_NO
+            ,USER_ID
+            ,ORDER_STATUS_CD                                AS orderStatusCd
+            ,PAY_STATUS_CD
+            ,PAY_METHOD_CD
+            ,TOTAL_PRODUCT_AMT
+            ,TOTAL_DISCOUNT_AMT
+            ,DELIVERY_AMT
+            ,ORDER_AMT
+            ,POINT_USE_AMT
+            ,POINT_SAVE_AMT
+            ,COUPON_USE_AMT
+            ,PAY_AMT
+            ,RECEIVER_NM
+            ,RECEIVER_PHONE
+            ,ZIP_CODE
+            ,ADDR1
+            ,ADDR2
+            ,DELIVERY_MEMO
+            ,USE_AT
+            ,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s')   AS orderDt
+            ,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s')   AS createdDt
+            ,CREATED_BY
+            ,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s')   AS updatedDt
+            ,UPDATED_BY
+        FROM TB_ORDER
+        WHERE ORDER_ID = #{orderId}
+        <choose>
+            <when test="useAt != null and useAt != ''">
+                AND USE_AT = #{useAt}
+            </when>
+            <otherwise>
+                AND USE_AT = 'Y'
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 주문 등록: AUTO_INCREMENT ORDER_ID를 useGeneratedKeys 로 paramMap.orderId 에 세팅 -->
+    <insert id="insertOrder"
+            parameterType="map"
+            useGeneratedKeys="true"
+            keyProperty="orderId"
+            keyColumn="ORDER_ID">
+        /*
+         SQL ID: www.api.ord.order.Order.insertOrder
+         Description : 주문 등록 Query
+        */
+        INSERT INTO TB_ORDER
+        (
+            -- ORDER_ID 는 AUTO_INCREMENT 이므로 제외
+            ORDER_NO
+            ,USER_ID
+            ,ORDER_STATUS_CD
+            ,PAY_STATUS_CD
+            ,PAY_METHOD_CD
+            ,TOTAL_PRODUCT_AMT
+            ,TOTAL_DISCOUNT_AMT
+            ,DELIVERY_AMT
+            ,ORDER_AMT
+            ,POINT_USE_AMT
+            ,POINT_SAVE_AMT
+            ,COUPON_USE_AMT
+            ,PAY_AMT
+            ,RECEIVER_NM
+            ,RECEIVER_PHONE
+            ,ZIP_CODE
+            ,ADDR1
+            ,ADDR2
+            ,DELIVERY_MEMO
+            ,USE_AT
+            ,CREATED_DT
+            ,CREATED_BY
+            ,UPDATED_DT
+            ,UPDATED_BY
+        )
+        VALUES
+        (
+            #{orderNo}
+            ,#{userId}
+            ,#{orderStatusCd}
+            ,#{payStatusCd}
+            ,#{payMethodCd}
+            ,#{totalProductAmt}
+            ,#{totalDiscountAmt}
+            ,#{deliveryAmt}
+            ,#{orderAmt}
+            ,#{pointUseAmt}
+            ,#{pointSaveAmt}
+            ,#{couponUseAmt}
+            ,#{payAmt}
+            ,#{receiverNm}
+            ,#{receiverPhone}
+            ,#{zipCode}
+            ,#{addr1}
+            ,#{addr2}
+            ,#{deliveryMemo}
+            ,#{useAt}
+            ,IFNULL(STR_TO_DATE(
+                NULLIF(
+                    CONCAT(
+                        REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt,jdbcType=VARCHAR}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                        CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt,jdbcType=VARCHAR}, 'T',' '), '.', 1),'Z',''),'T',' '))=16
+                             THEN ':00' ELSE '' END
+                    ),
+                    ''
+                ),
+                '%Y-%m-%d %H:%i:%s'
+            ), NOW())
+            ,#{createdBy}
+            ,IFNULL(STR_TO_DATE(
+                NULLIF(
+                    CONCAT(
+                        REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt,jdbcType=VARCHAR}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                        CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt,jdbcType=VARCHAR}, 'T',' '), '.', 1),'Z',''),'T',' '))=16
+                             THEN ':00' ELSE '' END
+                    ),
+                    ''
+                ),
+                '%Y-%m-%d %H:%i:%s'
+            ), NOW())
+            ,#{updatedBy}
+        )
+    </insert>
+
+    <!-- 주문 수정 -->
+    <update id="updateOrder" parameterType="hashmap">
+        /*
+         SQL ID: www.api.ord.order.Order.updateOrder
+         Description : 주문 수정 Query
+        */
+        UPDATE TB_ORDER
+        <set>
+            <if test='orderNo != null and orderNo != ""'>
+                ORDER_NO = #{orderNo},
+            </if>
+            <if test='userId != null and userId != ""'>
+                USER_ID = #{userId},
+            </if>
+            <if test='orderStatusCd != null and orderStatusCd != ""'>
+                ORDER_STATUS_CD = #{orderStatusCd},
+            </if>
+            <if test='payStatusCd != null and payStatusCd != ""'>
+                PAY_STATUS_CD = #{payStatusCd},
+            </if>
+            <if test='payMethodCd != null and payMethodCd != ""'>
+                PAY_METHOD_CD = #{payMethodCd},
+            </if>
+            <if test='totalProductAmt != null and totalProductAmt != ""'>
+                TOTAL_PRODUCT_AMT = #{totalProductAmt},
+            </if>
+            <if test='totalDiscountAmt != null and totalDiscountAmt != ""'>
+                TOTAL_DISCOUNT_AMT = #{totalDiscountAmt},
+            </if>
+            <if test='deliveryAmt != null and deliveryAmt != ""'>
+                DELIVERY_AMT = #{deliveryAmt},
+            </if>
+            <if test='orderAmt != null and orderAmt != ""'>
+                ORDER_AMT = #{orderAmt},
+            </if>
+            <if test='pointUseAmt != null and pointUseAmt != ""'>
+                POINT_USE_AMT = #{pointUseAmt},
+            </if>
+            <if test='pointSaveAmt != null and pointSaveAmt != ""'>
+                POINT_SAVE_AMT = #{pointSaveAmt},
+            </if>
+            <if test='couponUseAmt != null and couponUseAmt != ""'>
+                COUPON_USE_AMT = #{couponUseAmt},
+            </if>
+            <if test='payAmt != null and payAmt != ""'>
+                PAY_AMT = #{payAmt},
+            </if>
+            <if test='receiverNm != null and receiverNm != ""'>
+                RECEIVER_NM = #{receiverNm},
+            </if>
+            <if test='receiverPhone != null and receiverPhone != ""'>
+                RECEIVER_PHONE = #{receiverPhone},
+            </if>
+            <if test='zipCode != null and zipCode != ""'>
+                ZIP_CODE = #{zipCode},
+            </if>
+            <if test='addr1 != null and addr1 != ""'>
+                ADDR1 = #{addr1},
+            </if>
+            <if test='addr2 != null and addr2 != ""'>
+                ADDR2 = #{addr2},
+            </if>
+            <if test='deliveryMemo != null and deliveryMemo != ""'>
+                DELIVERY_MEMO = #{deliveryMemo},
+            </if>
+            <if test='useAt != null and useAt != ""'>
+                USE_AT = #{useAt},
+            </if>
+            <if test='createdDt != null and createdDt != ""'>
+                CREATED_DT = STR_TO_DATE(
+                    NULLIF(
+                        CONCAT(
+                            REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                            CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16
+                                 THEN ':00' ELSE '' END
+                        ),
+                        ''
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+            </if>
+            <if test='createdBy != null and createdBy != ""'>
+                CREATED_BY = #{createdBy},
+            </if>
+            <if test='updatedDt != null and updatedDt != ""'>
+                UPDATED_DT = STR_TO_DATE(
+                    NULLIF(
+                        CONCAT(
+                            REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                            CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16
+                                 THEN ':00' ELSE '' END
+                        ),
+                        ''
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+            </if>
+            <if test='updatedBy != null and updatedBy != ""'>
+                UPDATED_BY = #{updatedBy},
+            </if>
+        </set>
+        WHERE ORDER_ID = #{orderId}
+    </update>
+
+    <!-- 주문 삭제(soft delete) -->
+    <update id="deleteOrder" parameterType="hashmap">
+        /*
+         SQL ID: www.api.ord.order.Order.deleteOrder
+         Description : 주문 삭제(soft delete) Query
+        */
+        UPDATE TB_ORDER
+        SET
+            USE_AT    = 'N',
+            UPDATED_DT = NOW()
+            <if test='updatedBy != null and updatedBy != ""'>
+                , UPDATED_BY = #{updatedBy}
+            </if>
+        WHERE ORDER_ID = #{orderId}
+    </update>
+
+    <!-- 이건 참고: 이미 가지고 있는 쿼리 그대로 둬도 됨 -->
+    <select id="selectOrderByOrderNo" parameterType="map" resultType="hashmap">
+        SELECT
+            ORDER_ID                                        AS orderId
+            ,ORDER_ID                                       AS orderIdx
+            ,ORDER_NO
+            ,USER_ID
+            ,ORDER_STATUS_CD                                AS orderStatusCd
+            ,PAY_STATUS_CD
+            ,PAY_METHOD_CD
+            ,TOTAL_PRODUCT_AMT
+            ,TOTAL_DISCOUNT_AMT
+            ,DELIVERY_AMT
+            ,ORDER_AMT
+            ,POINT_USE_AMT
+            ,POINT_SAVE_AMT
+            ,COUPON_USE_AMT
+            ,PAY_AMT
+            ,RECEIVER_NM
+            ,RECEIVER_PHONE
+            ,ZIP_CODE
+            ,ADDR1
+            ,ADDR2
+            ,DELIVERY_MEMO
+            ,USE_AT
+            ,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s')   AS orderDt
+            ,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s')   AS createdDt
+            ,CREATED_BY
+            ,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s')   AS updatedDt
+            ,UPDATED_BY
+        FROM TB_ORDER
+        WHERE ORDER_NO = #{orderNo}
+    </select>
+
+</mapper>

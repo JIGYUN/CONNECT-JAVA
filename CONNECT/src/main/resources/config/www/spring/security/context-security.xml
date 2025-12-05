@@ -84,6 +84,9 @@
         <intercept-url pattern="/mba/auth/login"     access="permitAll"/>
         <intercept-url pattern="/com/auth/loginProc" access="permitAll"/>
         <intercept-url pattern="/mba/auth/logout"    access="permitAll"/>
+        <intercept-url pattern="/auth/google/login"    access="permitAll"/>
+		<intercept-url pattern="/auth/google/callback" access="permitAll"/>
+        
 
         <!-- ✅ 요구사항: USER 권한이 있어야 접근 -->
         <intercept-url pattern="/txn/**" access="hasAuthority('USER')"/>

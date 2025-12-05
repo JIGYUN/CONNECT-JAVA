@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.pay.payment.Payment">
+
+    <sql id="wherePayment">
+        <!-- 기본적으로 USE_AT = 'Y' -->
+        <choose>
+            <when test="useAt != null and useAt != ''">
+                AND USE_AT = #{useAt}
+            </when>
+            <otherwise>
+                AND USE_AT = 'Y'
+            </otherwise>
+        </choose>
+
+        <if test="orderId != null and orderId != ''">
+            AND ORDER_ID = #{orderId}
+        </if>
+
+        <if test="payStatusCd != null and payStatusCd != ''">
+            AND PAY_STATUS_CD = #{payStatusCd}
+        </if>
+    </sql>
+
+    <select id="selectPaymentList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.pay.payment.Payment.selectPaymentList
+         Description : 결제 목록 Query
+        */
+        SELECT
+            PAYMENT_ID
+            ,ORDER_ID
+            ,PG_CD
+            ,PG_MID
+            ,PG_TID
+            ,PAY_METHOD_CD
+            ,PAY_TOTAL_AMT
+            ,PAY_APPROVED_AMT
+            ,PAY_STATUS_CD
+            ,DATE_FORMAT(REQ_DT, '%Y-%m-%d %H:%i:%s') AS REQ_DT
+            ,DATE_FORMAT(RES_DT, '%Y-%m-%d %H:%i:%s') AS RES_DT
+            ,RAW_REQUEST_JSON
+            ,RAW_RESPONSE_JSON
+            ,USE_AT
+            ,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+            ,CREATED_BY
+            ,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+            ,UPDATED_BY
+        FROM TB_PAYMENT
+        <where>
+            <include refid="wherePayment" />
+        </where>
+        ORDER BY PAYMENT_ID DESC
+        <if test="limit != null and offset != null">
+            /*  페이징 하단 시작  */
+            LIMIT #{limit} OFFSET #{offset}
+            /*  페이징 하단 끝  */
+        </if>
+    </select>
+
+    <select id="selectPaymentListCount" parameterType="hashmap" resultType="hashmap">
+        /*
+         SQL ID: www.api.pay.payment.Payment.selectPaymentListCount
+         Description : 결제 목록 레코드수 Query
+        */
+        SELECT
+            COUNT(*) cnt
+        FROM TB_PAYMENT
+        <where>
+            <include refid="wherePayment" />
+        </where>
+    </select>
+
+    <select id="selectPaymentDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.pay.payment.Payment.selectPaymentDetail
+         Description : 결제 상세조회 Query
+        */
+        SELECT
+            PAYMENT_ID
+            ,ORDER_ID
+            ,PG_CD
+            ,PG_MID
+            ,PG_TID
+            ,PAY_METHOD_CD
+            ,PAY_TOTAL_AMT
+            ,PAY_APPROVED_AMT
+            ,PAY_STATUS_CD
+            ,DATE_FORMAT(REQ_DT, '%Y-%m-%d %H:%i:%s') AS REQ_DT
+            ,DATE_FORMAT(RES_DT, '%Y-%m-%d %H:%i:%s') AS RES_DT
+            ,RAW_REQUEST_JSON
+            ,RAW_RESPONSE_JSON
+            ,USE_AT
+            ,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+            ,CREATED_BY
+            ,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+            ,UPDATED_BY
+        FROM TB_PAYMENT
+        WHERE PAYMENT_ID = #{paymentId}
+        <choose>
+            <when test="useAt != null and useAt != ''">
+                AND USE_AT = #{useAt}
+            </when>
+            <otherwise>
+                AND USE_AT = 'Y'
+            </otherwise>
+        </choose>
+    </select>
+
+    <insert id="insertPayment" parameterType="hashmap">
+        /*
+         SQL ID: www.api.pay.payment.Payment.insertPayment
+         Description : 결제 등록 Query
+        */
+        INSERT INTO TB_PAYMENT
+        (
+            ORDER_ID
+            ,PG_CD
+            ,PG_MID
+            ,PG_TID
+            ,PAY_METHOD_CD
+            ,PAY_TOTAL_AMT
+            ,PAY_APPROVED_AMT
+            ,PAY_STATUS_CD
+            ,REQ_DT
+            ,RES_DT
+            ,RAW_REQUEST_JSON
+            ,RAW_RESPONSE_JSON
+            ,USE_AT
+            ,CREATED_DT
+            ,CREATED_BY
+            ,UPDATED_DT
+            ,UPDATED_BY
+        )
+        VALUES
+        (
+            #{orderId}
+            ,#{pgCd}
+            ,#{pgMid}
+            ,#{pgTid}
+            ,#{payMethodCd}
+            ,#{payTotalAmt}
+            ,#{payApprovedAmt}
+            ,#{payStatusCd}
+            ,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{reqDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{reqDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+            ,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{resDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{resDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+            ,#{rawRequestJson}
+            ,#{rawResponseJson}
+            ,#{useAt}
+            ,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+            ,#{createdBy}
+            ,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+            ,#{updatedBy}
+        )
+    </insert>
+
+    <update id="updatePayment" parameterType="hashmap">
+        /*
+         SQL ID: www.api.pay.payment.Payment.updatePayment
+         Description : 결제 수정 Query
+        */
+        UPDATE TB_PAYMENT
+        <set>
+            <if test='orderId != null and orderId != ""'>
+                ORDER_ID = #{orderId},
+            </if>
+            <if test='pgCd != null and pgCd != ""'>
+                PG_CD = #{pgCd},
+            </if>
+            <if test='pgMid != null and pgMid != ""'>
+                PG_MID = #{pgMid},
+            </if>
+            <if test='pgTid != null and pgTid != ""'>
+                PG_TID = #{pgTid},
+            </if>
+            <if test='payMethodCd != null and payMethodCd != ""'>
+                PAY_METHOD_CD = #{payMethodCd},
+            </if>
+            <if test='payTotalAmt != null and payTotalAmt != ""'>
+                PAY_TOTAL_AMT = #{payTotalAmt},
+            </if>
+            <if test='payApprovedAmt != null and payApprovedAmt != ""'>
+                PAY_APPROVED_AMT = #{payApprovedAmt},
+            </if>
+            <if test='payStatusCd != null and payStatusCd != ""'>
+                PAY_STATUS_CD = #{payStatusCd},
+            </if>
+            <if test='reqDt != null and reqDt != ""'>
+                REQ_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{reqDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{reqDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+            </if>
+            <if test='resDt != null and resDt != ""'>
+                RES_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{resDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{resDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+            </if>
+            <if test='rawRequestJson != null and rawRequestJson != ""'>
+                RAW_REQUEST_JSON = #{rawRequestJson},
+            </if>
+            <if test='rawResponseJson != null and rawResponseJson != ""'>
+                RAW_RESPONSE_JSON = #{rawResponseJson},
+            </if>
+            <if test='useAt != null and useAt != ""'>
+                USE_AT = #{useAt},
+            </if>
+            <if test='createdDt != null and createdDt != ""'>
+                CREATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+            </if>
+            <if test='createdBy != null and createdBy != ""'>
+                CREATED_BY = #{createdBy},
+            </if>
+            <if test='updatedDt != null and updatedDt != ""'>
+                UPDATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+            </if>
+            <if test='updatedBy != null and updatedBy != ""'>
+                UPDATED_BY = #{updatedBy},
+            </if>
+        </set>
+        WHERE PAYMENT_ID = #{paymentId}
+    </update>
+
+    <update id="deletePayment" parameterType="hashmap">
+        /*
+         SQL ID: www.api.pay.payment.Payment.deletePayment
+         Description : 결제 삭제(soft delete) Query
+        */
+        UPDATE TB_PAYMENT
+        SET
+            USE_AT = 'N',
+            UPDATED_DT = NOW()
+            <if test='updatedBy != null and updatedBy != ""'>
+                , UPDATED_BY = #{updatedBy}
+            </if>
+        WHERE PAYMENT_ID = #{paymentId}
+    </update>
+
+</mapper>

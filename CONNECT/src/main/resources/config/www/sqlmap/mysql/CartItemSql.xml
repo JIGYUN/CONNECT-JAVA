@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.crt.cartItem.CartItem">
+
+    <sql id="whereCartItem">
+        <!-- 
+        동적 검색 조건 템플릿 (필요 시 활성화)
+
+        <choose>
+            <when test='id != null and id != "" '>
+
+            </when>
+            <otherwise>
+
+            </otherwise>
+        </choose>
+
+        <if test="searchField != null and searchText != null and searchField != '' and searchText != ''">
+            <choose>
+                <when test='searchField == "title"'>
+                    AND TITLE LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "content"'>
+                    AND CONTENT LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "writer"'>
+                    AND WRITER LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        -->
+    </sql> 
+
+    <select id="selectCartItemList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.crt.cartItem.CartItem.selectCartItemList
+         Description : 목록 Query 
+        */
+        SELECT
+            CART_ITEM_ID
+            ,CART_ID
+            ,PRODUCT_ID
+            ,QTY
+            ,UNIT_PRICE
+            ,DISCOUNT_AMT
+            ,LINE_AMT
+            ,OPTION_JSON
+            ,USE_AT
+            ,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+            ,CREATED_BY
+            ,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+            ,UPDATED_BY
+
+        FROM TB_CART_ITEM
+        <where>
+            <include refid="whereCartItem" />
+        </where>
+        ORDER BY CART_ITEM_ID DESC
+        <if test="limit != null and offset != null">
+            /*  페이징 하단 시작  */
+            LIMIT #{limit} OFFSET #{offset}
+            /*  페이징 하단 끝  */
+        </if>
+    </select>
+
+    <select id="selectCartItemListCount" parameterType="hashmap" resultType="int">
+        /*
+         SQL ID: www.api.crt.cartItem.CartItem.selectCartItemListCount
+         Description : 목록에서 레코드수 Query 
+        */
+        SELECT
+            COUNT(*) CNT
+        FROM TB_CART_ITEM
+        <where>
+            <include refid="whereCartItem" />
+        </where> 
+    </select>
+
+    <select id="selectCartItemDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.crt.cartItem.CartItem.selectCartItemDetail
+         Description : 상세조회 Query 
+        */  
+        SELECT
+            CART_ITEM_ID
+            ,CART_ID
+            ,PRODUCT_ID
+            ,QTY
+            ,UNIT_PRICE
+            ,DISCOUNT_AMT
+            ,LINE_AMT
+            ,OPTION_JSON
+            ,USE_AT
+            ,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+            ,CREATED_BY
+            ,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+            ,UPDATED_BY
+
+        FROM TB_CART_ITEM
+        WHERE CART_ITEM_ID = #{cartItemId}
+    </select>
+
+    <insert id="insertCartItem" parameterType="hashmap">
+        /*
+         SQL ID: www.api.crt.cartItem.CartItem.insertCartItem
+         Description : 등록 Query (Javagen CRUD용)
+        */
+        INSERT INTO TB_CART_ITEM
+        (
+            CART_ID
+            ,PRODUCT_ID
+            ,QTY
+            ,UNIT_PRICE
+            ,DISCOUNT_AMT
+            ,LINE_AMT
+            ,OPTION_JSON
+            ,USE_AT
+            ,CREATED_DT
+            ,CREATED_BY
+            ,UPDATED_DT
+            ,UPDATED_BY
+
+        )
+        VALUES
+        (
+            #{cartId}
+            ,#{productId}
+            ,#{qty}
+            ,#{unitPrice}
+            ,#{discountAmt}
+            ,#{lineAmt}
+            ,#{optionJson}
+            ,#{useAt}
+            ,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+            ,#{createdBy}
+            ,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+            ,#{updatedBy}
+
+        )
+    </insert>
+
+    <update id="updateCartItem" parameterType="hashmap">
+        /*
+         SQL ID: www.api.crt.cartItem.CartItem.updateCartItem
+         Description : 수정 Query 
+        */
+        UPDATE TB_CART_ITEM
+        <set>
+            <if test='cartId != null and cartId != ""'>
+                CART_ID = #{cartId},
+            </if>
+            <if test='productId != null and productId != ""'>
+                PRODUCT_ID = #{productId},
+            </if>
+            <if test='qty != null and qty != ""'>
+                QTY = #{qty},
+            </if>
+            <if test='unitPrice != null and unitPrice != ""'>
+                UNIT_PRICE = #{unitPrice},
+            </if>
+            <if test='discountAmt != null and discountAmt != ""'>
+                DISCOUNT_AMT = #{discountAmt},
+            </if>
+            <if test='lineAmt != null and lineAmt != ""'>
+                LINE_AMT = #{lineAmt},
+            </if>
+            <if test='optionJson != null and optionJson != ""'>
+                OPTION_JSON = #{optionJson},
+            </if>
+            <if test='useAt != null and useAt != ""'>
+                USE_AT = #{useAt},
+            </if>
+            <if test='createdDt != null and createdDt != ""'>
+                CREATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+            </if>
+            <if test='createdBy != null and createdBy != ""'>
+                CREATED_BY = #{createdBy},
+            </if>
+            <if test='updatedDt != null and updatedDt != ""'>
+                UPDATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+            </if>
+            <if test='updatedBy != null and updatedBy != ""'>
+                UPDATED_BY = #{updatedBy},
+            </if>
+
+        </set>
+        WHERE CART_ITEM_ID = #{cartItemId}
+    </update>
+
+    <delete id="deleteCartItem" parameterType="hashmap">
+        /*
+         SQL ID: www.api.crt.cartItem.CartItem.deleteCartItem
+         Description : 삭제 Query (물리삭제, 관리자용)
+        */
+        DELETE FROM TB_CART_ITEM
+        WHERE CART_ITEM_ID = #{cartItemId}
+    </delete>
+
+    <!-- ============================= -->
+    <!--   ★ 장바구니 비즈니스용 추가 -->
+    <!-- ============================= -->
+
+    <!-- 장바구니 내 동일 상품 존재 여부 조회 -->
+    <select id="selectCartItemByCartAndProduct" parameterType="map" resultType="CamelHashMap">
+        SELECT
+            CART_ITEM_ID AS cartItemId,
+            CART_ID      AS cartId,
+            PRODUCT_ID   AS productId,
+            QTY          AS qty,
+            UNIT_PRICE   AS unitPrice,
+            LINE_AMT     AS lineAmt
+        FROM TB_CART_ITEM
+        WHERE CART_ID    = #{cartId}
+          AND PRODUCT_ID = #{productId}
+          AND USE_AT     = 'Y'
+        LIMIT 1
+    </select>
+
+    <!-- 카트 아이템 + 상품 정보 조인 → 유저 장바구니 조회 -->
+	<select id="selectCartViewListByUser" parameterType="map" resultType="hashmap">
+        SELECT
+            CI.CART_ITEM_ID   AS cartItemId,
+            CI.CART_ID        AS cartId,
+            CI.PRODUCT_ID     AS productId,
+            CI.QTY            AS qty,
+            CI.UNIT_PRICE     AS unitPrice,
+            CI.LINE_AMT       AS lineAmt,
+            P.TITLE           AS title,
+            P.BRAND_NM        AS brandNm,
+            P.SALE_PRICE      AS salePrice,
+            P.SHIP_FEE        AS shipFee,
+            P.MAIN_IMG_URL    AS mainImgUrl
+        FROM TB_CART C
+        JOIN TB_CART_ITEM CI
+          ON C.CART_ID = CI.CART_ID
+         AND CI.USE_AT = 'Y'
+        JOIN TB_PRODUCT P
+          ON CI.PRODUCT_ID = P.PRODUCT_ID
+         AND P.USE_AT = 'Y'
+        WHERE C.USER_ID   = #{userId}
+          AND C.STATUS_CD = 'ACTIVE'
+          AND C.USE_AT    = 'Y'
+        <if test="cartItemIds != null and cartItemIds.size() > 0">
+          AND CI.CART_ITEM_ID IN
+          <foreach item="id" collection="cartItemIds" open="(" separator="," close=")">
+            #{id}
+          </foreach>
+        </if>
+        ORDER BY CI.CART_ITEM_ID DESC
+    </select>
+
+    <!-- 카트 아이템 단건 (수량 변경용) -->
+    <select id="selectCartItemSimpleById" parameterType="map" resultType="CamelHashMap">
+        SELECT
+            CART_ITEM_ID AS cartItemId,
+            QTY          AS qty,
+            UNIT_PRICE   AS unitPrice
+        FROM TB_CART_ITEM
+        WHERE CART_ITEM_ID = #{cartItemId}
+          AND USE_AT       = 'Y'
+        LIMIT 1
+    </select>
+
+    <!-- 수량/라인금액 업데이트 -->
+    <update id="updateCartItemQty" parameterType="hashmap">
+        UPDATE TB_CART_ITEM
+        SET
+            QTY        = #{qty},
+            LINE_AMT   = #{lineAmt},
+            UPDATED_DT = NOW(),
+            UPDATED_BY = #{updatedBy}
+        WHERE CART_ITEM_ID = #{cartItemId}
+          AND USE_AT       = 'Y'
+    </update>
+
+    <!-- 소프트 삭제 (USE_AT = 'N') -->
+    <update id="softDeleteCartItem" parameterType="hashmap">
+        UPDATE TB_CART_ITEM
+        SET
+            USE_AT     = 'N',
+            UPDATED_DT = NOW(),
+            UPDATED_BY = #{updatedBy}
+        WHERE CART_ITEM_ID = #{cartItemId}
+    </update>
+
+    <!-- 장바구니 추가 시 사용할 상품 정보 조회 -->
+    <select id="selectProductForCart" parameterType="map" resultType="CamelHashMap">
+        SELECT
+            PRODUCT_ID,
+            TITLE,
+            BRAND_NM,
+            SALE_PRICE,
+            SHIP_FEE,
+            MAIN_IMG_URL
+        FROM TB_PRODUCT
+        WHERE PRODUCT_ID = #{productId}
+          AND USE_AT     = 'Y'
+        LIMIT 1
+    </select>
+
+</mapper>

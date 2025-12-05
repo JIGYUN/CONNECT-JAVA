@@ -503,7 +503,7 @@
 
         let html = '';
 
-        // 상단 메타
+        // 상단 메타ㅈㄴㄴㄴ
         html += "<div class='chat-meta'>";
         html += safeSender;
         if (safeDt) {
@@ -519,7 +519,7 @@
 
     function scrollToBottom() {
         const sc = document.getElementById('chatScroll');
-        if (!sc) return;
+        if (!sc) return;+
         sc.scrollTop = sc.scrollHeight;
     }
 

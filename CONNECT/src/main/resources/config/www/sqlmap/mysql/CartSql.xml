@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.crt.cart.Cart">
+
+    <sql id="whereCart">
+        <!-- 
+        동적 검색 조건 템플릿 (필요 시 활성화)
+
+        <choose>
+            <when test='id != null and id != "" '>
+
+            </when>
+            <otherwise>
+
+            </otherwise>
+        </choose>
+
+        <if test="searchField != null and searchText != null and searchField != '' and searchText != ''">
+            <choose>
+                <when test='searchField == "title"'>
+                    AND TITLE LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "content"'>
+                    AND CONTENT LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "writer"'>
+                    AND WRITER LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        -->
+    </sql> 
+
+    <select id="selectCartList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.crt.cart.Cart.selectCartList
+         Description : 목록 Query 
+        */
+        SELECT
+            CART_ID
+            ,USER_ID
+            ,STATUS_CD
+            ,USE_AT
+            ,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+            ,CREATED_BY
+            ,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+            ,UPDATED_BY
+
+        FROM TB_CART
+        <where>
+            <include refid="whereCart" />
+        </where>
+        ORDER BY CART_ID DESC
+        <if test="limit != null and offset != null">
+            /*  페이징 하단 시작  */
+            LIMIT #{limit} OFFSET #{offset}
+            /*  페이징 하단 끝  */
+        </if>
+    </select>
+
+    <select id="selectCartListCount" parameterType="hashmap" resultType="int">
+        /*
+         SQL ID: www.api.crt.cart.Cart.selectCartListCount
+         Description : 목록에서 레코드수 Query 
+        */
+        SELECT
+            COUNT(*) CNT
+        FROM TB_CART
+        <where>
+            <include refid="whereCart" />
+        </where> 
+    </select>
+
+    <select id="selectCartDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.crt.cart.Cart.selectCartDetail
+         Description : 상세조회 Query 
+        */  
+        SELECT
+            CART_ID
+            ,USER_ID
+            ,STATUS_CD
+            ,USE_AT
+            ,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+            ,CREATED_BY
+            ,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+            ,UPDATED_BY
+
+        FROM TB_CART
+        WHERE CART_ID = #{cartId}
+    </select>
+
+    <insert id="insertCart" parameterType="hashmap">
+        /*
+         SQL ID: www.api.crt.cart.Cart.insertCart
+         Description : 등록 Query (Javagen CRUD용)
+        */
+        INSERT INTO TB_CART
+        (
+            USER_ID
+            ,STATUS_CD
+            ,USE_AT
+            ,CREATED_DT
+            ,CREATED_BY
+            ,UPDATED_DT
+            ,UPDATED_BY
+
+        )
+        VALUES
+        (
+            #{userId}
+            ,#{statusCd}
+            ,#{useAt}
+            ,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+            ,#{createdBy}
+            ,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+            ,#{updatedBy}
+
+        )
+    </insert>
+
+    <update id="updateCart" parameterType="hashmap">
+        /*
+         SQL ID: www.api.crt.cart.Cart.updateCart
+         Description : 수정 Query 
+        */
+        UPDATE TB_CART
+        <set>
+            <if test='userId != null and userId != ""'>
+                USER_ID = #{userId},
+            </if>
+            <if test='statusCd != null and statusCd != ""'>
+                STATUS_CD = #{statusCd},
+            </if>
+            <if test='useAt != null and useAt != ""'>
+                USE_AT = #{useAt},
+            </if>
+            <if test='createdDt != null and createdDt != ""'>
+                CREATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+            </if>
+            <if test='createdBy != null and createdBy != ""'>
+                CREATED_BY = #{createdBy},
+            </if>
+            <if test='updatedDt != null and updatedDt != ""'>
+                UPDATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+            </if>
+            <if test='updatedBy != null and updatedBy != ""'>
+                UPDATED_BY = #{updatedBy},
+            </if>
+
+        </set>
+        WHERE CART_ID = #{cartId}
+    </update>
+
+    <delete id="deleteCart" parameterType="hashmap">
+        /*
+         SQL ID: www.api.crt.cart.Cart.deleteCart
+         Description : 삭제 Query (물리삭제, 관리자용)
+        */
+        DELETE FROM TB_CART
+        WHERE CART_ID = #{cartId}
+    </delete>
+
+    <!-- ============================= -->
+    <!--  ★ 장바구니 비즈니스용 추가  -->
+    <!-- ============================= -->
+
+    <!-- 유저의 ACTIVE 카트 조회 -->
+    <select id="selectActiveCartByUser" parameterType="map" resultType="CamelHashMap">
+        SELECT
+            CART_ID,
+            USER_ID,
+            STATUS_CD
+        FROM TB_CART
+        WHERE USER_ID   = #{userId}
+          AND STATUS_CD = 'ACTIVE'
+          AND USE_AT    = 'Y'
+        ORDER BY CART_ID DESC
+        LIMIT 1
+    </select>
+
+    <!-- 유저용 ACTIVE 카트 생성 (쇼핑몰 장바구니용) -->
+    <insert id="insertActiveCart" parameterType="hashmap">
+        INSERT INTO TB_CART
+        (
+            USER_ID,
+            STATUS_CD,
+            USE_AT,
+            CREATED_DT,
+            CREATED_BY,
+            UPDATED_DT,
+            UPDATED_BY
+        )
+        VALUES
+        (
+            #{userId},
+            'ACTIVE',
+            'Y',
+            NOW(),
+            #{createdBy},
+            NOW(),
+            #{createdBy}
+        )
+    </insert>
+
+</mapper>

@@ -11,6 +11,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import www.com.user.service.UserVO;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+
 
 import www.api.mba.auth.service.AuthService;
  
@@ -149,6 +153,39 @@ public class AuthController {
         
         resultMap.put("msg", "성공적으로 변경되었습니다.");
         return resultMap;
+    }
+    
+    @RequestMapping("/api/me")
+    @ResponseBody
+    public Map<String, Object> me() {
+        Map<String, Object> resp = new HashMap<>();
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            resp.put("ok", false);
+            resp.put("error", "UNAUTHENTICATED");
+            return resp;
+        }
+
+        Object principal = auth.getPrincipal();
+        if (!(principal instanceof UserVO)) {
+            resp.put("ok", false);
+            resp.put("error", "INVALID_PRINCIPAL");
+            return resp;
+        }
+
+        UserVO u = (UserVO) principal;
+        Map<String, Object> result = new HashMap<>();
+        result.put("userId", u.getUserId());
+        result.put("email", u.getEmail());
+        result.put("userNm", u.getUserNm());
+        result.put("nickNm", u.getNickNm());
+        result.put("profileImgUrl", u.getProfileImgUrl());
+        result.put("authType", u.getAuthType());
+
+        resp.put("ok", true);
+        resp.put("result", result);
+        return resp;
     }
     
 }

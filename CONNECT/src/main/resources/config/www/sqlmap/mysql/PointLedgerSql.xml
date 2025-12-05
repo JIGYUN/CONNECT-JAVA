@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.plg.pointLedger.PointLedger">
+
+    <!-- 공통 where 절 -->
+    <sql id="wherePointLedger">
+        <!-- 로그인 유저별 필터 -->
+        <if test="userId != null">
+            AND USER_ID = #{userId}
+        </if>
+
+        <!-- 타입 필터 (CHARGE / USE / REFUND 등) -->
+        <if test="typeCd != null and typeCd != ''">
+            AND TYPE_CD = #{typeCd}
+        </if>
+    </sql>
+
+    <!-- 목록 -->
+    <select id="selectPointLedgerList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.plg.pointLedger.PointLedger.selectPointLedgerList
+         Description : 포인트 원장 목록
+        */
+        SELECT
+            POINT_LEDGER_ID
+            ,USER_ID
+            ,ORDER_ID
+            ,TYPE_CD
+            ,AMT
+            ,BALANCE_AFTER
+            ,MEMO
+            ,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+            ,CREATED_BY
+            ,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+            ,UPDATED_BY
+        FROM TB_POINT_LEDGER
+        <where>
+            <include refid="wherePointLedger" />
+        </where>
+        ORDER BY POINT_LEDGER_ID DESC
+        <if test="limit != null and offset != null">
+            /* 페이징 */
+            LIMIT #{limit} OFFSET #{offset}
+        </if>
+    </select>
+
+    <!-- 목록 카운트 -->
+    <select id="selectPointLedgerListCount" parameterType="hashmap" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.plg.pointLedger.PointLedger.selectPointLedgerListCount
+         Description : 포인트 원장 레코드 수
+        */
+        SELECT
+            COUNT(*) AS CNT
+        FROM TB_POINT_LEDGER
+        <where>
+            <include refid="wherePointLedger" />
+        </where>
+    </select>
+
+    <!-- 상세 -->
+    <select id="selectPointLedgerDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.plg.pointLedger.PointLedger.selectPointLedgerDetail
+         Description : 포인트 원장 상세
+        */
+        SELECT
+            POINT_LEDGER_ID
+            ,USER_ID
+            ,ORDER_ID
+            ,TYPE_CD
+            ,AMT
+            ,BALANCE_AFTER
+            ,MEMO
+            ,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+            ,CREATED_BY
+            ,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+            ,UPDATED_BY
+        FROM TB_POINT_LEDGER
+        WHERE POINT_LEDGER_ID = #{pointLedgerId}
+    </select>
+
+    <!-- 원장 입력 -->
+    <insert id="insertPointLedger" parameterType="hashmap">
+        /*
+         SQL ID: www.api.plg.pointLedger.PointLedger.insertPointLedger
+         Description : 포인트 원장 등록
+        */
+        INSERT INTO TB_POINT_LEDGER
+        (
+            USER_ID
+            ,ORDER_ID
+            ,TYPE_CD
+            ,AMT
+            ,BALANCE_AFTER
+            ,MEMO
+            ,CREATED_DT
+            ,CREATED_BY
+            ,UPDATED_DT
+            ,UPDATED_BY
+        )
+        VALUES
+        (
+            #{userId}
+            ,#{orderId}
+            ,#{typeCd}
+            ,#{amt}
+            ,#{balanceAfter}
+            ,#{memo}
+            ,IFNULL(
+                STR_TO_DATE(
+                    NULLIF(
+                        CONCAT(
+                            REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                            CASE
+                                WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16
+                                    THEN ':00'
+                                ELSE ''
+                            END
+                        ),''
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+                NOW()
+            )
+            ,#{createdBy}
+            ,IFNULL(
+                STR_TO_DATE(
+                    NULLIF(
+                        CONCAT(
+                            REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                            CASE
+                                WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16
+                                    THEN ':00'
+                                ELSE ''
+                            END
+                        ),''
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+                NOW()
+            )
+            ,#{updatedBy}
+        )
+    </insert>
+
+    <!-- 원장 수정 -->
+    <update id="updatePointLedger" parameterType="hashmap">
+        /*
+         SQL ID: www.api.plg.pointLedger.PointLedger.updatePointLedger
+         Description : 포인트 원장 수정
+        */
+        UPDATE TB_POINT_LEDGER
+        <set>
+            <if test='userId != null and userId != ""'>
+                USER_ID = #{userId},
+            </if>
+            <if test='orderId != null and orderId != ""'>
+                ORDER_ID = #{orderId},
+            </if>
+            <if test='typeCd != null and typeCd != ""'>
+                TYPE_CD = #{typeCd},
+            </if>
+            <if test='amt != null and amt != ""'>
+                AMT = #{amt},
+            </if>
+            <if test='balanceAfter != null and balanceAfter != ""'>
+                BALANCE_AFTER = #{balanceAfter},
+            </if>
+            <if test='memo != null and memo != ""'>
+                MEMO = #{memo},
+            </if>
+            <if test='createdDt != null and createdDt != ""'>
+                CREATED_DT = STR_TO_DATE(
+                    NULLIF(
+                        CONCAT(
+                            REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                            CASE
+                                WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16
+                                    THEN ':00'
+                                ELSE ''
+                            END
+                        ),''
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+            </if>
+            <if test='createdBy != null and createdBy != ""'>
+                CREATED_BY = #{createdBy},
+            </if>
+            <if test='updatedDt != null and updatedDt != ""'>
+                UPDATED_DT = STR_TO_DATE(
+                    NULLIF(
+                        CONCAT(
+                            REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                            CASE
+                                WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16
+                                    THEN ':00'
+                                ELSE ''
+                            END
+                        ),''
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+            </if>
+            <if test='updatedBy != null and updatedBy != ""'>
+                UPDATED_BY = #{updatedBy},
+            </if>
+        </set>
+        WHERE POINT_LEDGER_ID = #{pointLedgerId}
+    </update>
+
+    <!-- 원장 삭제 -->
+    <delete id="deletePointLedger" parameterType="hashmap">
+        /*
+         SQL ID: www.api.plg.pointLedger.PointLedger.deletePointLedger
+         Description : 포인트 원장 삭제
+        */
+        DELETE FROM TB_POINT_LEDGER
+        WHERE POINT_LEDGER_ID = #{pointLedgerId}
+    </delete>
+
+    <!-- 유저 포인트 요약 (TB_USER) -->
+    <select id="selectUserPointSummary" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.plg.pointLedger.PointLedger.selectUserPointSummary
+         Description : 회원 포인트 요약
+        */
+        SELECT
+            U.USER_ID
+            ,U.EMAIL
+            ,U.USER_NM
+            ,IFNULL(U.POINT_BALANCE, 0) AS POINT_BALANCE
+        FROM TB_USER U
+        WHERE U.USER_ID = #{userId}
+    </select>
+
+    <!-- 유저 포인트 잔액 업데이트 (TB_USER) -->
+    <update id="updateUserPointBalance" parameterType="map">
+        /*
+         SQL ID: www.api.plg.pointLedger.PointLedger.updateUserPointBalance
+         Description : 회원 포인트 잔액 수정
+        */
+        UPDATE TB_USER
+        SET
+            POINT_BALANCE = #{pointBalance}
+            ,UPDATED_DT   = NOW()
+            ,UPDATED_BY   = #{updatedBy}
+        WHERE USER_ID = #{userId}
+    </update>
+    
+    <select id="selectPointSummary" parameterType="hashmap" resultType="CamelHashMap">
+        /*
+         SQL ID   : www.api.plg.pointLedger.PointLedger.selectPointSummary
+         Desc     : TB_USER 의 POINT_BALANCE 조회
+        	 주의사항 : USER_ID, USE_AT 컬럼명은 TB_USER 구조에 맞게 사용
+        */
+        SELECT
+            IFNULL(POINT_BALANCE, 0) AS POINT_BALANCE
+        FROM TB_USER
+        WHERE USER_ID = #{userId}
+          AND USE_AT = 'Y'
+    </select>
+
+</mapper>
