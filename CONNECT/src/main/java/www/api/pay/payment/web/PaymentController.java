@@ -1,3 +1,4 @@
+// filepath: src/main/java/www/api/pay/payment/web/PaymentController.java
 package www.api.pay.payment.web;
 
 import java.util.HashMap;
@@ -6,7 +7,9 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import www.api.pay.payment.service.PaymentService;
 import www.com.user.service.UserSessionManager;
@@ -52,7 +55,9 @@ public class PaymentController {
     @ResponseBody
     public Map<String, Object> insertPayment(@RequestBody HashMap<String, Object> map) throws Exception {
         if (UserSessionManager.isUserLogined()) {
-            map.put("createUser", UserSessionManager.getLoginUserVO().getUserId());
+            // 감사 컬럼 규칙: CREATED_BY
+            map.put("createdBy", UserSessionManager.getLoginUserVO().getUserId());
+            map.put("updatedBy", UserSessionManager.getLoginUserVO().getUserId());
         }
         Map<String, Object> resultMap = new HashMap<>();
         paymentService.insertPayment(map);
@@ -68,7 +73,8 @@ public class PaymentController {
     @ResponseBody
     public Map<String, Object> updatePayment(@RequestBody HashMap<String, Object> map) throws Exception {
         if (UserSessionManager.isUserLogined()) {
-            map.put("updateUser", UserSessionManager.getLoginUserVO().getUserId());
+            // 감사 컬럼 규칙: UPDATED_BY
+            map.put("updatedBy", UserSessionManager.getLoginUserVO().getUserId());
         }
         Map<String, Object> resultMap = new HashMap<>();
         paymentService.updatePayment(map);

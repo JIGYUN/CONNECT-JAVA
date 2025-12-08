@@ -1,6 +1,8 @@
+// filepath: src/main/java/www/com/oauth/web/GoogleAuthController.java
 package www.com.oauth.web;
 
 import www.com.oauth.service.GoogleAuthService;
+import www.api.mba.auth.service.AuthService;
 import www.com.user.service.UserSessionManager;
 import www.com.user.service.UserVO;
 
@@ -11,8 +13,8 @@ import javax.annotation.Resource;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.net.URLEncoder;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
@@ -36,12 +38,12 @@ public class GoogleAuthController {
     @Resource
     private GoogleAuthService googleAuthService;
 
+    @Resource
+    private AuthService authService;
+
     private final SecureRandom rnd = new SecureRandom();
 
-    /**
-     * 애플리케이션 컨텍스트 경로 (URL 조합용)
-     * - 루트 컨텍스트면 "" 반환 → "//..." 방지
-     */
+    /** 애플리케이션 컨텍스트 경로 (URL 조합용) */
     private String appCtx(HttpServletRequest req) {
         String ctx = req.getContextPath();
         if (ctx == null || "/".equals(ctx) || ctx.isEmpty()) {
@@ -50,11 +52,7 @@ public class GoogleAuthController {
         return ctx;
     }
 
-    /**
-     * 쿠키 path 용
-     * - 루트 컨텍스트면 "/"
-     * - 서브 컨텍스트면 해당 경로 그대로
-     */
+    /** 쿠키 path 용 */
     private String cookiePath(HttpServletRequest req) {
         String ctx = appCtx(req);
         return ctx.isEmpty() ? "/" : ctx;
@@ -69,13 +67,13 @@ public class GoogleAuthController {
         }
 
         if (redirect.isEmpty()) {
-            // redirect 없으면 nonce만
             return nonce;
         }
 
         String encodedRedirect = Base64.getUrlEncoder()
-                                       .withoutPadding()
-                                       .encodeToString(redirect.getBytes(StandardCharsets.UTF_8));
+                .withoutPadding()
+                .encodeToString(redirect.getBytes(StandardCharsets.UTF_8));
+
         return nonce + STATE_SEP + encodedRedirect;
     }
 
@@ -122,7 +120,7 @@ public class GoogleAuthController {
     /** 1단계: 우리 서버 -> 구글 로그인 */
     @RequestMapping("/auth/google/login")
     public void login(HttpServletRequest req, HttpServletResponse res) throws Exception {
-        // React에서 encodeURIComponent 로 줬기 때문에 한 번 더 디코드해도 안전
+        // React 에서 encodeURIComponent 로 줬으므로 한 번 더 디코드
         String redirect = req.getParameter("redirect");
         if (redirect != null && !redirect.trim().isEmpty()) {
             redirect = URLDecoder.decode(redirect.trim(), "UTF-8");
@@ -133,13 +131,13 @@ public class GoogleAuthController {
         String nonce = genState();
         String state = buildState(nonce, redirect);
 
-        // 세션에 nonce 저장 (state 전체 X)
+        // 세션에 nonce 저장
         req.getSession(true).setAttribute(SESSION_KEY_STATE, nonce);
         System.out.println("[GAuth] LOGIN sessionId=" + req.getSession().getId());
         System.out.println("[GAuth] login: nonce=" + nonce);
         System.out.println("[GAuth] login: redirect=" + redirect);
 
-        // nonce 쿠키 저장 (세션 유실 시 참고용)
+        // nonce 쿠키 저장
         Cookie c = new Cookie(COOKIE_STATE, nonce);
         c.setHttpOnly(true);
         c.setPath(cookiePath(req));
@@ -168,10 +166,10 @@ public class GoogleAuthController {
 
         String rawState = req.getParameter("state");
         StateInfo stateInfo = parseState(rawState);
-        String stateNonce = stateInfo.nonce;
+        String stateNonce       = stateInfo.nonce;
         String redirectFromState = stateInfo.redirect;
 
-        // ----- 기대 nonce 로드 (세션 -> 쿠키 순서) -----
+        // 기대 nonce 로드 (세션 -> 쿠키)
         String expectedNonce = null;
         if (req.getSession(false) != null) {
             expectedNonce = (String) req.getSession(false).getAttribute(SESSION_KEY_STATE);
@@ -190,16 +188,15 @@ public class GoogleAuthController {
                 + ", redirectFromState=" + redirectFromState
                 + ", expectedNonce=" + expectedNonce);
 
-        // ----- 로컬 환경 여부 판별 -----
+        // 로컬 여부
         String host = req.getServerName();
-        boolean isLocalHost =
-                "localhost".equalsIgnoreCase(host) ||
-                        "127.0.0.1".equals(host);
+        boolean isLocalHost = "localhost".equalsIgnoreCase(host)
+                || "127.0.0.1".equals(host);
 
-        // ----- nonce 검증 -----
+        // nonce 검증
         if (stateNonce == null || expectedNonce == null || !expectedNonce.equals(stateNonce)) {
             if (isLocalHost) {
-                System.out.println("[GAuth] LOCAL DEV: nonce mismatch지만 체크 생략하고 진행");
+                System.out.println("[GAuth] LOCAL DEV: nonce mismatch지만 진행");
             } else {
                 System.out.println("[GAuth] NONCE_MISMATCH (PROD)");
                 redirectWithError(req, res, "state_mismatch");
@@ -223,8 +220,10 @@ public class GoogleAuthController {
         Map<String, String> uinfo = googleAuthService.fetchUserInfo(accessToken);
         System.out.println("[GAuth] uinfo=" + uinfo);
 
+        // TB_USER upsert
         googleAuthService.upsertUserFromGoogle(uinfo);
 
+        // 세션용 유저 로드
         UserVO loginVo = googleAuthService.loadSessionUser(uinfo.get("email"));
         System.out.println("[GAuth] loginVo=" + loginVo);
         if (loginVo == null) {
@@ -232,7 +231,7 @@ public class GoogleAuthController {
             return;
         }
 
-        // ----- Spring Security 인증 컨텍스트 구성 -----
+        // ── 1) (자바/JSP용) Spring Security 세션 구성 ──
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         UsernamePasswordAuthenticationToken auth =
                 new UsernamePasswordAuthenticationToken(
@@ -255,33 +254,45 @@ public class GoogleAuthController {
 
         UserSessionManager.setLoginUserVO(loginVo, req);
 
-        // ----- nonce 정리 -----
+        // nonce 정리
         if (req.getSession(false) != null) {
             req.getSession(false).removeAttribute(SESSION_KEY_STATE);
         }
-
-        // nonce 쿠키 삭제
         Cookie clear = new Cookie(COOKIE_STATE, "");
         clear.setPath(cookiePath(req));
         clear.setMaxAge(0);
         clear.setHttpOnly(true);
         res.addCookie(clear);
 
-        // ----- 최종 이동 위치 결정 -----
+        // ── 2) 리다이렉트 대상 결정 ──
         String target;
-        if (redirectFromState != null && !redirectFromState.trim().isEmpty()) {
-            target = redirectFromState.trim();   // 예: http://localhost:3000/login/google/success...
+        boolean isReactRedirect = redirectFromState != null
+                && redirectFromState.startsWith("http");
+
+        if (isReactRedirect) {
+            // React → 임시 로그인 토큰 발급
+            System.out.println("[GAuth] React loginToken flow 시작");
+            String loginToken = authService.issueLoginToken(loginVo.getEmail());
+            System.out.println("[GAuth] loginToken=" + loginToken);
+
+            String base = redirectFromState.trim();
+            String sep = base.contains("?") ? "&" : "?";
+            target = base + sep + "loginToken=" + URLEncoder.encode(loginToken, "UTF-8");
+            System.out.println("[GAuth] (REACT) redirecting to: " + target);
+        } else if (redirectFromState != null && !redirectFromState.trim().isEmpty()) {
+            // 서버 내부 경로 리다이렉트 (JSP 등)
+            target = redirectFromState.trim();
+            System.out.println("[GAuth] (JSP) redirecting to: " + target);
         } else {
             String ctx = appCtx(req);
             target = ctx.isEmpty() ? "/" : ctx + "/";
+            System.out.println("[GAuth] redirecting to ctx root: " + target);
         }
 
-        System.out.println("[GAuth] redirecting to: " + target);
         res.sendRedirect(target);
     }
 
     private void redirectWithError(HttpServletRequest req, HttpServletResponse res, String err) throws Exception {
-        // state 에서 redirect 우선 복구
         String rawState = req.getParameter("state");
         StateInfo stateInfo = parseState(rawState);
         String redirect = stateInfo.redirect;

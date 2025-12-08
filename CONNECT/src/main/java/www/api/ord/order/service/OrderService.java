@@ -108,16 +108,16 @@ public class OrderService {
 
         // 컬럼 키가 alias / 대소문자 섞여 있을 수 있으니 여러 키로 방어
         Long orderId = firstNonNullLong(
-            orderRow.get("orderId"),
-            orderRow.get("ORDER_ID"),
-            orderRow.get("order_id"),
-            orderRow.get("orderIdx"),
-            orderRow.get("ORDERIDX")
+                orderRow.get("orderId"),
+                orderRow.get("ORDER_ID"),
+                orderRow.get("order_id"),
+                orderRow.get("orderIdx"),
+                orderRow.get("ORDERIDX")
         );
 
         if (orderId == null) {
             throw new IllegalStateException(
-                "ORDER_ID를 찾을 수 없습니다. orderNo=" + orderNo + ", mapKeys=" + orderRow.keySet()
+                    "ORDER_ID를 찾을 수 없습니다. orderNo=" + orderNo + ", mapKeys=" + orderRow.keySet()
             );
         }
 
@@ -160,11 +160,11 @@ public class OrderService {
             // 포인트 사용(차감)
             if (pointUseAmt.compareTo(BigDecimal.ZERO) > 0) {
                 pointLedgerService.usePointForOrder(
-                    userId,
-                    actor,
-                    pointUseAmt,
-                    orderId,
-                    "주문 포인트 사용 (" + orderNo + ")"
+                        userId,
+                        actor,
+                        pointUseAmt,
+                        orderId,
+                        "주문 포인트 사용 (" + orderNo + ")"
                 );
             }
 
@@ -172,10 +172,10 @@ public class OrderService {
             if (pointSaveAmt.compareTo(BigDecimal.ZERO) > 0) {
                 // 기존 구현처럼 ORDER_ID 없이 적립
                 pointLedgerService.chargePoint(
-                    userId,
-                    actor,
-                    pointSaveAmt,
-                    "주문 포인트 적립 (" + orderNo + ")"
+                        userId,
+                        actor,
+                        pointSaveAmt,
+                        "주문 포인트 적립 (" + orderNo + ")"
                 );
             }
         }
@@ -198,8 +198,8 @@ public class OrderService {
 
         if (cartItemIds.isEmpty()) {
             throw new IllegalStateException(
-                "선택된 장바구니 항목이 없습니다. cartItemIds 비어 있음. "
-                + "프런트나 컨트롤러에서 CART_ITEM_ID들을 cartItemIds/cartIds/cartIdList 중 하나로 전달해야 합니다."
+                    "선택된 장바구니 항목이 없습니다. cartItemIds 비어 있음. "
+                            + "프런트나 컨트롤러에서 CART_ITEM_ID들을 cartItemIds/cartIds/cartIdList 중 하나로 전달해야 합니다."
             );
         }
 
@@ -211,21 +211,22 @@ public class OrderService {
 
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> items =
-                (List<Map<String, Object>>) (List<?>) dao.list(
-                    "www.api.crt.cartItem.CartItem.selectCartViewListByUser",
-                    cartParam
-                );
+                    (List<Map<String, Object>>) (List<?>) dao.list(
+                            "www.api.crt.cartItem.CartItem.selectCartViewListByUser",
+                            cartParam
+                    );
 
             if (log.isDebugEnabled()) {
-                log.debug("선택된 장바구니 조회 결과 건수 = {}", (items == null ? 0 : items.size()));
+                log.debug("선택된 장바구니 조회 결과 건수 = {}",
+                        (items == null ? 0 : items.size()));
             }
 
             if (items != null && !items.isEmpty()) {
                 for (Map<String, Object> row : items) {
 
                     Long productId = firstNonNullLong(
-                        row.get("productId"),
-                        row.get("PRODUCT_ID")
+                            row.get("productId"),
+                            row.get("PRODUCT_ID")
                     );
                     if (productId == null) {
                         // 상품 ID 없으면 스킵
@@ -234,46 +235,46 @@ public class OrderService {
 
                     // 상품명: productNm / PRODUCT_NM / title / TITLE 중 첫 번째
                     String productNm = firstNonEmptyString(
-                        row.get("productNm"),
-                        row.get("PRODUCT_NM"),
-                        row.get("title"),
-                        row.get("TITLE")
+                            row.get("productNm"),
+                            row.get("PRODUCT_NM"),
+                            row.get("title"),
+                            row.get("TITLE")
                     );
                     if (productNm == null || productNm.isEmpty()) {
                         productNm = "(상품명 미지정)";
                     }
 
                     int qty = toInt(firstNonNull(
-                        row.get("qty"),
-                        row.get("QTY")
+                            row.get("qty"),
+                            row.get("QTY")
                     ), 0);
                     if (qty <= 0) {
                         qty = 1;
                     }
 
                     BigDecimal unitPrice = firstNonZeroBigDecimal(
-                        row.get("unitPrice"),
-                        row.get("UNIT_PRICE"),
-                        row.get("salePrice"),
-                        row.get("SALE_PRICE")
+                            row.get("unitPrice"),
+                            row.get("UNIT_PRICE"),
+                            row.get("salePrice"),
+                            row.get("SALE_PRICE")
                     );
 
                     BigDecimal discountAmt = firstNonZeroBigDecimal(
-                        row.get("discountAmt"),
-                        row.get("DISCOUNT_AMT")
+                            row.get("discountAmt"),
+                            row.get("DISCOUNT_AMT")
                     );
 
                     BigDecimal lineAmt = firstNonZeroBigDecimal(
-                        row.get("lineAmt"),
-                        row.get("LINE_AMT")
+                            row.get("lineAmt"),
+                            row.get("LINE_AMT")
                     );
                     if (lineAmt.compareTo(BigDecimal.ZERO) <= 0) {
                         lineAmt = unitPrice.multiply(BigDecimal.valueOf(qty));
                     }
 
                     Object optObj = firstNonNull(
-                        row.get("optionJson"),
-                        row.get("OPTION_JSON")
+                            row.get("optionJson"),
+                            row.get("OPTION_JSON")
                     );
                     String optionJson = optObj != null ? String.valueOf(optObj) : "{}";
 
@@ -297,8 +298,8 @@ public class OrderService {
 
                     // 장바구니 항목 소프트 삭제
                     Long cartItemId = firstNonNullLong(
-                        row.get("cartItemId"),
-                        row.get("CART_ITEM_ID")
+                            row.get("cartItemId"),
+                            row.get("CART_ITEM_ID")
                     );
                     if (cartItemId != null) {
                         cartService.deleteCartItem(userId, cartItemId);
@@ -329,6 +330,114 @@ public class OrderService {
     @Transactional
     public void deleteOrder(Map<String, Object> paramMap) {
         dao.delete(namespace + ".deleteOrder", paramMap);
+    }
+
+    // =======================
+    //  주문 취소 (A안)
+    //  - 금지 상태만 막고, 나머지(ORDER_DONE 포함)는 취소 허용
+    // =======================
+    @Transactional
+    public void cancelOrder(Map<String, Object> paramMap) {
+        if (paramMap == null) {
+            throw new IllegalArgumentException("paramMap is null");
+        }
+
+        Long orderId = firstNonNullLong(
+                paramMap.get("orderId"),
+                paramMap.get("orderIdx")
+        );
+        if (orderId == null) {
+            throw new IllegalArgumentException("orderId/orderIdx 가 필요합니다.");
+        }
+
+        Map<String, Object> findParam = new HashMap<>();
+        findParam.put("orderId", orderId);
+
+        Map<String, Object> order = dao.selectOne(namespace + ".selectOrderForCancel", findParam);
+        if (order == null) {
+            throw new IllegalStateException("주문을 찾을 수 없습니다. orderId=" + orderId);
+        }
+
+        String orderStatusCd = asString(firstNonNull(order.get("orderStatusCd"), order.get("ORDER_STATUS_CD")));
+        String payStatusCd   = asString(firstNonNull(order.get("payStatusCd"),   order.get("PAY_STATUS_CD")));
+        String useAt         = asString(firstNonNull(order.get("useAt"),         order.get("USE_AT")));
+
+        // 사용안함/삭제된 주문은 취소 금지
+        if (!"Y".equalsIgnoreCase(useAt)) {
+            throw new IllegalStateException("이미 삭제되었거나 사용안함 상태의 주문입니다.");
+        }
+
+        // 이미 취소된 주문은 재취소 금지
+        if ("ORDER_CANCEL".equals(orderStatusCd)) {
+            throw new IllegalStateException("이미 취소된 주문입니다.");
+        }
+
+        Long userId = firstNonNullLong(order.get("userId"), order.get("USER_ID"));
+        String orderNo = asString(firstNonNull(order.get("orderNo"), order.get("ORDER_NO")));
+
+        // updatedBy/createdBy/param.updatedBy 중 하나를 actor 로 사용
+        String actor = asString(firstNonNull(
+                paramMap.get("updatedBy"),
+                paramMap.get("createdBy"),
+                order.get("UPDATED_BY"),
+                order.get("CREATED_BY")
+        ));
+
+        BigDecimal pointUseAmt  = firstNonZeroBigDecimal(order.get("pointUseAmt"),  order.get("POINT_USE_AMT"));
+        BigDecimal pointSaveAmt = firstNonZeroBigDecimal(order.get("pointSaveAmt"), order.get("POINT_SAVE_AMT"));
+        BigDecimal payAmt       = firstNonZeroBigDecimal(order.get("payAmt"),       order.get("PAY_AMT"));
+
+        if (log.isDebugEnabled()) {
+            log.debug(
+                    "cancelOrder - orderId=" + orderId
+                            + ", orderNo=" + orderNo
+                            + ", statusCd=" + orderStatusCd
+                            + ", payStatusCd=" + payStatusCd
+                            + ", pointUseAmt=" + pointUseAmt
+                            + ", pointSaveAmt=" + pointSaveAmt
+                            + ", payAmt=" + payAmt
+            );
+        }
+
+        // 1) 결제 취소 (TB_PAYMENT 상태 변경)
+        //    - PAY_DONE 인 경우에만 실제 취소 처리
+        if ("PAY_DONE".equals(payStatusCd)) {
+            paymentService.cancelPaymentByOrderId(orderId, actor);
+        }
+
+        // 2) 포인트 롤백
+        if (userId != null) {
+            // 사용했던 포인트 환불(+)
+            if (pointUseAmt.compareTo(BigDecimal.ZERO) > 0) {
+                pointLedgerService.chargePoint(
+                        userId,
+                        actor,
+                        pointUseAmt,
+                        "주문 취소 포인트 환불 (" + orderNo + ")"
+                );
+            }
+
+            // 적립했던 포인트 회수(−)
+            if (pointSaveAmt.compareTo(BigDecimal.ZERO) > 0) {
+                pointLedgerService.usePointForOrder(
+                        userId,
+                        actor,
+                        pointSaveAmt,
+                        orderId,
+                        "주문 취소 포인트 적립 회수 (" + orderNo + ")"
+                );
+            }
+        }
+
+        // 3) 주문 상태 변경 (ORDER_CANCEL 등으로)
+        Map<String, Object> upd = new HashMap<>();
+        upd.put("orderId", orderId);
+        upd.put("updatedBy", actor);
+
+        int updated = dao.update(namespace + ".updateOrderCancel", upd);
+        if (updated <= 0) {
+            throw new IllegalStateException("주문 상태 업데이트에 실패했습니다. 이미 취소되었을 수 있습니다.");
+        }
     }
 
     // =======================
@@ -390,11 +499,11 @@ public class OrderService {
         }
 
         Object raw = firstNonNull(
-            paramMap.get("cartItemIds"),
-            paramMap.get("cartIds"),
-            paramMap.get("cartIdList"),
-            paramMap.get("cartItemId"),
-            paramMap.get("cartId")
+                paramMap.get("cartItemIds"),
+                paramMap.get("cartIds"),
+                paramMap.get("cartIdList"),
+                paramMap.get("cartItemId"),
+                paramMap.get("cartId")
         );
 
         if (raw == null) {

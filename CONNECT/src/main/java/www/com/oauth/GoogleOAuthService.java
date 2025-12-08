@@ -1,3 +1,4 @@
+// filepath: src/main/java/www/com/oauth/GoogleOAuthService.java
 package www.com.oauth;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -15,7 +16,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Service("googleOAuthService")
 public class GoogleOAuthService {
 
-    // ★ 여기서부터는 CoreProperties 안 쓰고, ConfigProperties(외부 파일)에서 바로 읽는다.
     @Value("#{ConfigProperties['google.oauth.clientId']}")
     private String clientId;
 
@@ -26,7 +26,7 @@ public class GoogleOAuthService {
     private String redirectUri;
 
     @Value("#{ConfigProperties['google.oauth.scope']}")
-    private String scope; // null 이면 아래에서 기본값 처리
+    private String scope; // null 이면 기본값 사용
 
     private static final String AUTH_URL  = "https://accounts.google.com/o/oauth2/v2/auth";
     private static final String TOKEN_URL = "https://oauth2.googleapis.com/token";
@@ -39,15 +39,13 @@ public class GoogleOAuthService {
                 ? "openid email profile"
                 : scope.trim();
 
-        String redirect = redirectUri;  // 외부 properties 그대로
-        String auth = AUTH_URL;
+        String redirect = redirectUri;
 
-        // 디버그 로그
         System.out.println("[GAuth] client_id(raw)=" + clientId);
         System.out.println("[GAuth] redirect_uri(raw)=" + redirect);
         System.out.println("[GAuth] scope(raw)=" + rawScope);
 
-        String url = auth
+        String url = AUTH_URL
                 + "?client_id=" + URLEncoder.encode(clientId, "UTF-8")
                 + "&redirect_uri=" + URLEncoder.encode(redirect, "UTF-8")
                 + "&response_type=code"
@@ -87,6 +85,7 @@ public class GoogleOAuthService {
     }
 
     /* ---------- helpers ---------- */
+
     private String postForm(String url, Map<String,String> form) throws Exception {
         String body = buildForm(form);
         HttpURLConnection con = (HttpURLConnection) new URL(url).openConnection();

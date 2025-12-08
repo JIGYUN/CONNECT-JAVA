@@ -232,4 +232,101 @@
         WHERE PAYMENT_ID = #{paymentId}
     </update>
 
+    <!-- ========================= -->
+    <!-- 환불/취소 관련 추가 쿼리 -->
+    <!-- ========================= -->
+
+    <!-- 1) 주문 기준 마지막 PAY_DONE 결제 한 건 조회 -->
+    <select id="selectLastPayDoneByOrderId" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.pay.payment.Payment.selectLastPayDoneByOrderId
+         Description : 주문 기준 마지막 결제완료 건 조회
+        */
+        SELECT
+            PAYMENT_ID
+            ,ORDER_ID
+            ,PG_CD
+            ,PG_MID
+            ,PG_TID
+            ,PAY_METHOD_CD
+            ,PAY_TOTAL_AMT
+            ,PAY_APPROVED_AMT
+            ,PAY_STATUS_CD
+            ,REQ_DT
+            ,RES_DT
+            ,RAW_REQUEST_JSON
+            ,RAW_RESPONSE_JSON
+            ,USE_AT
+            ,CREATED_DT
+            ,CREATED_BY
+            ,UPDATED_DT
+            ,UPDATED_BY
+        FROM TB_PAYMENT
+        WHERE ORDER_ID = #{orderId}
+          AND USE_AT = 'Y'
+          AND PAY_STATUS_CD = 'PAY_DONE'
+        ORDER BY PAYMENT_ID DESC
+        LIMIT 1
+    </select>
+
+    <!-- 2) TB_PAYMENT_REFUND INSERT -->
+    <insert id="insertPaymentRefund" parameterType="hashmap">
+        /*
+         SQL ID: www.api.pay.payment.Payment.insertPaymentRefund
+         Description : 결제 환불 이력 등록
+         TB_PAYMENT_REFUND 실제 컬럼 구조에 맞춤
+        */
+        INSERT INTO TB_PAYMENT_REFUND
+        (
+            PAYMENT_ID
+            ,ORDER_ID
+            ,ORDER_ITEM_ID
+            ,REFUND_AMT
+            ,REFUND_STATUS_CD
+            ,REFUND_REASON
+            ,PG_CANCEL_TID
+            ,REQ_DT
+            ,RES_DT
+            ,USE_AT
+            ,CREATED_DT
+            ,CREATED_BY
+            ,UPDATED_DT
+            ,UPDATED_BY
+        )
+        VALUES
+        (
+            #{paymentId}
+            ,#{orderId}
+            ,#{orderItemId}
+            ,#{refundAmt}
+            ,#{refundStatusCd}
+            ,#{refundReason}
+            ,#{pgCancelTid}
+            ,NOW()
+            ,NOW()
+            ,#{useAt}
+            ,NOW()
+            ,#{createdBy}
+            ,NOW()
+            ,#{updatedBy}
+        )
+    </insert>
+
+    <!-- 3) 주문 기준 결제 상태 취소로 변경 -->
+    <update id="updatePaymentStatusByOrderId" parameterType="hashmap">
+        /*
+         SQL ID: www.api.pay.payment.Payment.updatePaymentStatusByOrderId
+         Description : 주문 기준 결제 상태(PAY_STATUS_CD) 변경
+        */
+        UPDATE TB_PAYMENT
+        SET
+            PAY_STATUS_CD = #{payStatusCd}
+            ,UPDATED_DT = NOW()
+            <if test="updatedBy != null and updatedBy != ''">
+                ,UPDATED_BY = #{updatedBy}
+            </if>
+        WHERE ORDER_ID = #{orderId}
+          AND USE_AT = 'Y'
+    </update>
+
 </mapper>

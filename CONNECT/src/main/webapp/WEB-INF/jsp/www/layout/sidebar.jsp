@@ -45,6 +45,7 @@
                             </button>
                             <div class="dropdown-menu dropdown-menu-right">
                                 <a class="dropdown-item" href="/mypage">MYPAGE</a>
+                                <a class="dropdown-item" href="/plg/pointLedger/pointLedgerList">POINT</a>
                                 <div class="dropdown-divider"></div>
                                 <a class="dropdown-item text-danger" href="/mba/auth/logout">LOGOUT</a>
                             </div>

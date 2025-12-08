@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.http.HttpSession;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -177,6 +179,66 @@ public class OrderController {
         resultMap.put("ok", true);
         resultMap.put("msg", "성공");
         resultMap.put("count", count);
+        return resultMap;
+    }
+
+    /**
+     * 주문 취소(결제 취소 + 포인트 사용/적립 롤백까지 한 번에 처리)
+     *
+     * 기대 입력(JSON):
+     * {
+     *   "orderId": 123   // 또는 "orderIdx": 123
+     * }
+     *
+     * - 이미 취소된 주문에 대해선 서비스 레벨에서 방어(예외/무시) 처리 가정
+     * - 컨트롤러는 로그인·파라미터 검증 + 공통 응답만 담당
+     */
+    @RequestMapping("/api/ord/order/cancelOrder")
+    @ResponseBody
+    public Map<String, Object> cancelOrder(@RequestBody HashMap<String, Object> map) throws Exception {
+        Map<String, Object> resultMap = new HashMap<>();
+
+        if (!UserSessionManager.isUserLogined()) {
+            resultMap.put("ok", false);
+            resultMap.put("msg", "LOGIN_REQUIRED");
+            return resultMap;
+        }
+
+        // 로그인 사용자 정보
+        String userId = UserSessionManager.getLoginUserVO().getUserId();
+        String userEmail = UserSessionManager.getLoginUserVO().getEmail();
+
+        map.put("userId", userId);
+        map.put("updatedBy", userId);
+
+        // orderId / orderIdx 정규화
+        Object orderIdObj = map.get("orderId");
+        if (orderIdObj == null) {
+            orderIdObj = map.get("orderIdx");
+        }
+        if (orderIdObj == null) {
+            resultMap.put("ok", false);
+            resultMap.put("msg", "INVALID_ORDER_ID");
+            return resultMap;
+        }
+
+        String orderIdStr = String.valueOf(orderIdObj).trim();
+        if (orderIdStr.isEmpty()) {
+            resultMap.put("ok", false);
+            resultMap.put("msg", "INVALID_ORDER_ID");
+            return resultMap;
+        }
+
+        // 서비스 계층에서 혼동 없도록 두 키 모두 세팅
+        map.put("orderId", orderIdStr);
+        map.put("orderIdx", orderIdStr);
+
+        // 주문 취소 + 결제 취소 + 포인트 롤백을 하나의 트랜잭션으로 처리
+        // (실제 구현: OrderService.cancelOrderWithPayAndPoint(map) 에서 담당)
+        orderService.cancelOrder(map);
+
+        resultMap.put("ok", true);
+        resultMap.put("msg", "취소 성공");
         return resultMap;
     }
 

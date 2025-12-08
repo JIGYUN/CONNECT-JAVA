@@ -1,8 +1,14 @@
+// filepath: src/main/java/www/api/mba/auth/service/AuthService.java
 package www.api.mba.auth.service;
 
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,16 +16,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+
 import egovframework.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import www.com.util.CommonDao;
 import www.com.util.Sha256;
-import www.api.mba.auth.service.AuthService;
+
+import www.com.oauth.service.GoogleAuthService;
+import www.com.user.service.UserSessionManager;
+import www.com.user.service.UserVO;
+
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 
 /**
- * 조직관리1 정보 관리 구현 클래스
- *
- * @author 정지균
- * @since 2024.01.12
+ * 인증/회원 관련 서비스
  */
 @Service
 public class AuthService extends EgovAbstractServiceImpl {
@@ -29,116 +42,180 @@ public class AuthService extends EgovAbstractServiceImpl {
     @Autowired
     private CommonDao dao;
 
-    
-    private String namespace = "www.api.mba.auth.Auth";
+    @Autowired
+    private GoogleAuthService googleAuthService;
 
-    /**
-     * 회원가입
-     *
-     * @author 정지균
-     * @since 2024.01.12
-     */
+    private final String namespace = "www.api.mba.auth.Auth";
+
+    private final SecureRandom rnd = new SecureRandom();
+
+    /* ================== 기존 회원가입/일반 로그인 ================== */
+
     @Transactional(propagation = Propagation.REQUIRED)
     public void insertJoin(Map<String, Object> params) {
-    	Sha256 sha256 = new Sha256();
-    	params.put("password", sha256.encrypt(String.valueOf(params.get("password"))));
-    	
-        dao.insert(namespace+".insertJoin", params);  		//마스터 인서트 
+        Sha256 sha256 = new Sha256();
+        params.put("password", sha256.encrypt(String.valueOf(params.get("password"))));
+        dao.insert(namespace + ".insertJoin", params);
     }
 
     /**
-     * 로그인
-     * - 비밀번호 해시 → 사용자 조회
-     * - 조회 성공(=로그인 성공)이고 fcmToken 파라미터가 있을 때만 TB_USER 토큰 업데이트
+     * 일반 로그인 (이메일 + 패스워드)
      */
     public Map<String, Object> selectLogin(Map<String, Object> params) {
-        // 1) 비밀번호 해시
         Sha256 sha256 = new Sha256();
         params.put("password", sha256.encrypt(String.valueOf(params.get("password"))));
 
-        // 2) 로그인 시도
         Map<String, Object> user = dao.selectOne(namespace + ".selectLogin", params);
 
-        // 3) 로그인 성공 시에만 토큰 업데이트
+        // 로그인 성공 시 FCM 토큰 업데이트
         if (user != null) {
-            // 프론트가 보낸 fcmToken 키가 "존재"할 때만 동작 (값이 null이면 DB를 NULL로 클리어)
-        	// fcmToken이 비어있지 않을 때만 토큰 업데이트 수행
-        	Object t = params.get("fcmToken");
-        	String token = (t == null) ? null : String.valueOf(t).trim();
-        	if (token != null && !token.isEmpty()) {
-        	    // USER_ID 추출(대소문자 혼용 대비)
-        	    Object uidObj = user.containsKey("USER_ID") ? user.get("USER_ID") : user.get("userId");
-        	    Long userId = (uidObj == null) ? null : Long.valueOf(String.valueOf(uidObj));
+            Object t = params.get("fcmToken");
+            String token = (t == null) ? null : String.valueOf(t).trim();
+            if (token != null && !token.isEmpty()) {
+                Object uidObj = user.containsKey("USER_ID") ? user.get("USER_ID") : user.get("userId");
+                Long userId = (uidObj == null) ? null : Long.valueOf(String.valueOf(uidObj));
+                if (userId != null) {
+                    Map<String, Object> up = new HashMap<>();
+                    up.put("userId", userId);
+                    up.put("fcmToken", token);
 
-        	    if (userId != null) {
-        	        Map<String, Object> up = new HashMap<>();
-        	        up.put("userId", userId);
-        	        up.put("fcmToken", token); // 빈값 아님(위에서 검증)
+                    Object p = params.get("platformInfo");
+                    String platformInfo = (p == null) ? null : String.valueOf(p).trim();
+                    if (platformInfo != null && !platformInfo.isEmpty()) {
+                        up.put("platformInfo", platformInfo);
+                    }
 
-        	        // 선택: 플랫폼 정보가 있을 때만 반영(빈문자면 미포함)
-        	        Object p = params.get("platformInfo");
-        	        String platformInfo = (p == null) ? null : String.valueOf(p).trim();
-        	        if (platformInfo != null && !platformInfo.isEmpty()) {
-        	            up.put("platformInfo", platformInfo);
-        	        }
-
-        	        dao.update(namespace + ".updateToken", up);
-        	    }
-        	}
+                    dao.update(namespace + ".updateToken", up);
+                }
+            }
         }
 
         return user;
     }
 
-    /**
-     * 아이디비밀번호찾기
-     *
-     * @author 정지균
-     * @since 2024.01.12
-     * @param Map 조회 조건
-     * @return List 조회 결과
-     */
     public Map<String, Object> selectIdPwFind(Map<String, Object> params) {
         return dao.selectOne(namespace + ".selectIdPwFind", params);
     }
-    
-    /**
-     * 아이디 중복체크 
-     *
-     * @author 정지균
-     * @since 2024.01.12
-     * @param Map 조회 조건
-     * @return List 조회 결과
-     */
+
     public Map<String, Object> duplicateId(Map<String, Object> params) {
         return dao.selectOne(namespace + ".duplicateId", params);
     }
-    
-    
-    /**
-     * 아이디 찾기 
-     *
-     * @author 정지균
-     * @since 2024.01.12
-     * @param Map 조회 조건
-     * @return List 조회 결과
-     */
+
     public Map<String, Object> findId(Map<String, Object> params) {
         return dao.selectOne(namespace + ".findId", params);
     }
-    
-    /**
-     * 비밀번호 변경 
-     *
-     * @author 정지균
-     * @since 2024.01.12
-     * @param Map 조회 조건
-     * @return List 조회 결과
-     */
+
     public int changePassword(Map<String, Object> params) {
-    	Sha256 sha256 = new Sha256();
-    	params.put("password", sha256.encrypt(String.valueOf(params.get("password"))));
+        Sha256 sha256 = new Sha256();
+        params.put("password", sha256.encrypt(String.valueOf(params.get("password"))));
         return dao.update(namespace + ".changePassword", params);
     }
- 
+
+    /* ================== 구글 로그인 임시 토큰 플로우 ================== */
+
+    /**
+     * 구글 로그인용 임시 로그인 토큰 발급
+     * (구글 콜백에서 호출)
+     */
+    @Transactional(propagation = Propagation.REQUIRED)
+    public String issueLoginToken(String email) {
+        String tokenId = genTokenId();
+
+        Map<String, Object> p = new HashMap<>();
+        p.put("tokenId", tokenId);
+        p.put("email", email);
+        p.put("expiresMinutes", 5); // 5분 유효
+        p.put("createdBy", email);
+
+        dao.insert(namespace + ".insertLoginToken", p);
+
+        logger.info("Issued login token for email={}, tokenId={}", email, tokenId);
+        return tokenId;
+    }
+
+    /**
+     * 임시토큰 소비 + Spring Security 세션 생성
+     *  - 유효한 토큰인지 검증
+     *  - TB_LOGIN_TOKEN.USED_AT = 'Y' 로 마킹
+     *  - EMAIL 기준으로 UserVO 조회
+     *  - SecurityContext + HttpSession(JSESSIONID) 생성
+     *  - 프론트에 내려줄 UserVO 리턴
+     */
+    @Transactional(propagation = Propagation.REQUIRED)
+    public UserVO consumeLoginTokenAndCreateSession(
+            String tokenId,
+            HttpServletRequest req,
+            HttpServletResponse res
+    ) {
+        if (tokenId == null || tokenId.trim().isEmpty()) {
+            logger.info("consumeLoginTokenAndCreateSession: tokenId empty");
+            return null;
+        }
+
+        Map<String, Object> param = new HashMap<>();
+        param.put("tokenId", tokenId);
+
+        // 1) 유효 토큰 조회
+        Map<String, Object> row = dao.selectOne(namespace + ".selectValidLoginToken", param);
+        if (row == null) {
+            logger.info("consumeLoginTokenAndCreateSession: no valid token. tokenId={}", tokenId);
+            return null;
+        }
+
+        // MyBatis resultType=hashmap → 키가 EMAIL 또는 email 일 수 있음
+        Object emailObj = row.get("email");
+        if (emailObj == null) {
+            emailObj = row.get("EMAIL");
+        }
+        String email = (emailObj == null) ? null : String.valueOf(emailObj);
+
+        // 2) 토큰 사용 처리
+        dao.update(namespace + ".markLoginTokenUsed", param);
+        logger.info("Consumed login token tokenId={}, email={}", tokenId, email);
+
+        if (email == null || email.trim().isEmpty()) {
+            logger.warn("consumeLoginTokenAndCreateSession: email null, abort");
+            return null;
+        }
+
+        // 3) 이메일로 UserVO 로드
+        UserVO loginVo = googleAuthService.loadSessionUser(email);
+        if (loginVo == null) {
+            logger.warn("consumeLoginTokenAndCreateSession: user not found for email={}", email);
+            return null;
+        }
+
+        // 4) Spring Security 컨텍스트 + 세션 구성
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        UsernamePasswordAuthenticationToken auth =
+                new UsernamePasswordAuthenticationToken(
+                        loginVo,
+                        loginVo.getPassword(),
+                        loginVo.getAuthorities()
+                );
+        auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
+        context.setAuthentication(auth);
+        SecurityContextHolder.setContext(context);
+
+        HttpSessionSecurityContextRepository repo = new HttpSessionSecurityContextRepository();
+        repo.setAllowSessionCreation(true);
+        repo.saveContext(context, req, res);
+
+        try {
+            req.changeSessionId();
+        } catch (Throwable ignore) {
+        }
+
+        UserSessionManager.setLoginUserVO(loginVo, req);
+
+        return loginVo;
+    }
+
+    /* ================== 내부 util ================== */
+
+    private String genTokenId() {
+        byte[] b = new byte[32];
+        rnd.nextBytes(b);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(b);
+    }
 }

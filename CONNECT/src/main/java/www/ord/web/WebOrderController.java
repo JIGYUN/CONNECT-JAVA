@@ -19,13 +19,13 @@ import java.util.HashMap;
 public class WebOrderController {
 
     /** 기본 페이지 */
-    @RequestMapping("/order/order")
+    @RequestMapping("/order/orderDetail")
     public String page(ModelMap model, @RequestParam HashMap<String,Object> map) throws Exception {
         if (UserSessionManager.isUserLogined()) {
             model.put("userVO", UserSessionManager.getLoginUserVO());
         }
         model.put("map", map);
-        return "ord/order/order"; // 예) bbs/board/board.jsp
+        return "ord/order/orderDetail"; // 예) bbs/board/board.jsp
     }
 
     /** 목록 페이지 */

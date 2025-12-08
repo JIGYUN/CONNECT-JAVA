@@ -22,39 +22,56 @@
             AND PRODUCT_ID = #{productId}
         </if>
     </sql>
+	
+	<select id="selectOrderItemList" parameterType="map" resultType="CamelHashMap">
+	    /*
+	     SQL ID: www.api.ord.orderItem.OrderItem.selectOrderItemList
+	     Description : 주문상품 목록 Query (+ 상품 이미지/제목 포함)
+	    */
+	    SELECT
+	        oi.ORDER_ITEM_ID
+	        ,oi.ORDER_ID
+	        ,oi.PRODUCT_ID
+	        ,oi.PRODUCT_NM
+	        ,oi.QTY
+	        ,oi.UNIT_PRICE
+	        ,oi.DISCOUNT_AMT
+	        ,oi.LINE_AMT
+	        ,oi.STATUS_CD
+	        ,oi.OPTION_JSON
+	        ,oi.USE_AT
+	        ,DATE_FORMAT(oi.CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+	        ,oi.CREATED_BY
+	        ,DATE_FORMAT(oi.UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+	        ,oi.UPDATED_BY
+	
+	        /* ▼ 상품 테이블에서 이미지/제목 들고오기 (없어도 null로 떨어지게) */
+	        ,(
+	            SELECT p.MAIN_IMG_URL
+	            FROM TB_PRODUCT p
+	            WHERE p.PRODUCT_ID = oi.PRODUCT_ID
+	              AND p.USE_AT = 'Y'
+	            LIMIT 1
+	        ) AS mainImgUrl
+	        ,(
+	            SELECT p.TITLE
+	            FROM TB_PRODUCT p
+	            WHERE p.PRODUCT_ID = oi.PRODUCT_ID
+	              AND p.USE_AT = 'Y'
+	            LIMIT 1
+	        ) AS productTitle
+	    FROM TB_ORDER_ITEM oi
+	    <where>
+	        <include refid="whereOrderItem" />
+	    </where>
+	    ORDER BY oi.ORDER_ITEM_ID DESC
+	    <if test="limit != null and offset != null">
+	        /*  페이징 하단 시작  */
+	        LIMIT #{limit} OFFSET #{offset}
+	        /*  페이징 하단 끝  */
+	    </if>
+	</select>
 
-    <select id="selectOrderItemList" parameterType="map" resultType="CamelHashMap">
-        /*
-         SQL ID: www.api.ord.orderItem.OrderItem.selectOrderItemList
-         Description : 주문상품 목록 Query
-        */
-        SELECT
-            ORDER_ITEM_ID
-            ,ORDER_ID
-            ,PRODUCT_ID
-            ,PRODUCT_NM
-            ,QTY
-            ,UNIT_PRICE
-            ,DISCOUNT_AMT
-            ,LINE_AMT
-            ,STATUS_CD
-            ,OPTION_JSON
-            ,USE_AT
-            ,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
-            ,CREATED_BY
-            ,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
-            ,UPDATED_BY
-        FROM TB_ORDER_ITEM
-        <where>
-            <include refid="whereOrderItem" />
-        </where>
-        ORDER BY ORDER_ITEM_ID DESC
-        <if test="limit != null and offset != null">
-            /*  페이징 하단 시작  */
-            LIMIT #{limit} OFFSET #{offset}
-            /*  페이징 하단 끝  */
-        </if>
-    </select>
 
     <select id="selectOrderItemListCount" parameterType="hashmap" resultType="hashmap">
         /*

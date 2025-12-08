@@ -24,85 +24,75 @@
         </if>
     </sql>
 
-	<select id="selectOrderList" parameterType="map" resultType="CamelHashMap">
-	    /*
-	     SQL ID: www.api.ord.order.Order.selectOrderList
-	     Description : 주문 목록 Query (사용자 주문내역 + 관리자 공용)
-	    */
-	    SELECT
-	        /* 목록 화면용 번호/PK */
-	        o.ORDER_ID                                         AS orderIdx
-	        ,o.ORDER_ID                                        AS orderId
-	
-	        /* 기본 주문 정보 */
-	        ,o.ORDER_NO
-	        ,o.USER_ID
-	        ,o.ORDER_STATUS_CD                                 AS orderStatusCd
-	        ,o.PAY_STATUS_CD
-	        ,o.PAY_METHOD_CD
-	
-	        /* 금액 정보 */
-	        ,o.TOTAL_PRODUCT_AMT
-	        ,o.TOTAL_DISCOUNT_AMT
-	        ,o.DELIVERY_AMT
-	        ,o.ORDER_AMT
-	        ,o.POINT_USE_AMT
-	        ,o.POINT_SAVE_AMT
-	        ,o.COUPON_USE_AMT
-	        ,o.PAY_AMT
-	
-	        /* 목록에서 쓰는 대표 금액 */
-	        ,o.ORDER_AMT                                       AS totalAmt
-	
-	        /* 수령인 / 배송 정보 */
-	        ,o.RECEIVER_NM
-	        ,o.RECEIVER_PHONE
-	        ,o.ZIP_CODE
-	        ,o.ADDR1
-	        ,o.ADDR2
-	        ,o.DELIVERY_MEMO
-	
-	        ,o.USE_AT
-	
-	        /* 일시 */
-	        ,DATE_FORMAT(o.CREATED_DT, '%Y-%m-%d %H:%i:%s')    AS orderDt
-	        ,DATE_FORMAT(o.CREATED_DT, '%Y-%m-%d %H:%i:%s')    AS createdDt
-	        ,o.CREATED_BY
-	        ,DATE_FORMAT(o.UPDATED_DT, '%Y-%m-%d %H:%i:%s')    AS updatedDt
-	        ,o.UPDATED_BY
-	
-	        /* 주문 상품 요약 (첫 상품명 + ' 외 N건') */
-	        ,(
-	            SELECT
-	                CASE
-	                    WHEN COUNT(*) = 0 THEN '(상품 정보 없음)'
-	                    WHEN COUNT(*) = 1 THEN
-	                        MAX(COALESCE(p2.TITLE, '(상품 정보 없음)'))
-	                    ELSE CONCAT(
-	                        MAX(COALESCE(p2.TITLE, '(상품 정보 없음)')),
-	                        ' 외 ',
-	                        COUNT(*) - 1,
-	                        '건'
-	                    )
-	                END
-	            FROM TB_ORDER_ITEM oi2
-	            LEFT JOIN TB_PRODUCT p2
-	                ON p2.PRODUCT_ID = oi2.PRODUCT_ID
-	            WHERE oi2.ORDER_ID = o.ORDER_ID
-	              AND oi2.USE_AT = 'Y'
-	        )                                                  AS productSummary
-	    FROM TB_ORDER o
-	    <where>
-	        <include refid="whereOrder" />
-	    </where>
-	    ORDER BY o.ORDER_ID DESC
-	    <if test="limit != null and offset != null">
-	        /*  페이징 하단 시작  */
-	        LIMIT #{limit} OFFSET #{offset}
-	        /*  페이징 하단 끝  */
-	    </if>
-	</select>
-
+    <select id="selectOrderList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.ord.order.Order.selectOrderList
+         Description : 주문 목록 Query (사용자 주문내역 + 관리자 공용)
+        */
+        SELECT
+            /* 목록 화면용 번호/PK */
+            o.ORDER_ID                                         AS orderIdx
+            ,o.ORDER_ID                                        AS orderId
+            /* 기본 주문 정보 */
+            ,o.ORDER_NO
+            ,o.USER_ID
+            ,o.ORDER_STATUS_CD                                 AS orderStatusCd
+            ,o.PAY_STATUS_CD
+            ,o.PAY_METHOD_CD
+            /* 금액 정보 */
+            ,o.TOTAL_PRODUCT_AMT
+            ,o.TOTAL_DISCOUNT_AMT
+            ,o.DELIVERY_AMT
+            ,o.ORDER_AMT
+            ,o.POINT_USE_AMT
+            ,o.POINT_SAVE_AMT
+            ,o.COUPON_USE_AMT
+            ,o.PAY_AMT
+            /* 목록에서 쓰는 대표 금액 */
+            ,o.ORDER_AMT                                       AS totalAmt
+            /* 수령인 / 배송 정보 */
+            ,o.RECEIVER_NM
+            ,o.RECEIVER_PHONE
+            ,o.ZIP_CODE
+            ,o.ADDR1
+            ,o.ADDR2
+            ,o.DELIVERY_MEMO
+            ,o.USE_AT
+            /* 일시 */
+            ,DATE_FORMAT(o.CREATED_DT, '%Y-%m-%d %H:%i:%s')    AS orderDt
+            ,DATE_FORMAT(o.CREATED_DT, '%Y-%m-%d %H:%i:%s')    AS createdDt
+            ,o.CREATED_BY
+            ,DATE_FORMAT(o.UPDATED_DT, '%Y-%m-%d %H:%i:%s')    AS updatedDt
+            ,o.UPDATED_BY
+            /* 주문 상품 요약 (첫 상품명 + ' 외 N건') */
+            ,(
+                SELECT
+                    CASE
+                        WHEN COUNT(*) = 0 THEN NULL
+                        WHEN COUNT(*) = 1 THEN
+                            MAX(oi2.PRODUCT_NM)
+                        ELSE CONCAT(
+                            MAX(oi2.PRODUCT_NM),
+                            ' 외 ',
+                            COUNT(*) - 1,
+                            '건'
+                        )
+                    END
+                FROM TB_ORDER_ITEM oi2
+                WHERE oi2.ORDER_ID = o.ORDER_ID
+                  AND oi2.USE_AT = 'Y'
+            )                                                  AS productSummary
+        FROM TB_ORDER o
+        <where>
+            <include refid="whereOrder" />
+        </where>
+        ORDER BY o.ORDER_ID DESC
+        <if test="limit != null and offset != null">
+            /*  페이징 하단 시작  */
+            LIMIT #{limit} OFFSET #{offset}
+            /*  페이징 하단 끝  */
+        </if>
+    </select>
 
     <!-- 주문 목록 카운트 -->
     <select id="selectOrderListCount" parameterType="hashmap" resultType="hashmap">
@@ -371,7 +361,7 @@
         WHERE ORDER_ID = #{orderId}
     </update>
 
-    <!-- 이건 참고: 이미 가지고 있는 쿼리 그대로 둬도 됨 -->
+    <!-- 주문번호로 조회 (기존) -->
     <select id="selectOrderByOrderNo" parameterType="map" resultType="hashmap">
         SELECT
             ORDER_ID                                        AS orderId
@@ -404,5 +394,50 @@
         FROM TB_ORDER
         WHERE ORDER_NO = #{orderNo}
     </select>
+
+    <!-- 주문 취소용 단건 조회 -->
+    <select id="selectOrderForCancel" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.ord.order.Order.selectOrderForCancel
+         Description : 주문 취소 시 상태/포인트/결제금액 조회
+        */
+        SELECT
+            ORDER_ID                                    AS orderId
+            ,ORDER_NO
+            ,USER_ID
+            ,ORDER_STATUS_CD                            AS orderStatusCd
+            ,PAY_STATUS_CD
+            ,PAY_METHOD_CD
+            ,TOTAL_PRODUCT_AMT
+            ,DELIVERY_AMT
+            ,ORDER_AMT
+            ,POINT_USE_AMT
+            ,POINT_SAVE_AMT
+            ,PAY_AMT
+            ,USE_AT
+            ,CREATED_BY
+            ,UPDATED_BY
+        FROM TB_ORDER
+        WHERE ORDER_ID = #{orderId}
+    </select>
+
+    <!-- 주문 취소 상태 업데이트 -->
+    <update id="updateOrderCancel" parameterType="map">
+        /*
+         SQL ID: www.api.ord.order.Order.updateOrderCancel
+         Description : 주문 취소 상태 업데이트
+        */
+        UPDATE TB_ORDER
+           SET ORDER_STATUS_CD = 'ORDER_CANCEL'
+              ,PAY_STATUS_CD   = 'PAY_CANCEL'
+              ,UPDATED_DT      = NOW()
+              <if test="updatedBy != null and updatedBy != ''">
+                  ,UPDATED_BY  = #{updatedBy}
+              </if>
+         WHERE ORDER_ID        = #{orderId}
+           AND USE_AT          = 'Y'
+           AND ORDER_STATUS_CD = 'ORDER_DONE'
+           AND PAY_STATUS_CD   = 'PAY_DONE'
+    </update>
 
 </mapper>

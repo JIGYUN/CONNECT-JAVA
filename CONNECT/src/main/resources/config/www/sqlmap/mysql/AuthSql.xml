@@ -1,83 +1,144 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="www.api.mba.auth.Auth">
-	
-	<insert id="insertJoin" parameterType="map">
-	    INSERT INTO TB_USER
-	    (
-	        EMAIL,
-	        PASSWORD_HASH,
-	        USER_NM,
-	        TELNO,
-	        USER_STTS_CD,
-	        EMAIL_VRFCT_AT,
-	        PW_FAILR_CNT,
-	        LAST_LOGIN_DT,
-	        USE_AT,
-	        CREATED_DT,
-	        CREATED_BY,
-	        UPDATED_DT,
-	        UPDATED_BY,
-	        AUTH_TYPE
-	    )
-	    VALUES
-	    (
-	        #{email},
-	        #{password},
-	        #{userNm},
-	        #{telno},
-	        'ACTIVE',        -- 기본값
-	        'N',             -- 이메일 인증여부
-	        0,               -- 실패횟수
-	        NULL,            -- 마지막 로그인
-	        'Y',             -- 사용여부
-	        NOW(),           -- 생성일시
-	        #{createdBy},    -- 생성자
-	        NOW(),           -- 수정일시
-	        #{updatedBy},    -- 수정자
-	        'U'              -- 가입 타입(일반)
-	    )
-	</insert>
 
-    <!-- 로그인 -->
+    <!-- 회원가입 -->
+    <insert id="insertJoin" parameterType="map">
+        INSERT INTO TB_USER
+        (
+            EMAIL,
+            PASSWORD_HASH,
+            USER_NM,
+            TELNO,
+            USER_STTS_CD,
+            EMAIL_VRFCT_AT,
+            PW_FAILR_CNT,
+            LAST_LOGIN_DT,
+            USE_AT,
+            CREATED_DT,
+            CREATED_BY,
+            UPDATED_DT,
+            UPDATED_BY,
+            AUTH_TYPE
+        )
+        VALUES
+        (
+            #{email},
+            #{password},
+            #{userNm},
+            #{telno},
+            'ACTIVE',
+            'N',
+            0,
+            NULL,
+            'Y',
+            NOW(),
+            #{createdBy},
+            NOW(),
+            #{updatedBy},
+            'U'
+        )
+    </insert>
+
+    <!-- 일반 로그인 -->
     <select id="selectLogin" parameterType="map" resultType="CamelHashMap">
-    /* www.api.mba.auth.Auth.selectLogin */
-	    SELECT USER_ID, EMAIL, PASSWORD_HASH, USER_NM, TELNO,
-	           USER_STTS_CD, EMAIL_VRFCT_AT, PW_FAILR_CNT,
-	           LAST_LOGIN_DT, USE_AT, CREATED_DT, CREATED_BY,
-	           UPDATED_DT, UPDATED_BY, AUTH_TYPE
-	    FROM TB_USER
-	    WHERE EMAIL = #{email}
-	        AND PASSWORD_HASH = #{password}
-	        AND USE_AT = 'Y'
-	    LIMIT 1
+        /* www.api.mba.auth.Auth.selectLogin */
+        SELECT USER_ID,
+               EMAIL,
+               PASSWORD_HASH,
+               USER_NM,
+               TELNO,
+               USER_STTS_CD,
+               EMAIL_VRFCT_AT,
+               PW_FAILR_CNT,
+               LAST_LOGIN_DT,
+               USE_AT,
+               CREATED_DT,
+               CREATED_BY,
+               UPDATED_DT,
+               UPDATED_BY,
+               AUTH_TYPE
+        FROM TB_USER
+        WHERE EMAIL          = #{email}
+          AND PASSWORD_HASH  = #{password}
+          AND USE_AT         = 'Y'
+        LIMIT 1
     </select>
-    
+
+    <!-- 로그인 시 FCM 토큰 갱신 -->
     <update id="updateToken" parameterType="hashmap">
-        /*
-         SQL ID: www.api.usr.user.User.updateUser
-         Description : 수정 Query 
-        */
+        /* www.api.mba.auth.Auth.updateToken */
         UPDATE TB_USER
         <set>
-			<if test='fcmToken != null and fcmToken != ""'>
-				FCM_TOKEN = #{fcmToken},
-			</if>
+            <if test="fcmToken != null and fcmToken != ''">
+                FCM_TOKEN = #{fcmToken},
+            </if>
+            <if test="platformInfo != null and platformInfo != ''">
+                PLATFORM_INFO = #{platformInfo},
+            </if>
         </set>
         WHERE USER_ID = #{userId}
     </update>
-    
-    
-        <!-- 로그인 -->
+
+    <!-- 아이디 중복 체크 -->
     <select id="duplicateId" parameterType="map" resultType="CamelHashMap">
-    /* www.api.mba.auth.Auth.duplicateId */
-	    SELECT COUNT(*) AS cnt 
-	    FROM TB_USER
-	    WHERE EMAIL = #{email}
-	    AND USE_AT = 'Y'
-	    LIMIT 1
+        /* www.api.mba.auth.Auth.duplicateId */
+        SELECT COUNT(*) AS cnt
+        FROM TB_USER
+        WHERE EMAIL = #{email}
+          AND USE_AT = 'Y'
+        LIMIT 1
     </select>
 
+    <!-- 로그인 토큰 INSERT -->
+    <insert id="insertLoginToken" parameterType="map">
+        /* www.api.mba.auth.Auth.insertLoginToken */
+        INSERT INTO TB_LOGIN_TOKEN
+        (
+            TOKEN_ID,
+            EMAIL,
+            EXPIRES_DT,
+            USED_AT,
+            CREATED_DT,
+            CREATED_BY
+        )
+        VALUES
+        (
+            #{tokenId},
+            #{email},
+            DATE_ADD(NOW(), INTERVAL #{expiresMinutes} MINUTE),
+            'N',
+            NOW(),
+            #{createdBy}
+        )
+    </insert>
+
+    <!-- 유효한 로그인 토큰 조회 -->
+    <select id="selectValidLoginToken"
+            parameterType="map"
+            resultType="hashmap">
+        /* www.api.mba.auth.Auth.selectValidLoginToken */
+        SELECT
+            TOKEN_ID,
+            EMAIL,
+            EXPIRES_DT,
+            USED_AT
+        FROM TB_LOGIN_TOKEN
+        WHERE TOKEN_ID  = #{tokenId}
+          AND USED_AT   = 'N'
+          AND EXPIRES_DT > NOW()
+        LIMIT 1
+    </select>
+
+    <!-- 토큰 사용 처리 -->
+    <update id="markLoginTokenUsed" parameterType="map">
+        /* www.api.mba.auth.Auth.markLoginTokenUsed */
+        UPDATE TB_LOGIN_TOKEN
+        SET USED_AT = 'Y',
+            USED_DT  = NOW()
+        WHERE TOKEN_ID = #{tokenId}
+    </update>
 
 </mapper>

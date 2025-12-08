@@ -321,8 +321,8 @@
                     <span class="label">최종 결제금액</span>
                     <span class="value" id="sumPay">0원</span>
                 </div>
-                <div class="final-pay-text">
-                    결제 버튼 클릭 시 주문이 저장되고, 결제완료 화면으로 이동합니다.
+                <div class="final-pay-text" id="finalPayText">
+                    현재는 <strong>포인트 전액 결제</strong>만 가능합니다. 주문 금액만큼 포인트를 사용해야 결제가 진행됩니다.
                 </div>
 
                 <button type="button"
@@ -527,6 +527,7 @@
                 if (isNaN(bal) || bal < 0) bal = 0;
                 gPointBalance = bal;
                 $('#pointBalance').text(fmtMoney(gPointBalance) + ' P');
+                recalcPaymentSummary();
             },
             error: function () {
                 // 포인트 API 아직 없으면 조용히 무시
@@ -576,6 +577,24 @@
         $('#sumOrder').text(fmtMoney(orderAmt) + '원');
         $('#sumPointUse').text('-' + fmtMoney(pointUse) + '원');
         $('#sumPay').text(fmtMoney(payAmt) + '원');
+
+        // 안내 문구 동적 변경
+        const $msg = $('#finalPayText');
+        if (orderAmt <= 0) {
+            $msg.text('주문할 상품을 담은 후 결제를 진행해 주세요.');
+            return;
+        }
+
+        if (gPointBalance < orderAmt) {
+            $msg.text(
+                '보유 포인트(' + fmtMoney(gPointBalance) + ' P)가 주문 금액(' +
+                fmtMoney(orderAmt) + '원)보다 적어 결제를 진행할 수 없습니다.'
+            );
+        } else if (payAmt > 0) {
+            $msg.text('현재는 포인트 전액 결제만 가능합니다. 포인트 사용 금액을 주문 금액과 동일하게 맞춰 주세요.');
+        } else {
+            $msg.text('결제 버튼 클릭 시 주문이 저장되고, 결제완료 화면으로 이동합니다.');
+        }
     }
 
     function goBackToCart() {
@@ -621,6 +640,26 @@
         const payAmt = orderAmt - pointUse;
         const pointSave = Math.floor(gProductTotal * 0.01); // 예시: 상품금액의 1%
 
+        // ▼ 핵심: 포인트가 부족하면 결제 자체 불가
+        if (gPointBalance < orderAmt) {
+            alert(
+                '보유 포인트가 부족하여 결제를 진행할 수 없습니다.\n\n' +
+                '주문 금액: ' + fmtMoney(orderAmt) + '원\n' +
+                '보유 포인트: ' + fmtMoney(gPointBalance) + ' P'
+            );
+            return;
+        }
+
+        // ▼ 포인트 전액 사용이 아니면 결제 불가 (카드 결제 미지원)
+        if (payAmt !== 0) {
+            alert(
+                '현재는 포인트 전액 결제만 가능합니다.\n\n' +
+                '주문 금액 전체를 포인트로 결제해 주세요.'
+            );
+            $('#pointUseAmt').focus();
+            return;
+        }
+
         const orderNo = makeOrderNo();
 
         const payload = {
@@ -628,7 +667,7 @@
             // 서버에서 userId는 세션 기반으로 처리(컬럼이 NOT NULL이면 컨트롤러에서 보완)
             orderStatusCd: 'ORDER_DONE',
             payStatusCd: 'PAY_DONE',
-            payMethodCd: payAmt > 0 ? 'CARD' : 'POINT',
+            payMethodCd: 'POINT',   // 전액 포인트 결제만 허용
 
             totalProductAmt: gProductTotal,
             totalDiscountAmt: 0,
@@ -637,7 +676,7 @@
             pointUseAmt: pointUse,
             pointSaveAmt: pointSave,
             couponUseAmt: 0,
-            payAmt: payAmt,
+            payAmt: payAmt,        // 0 이어야 함
 
             receiverNm: receiverNm,
             receiverPhone: receiverPhone,
@@ -646,13 +685,13 @@
             addr2: $('#addr2').val().trim(),
             deliveryMemo: $('#deliveryMemo').val().trim(),
 
-            useAt: 'Y'
+            useAt: 'Y',
+
+            // 선택한 장바구니 항목들
+            cartItemIds: gSelectedCartIds
         };
 
-        // 선택한 장바구니 항목들을 주문 파라미터에 포함시킨다.
-        payload.cartItemIds = gSelectedCartIds;
-
-        if (!confirm('주문을 진행하시겠습니까?\n\n최종 결제금액: ' + fmtMoney(payAmt) + '원')) {
+        if (!confirm('주문을 진행하시겠습니까?\n\n결제 방식: 포인트 전액 결제\n결제 금액: ' + fmtMoney(orderAmt) + '원')) {
             return;
         }
 
