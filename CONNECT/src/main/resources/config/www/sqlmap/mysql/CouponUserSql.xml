@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.cop.couponUser.CouponUser">
+
+    <!-- 공통 where -->
+    <sql id="whereCouponUser">
+        <if test="userId != null and userId != ''">
+            AND cu.USER_ID = #{userId}
+        </if>
+        <if test="couponId != null and couponId != ''">
+            AND cu.COUPON_ID = #{couponId}
+        </if>
+        <if test="statusCd != null and statusCd != ''">
+            AND cu.STATUS_CD = #{statusCd}
+        </if>
+        <if test="useAt != null and useAt != ''">
+            AND cu.USE_AT = #{useAt}
+        </if>
+    </sql>
+
+    <!-- (옵션) 사용 가능 쿠폰 전용 where -->
+    <sql id="whereAvailableCoupon">
+        <!-- 미사용 & 사용 가능 기간 내 -->
+        AND cu.USE_AT = 'Y'
+        AND cu.USE_DT IS NULL
+        AND NOW() BETWEEN c.START_DT AND c.END_DT
+    </sql>
+
+    <!-- 쿠폰 발급 내역 목록 -->
+    <select id="selectCouponUserList"
+            parameterType="map"
+            resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.cop.couponUser.CouponUser.selectCouponUserList
+         Description : 쿠폰 발급 내역 목록
+        */
+        SELECT
+            cu.COUPON_USER_ID
+            ,cu.COUPON_ID
+            ,cu.USER_ID
+            ,DATE_FORMAT(cu.ISSUE_DT, '%Y-%m-%d %H:%i:%s') AS ISSUE_DT
+            ,DATE_FORMAT(cu.USE_DT,   '%Y-%m-%d %H:%i:%s') AS USE_DT
+            ,cu.STATUS_CD
+            ,cu.ORDER_ID
+            ,cu.USE_AT
+            ,DATE_FORMAT(cu.CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+            ,cu.CREATED_BY
+            ,DATE_FORMAT(cu.UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+            ,cu.UPDATED_BY
+            ,c.COUPON_CD
+            ,c.COUPON_NM
+            ,c.COUPON_TYPE_CD
+            ,c.DISCOUNT_RATE
+            ,c.DISCOUNT_AMT
+            ,c.MIN_ORDER_AMT
+            ,DATE_FORMAT(c.START_DT, '%Y-%m-%d %H:%i:%s') AS COUPON_START_DT
+            ,DATE_FORMAT(c.END_DT,   '%Y-%m-%d %H:%i:%s') AS COUPON_END_DT
+        FROM TB_COUPON_USER cu
+        LEFT JOIN TB_COUPON c
+            ON cu.COUPON_ID = c.COUPON_ID
+        <where>
+            1 = 1
+            <include refid="whereCouponUser"/>
+        </where>
+        ORDER BY cu.COUPON_USER_ID DESC
+        <if test="limit != null and offset != null">
+            LIMIT #{limit} OFFSET #{offset}
+        </if>
+    </select>
+
+    <!-- 사용 가능 쿠폰 목록(주문 페이지용) -->
+    <select id="selectMyAvailableCouponList"
+            parameterType="map"
+            resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.cop.couponUser.CouponUser.selectMyAvailableCouponList
+         Description : 로그인 사용자의 사용 가능 쿠폰 목록
+        */
+        SELECT
+            cu.COUPON_USER_ID
+            ,cu.COUPON_ID
+            ,cu.USER_ID
+            ,DATE_FORMAT(cu.ISSUE_DT, '%Y-%m-%d %H:%i:%s') AS ISSUE_DT
+            ,DATE_FORMAT(cu.USE_DT,   '%Y-%m-%d %H:%i:%s') AS USE_DT
+            ,cu.STATUS_CD
+            ,cu.ORDER_ID
+            ,cu.USE_AT
+            ,DATE_FORMAT(cu.CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+            ,cu.CREATED_BY
+            ,DATE_FORMAT(cu.UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+            ,cu.UPDATED_BY
+            ,c.COUPON_CD
+            ,c.COUPON_NM
+            ,c.COUPON_TYPE_CD
+            ,c.DISCOUNT_RATE
+            ,c.DISCOUNT_AMT
+            ,c.MIN_ORDER_AMT
+            ,DATE_FORMAT(c.START_DT, '%Y-%m-%d %H:%i:%s') AS COUPON_START_DT
+            ,DATE_FORMAT(c.END_DT,   '%Y-%m-%d %H:%i:%s') AS COUPON_END_DT
+        FROM TB_COUPON_USER cu
+        LEFT JOIN TB_COUPON c
+            ON cu.COUPON_ID = c.COUPON_ID
+        <where>
+            1 = 1
+            <!-- userId는 컨트롤러에서 무조건 세팅 -->
+            AND cu.USER_ID = #{userId}
+            <include refid="whereAvailableCoupon"/>
+        </where>
+        ORDER BY cu.COUPON_USER_ID DESC
+    </select>
+
+    <!-- 발급 내역 수 -->
+    <select id="selectCouponUserListCount"
+            parameterType="map"
+            resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.cop.couponUser.CouponUser.selectCouponUserListCount
+         Description : 쿠폰 발급 내역 수
+        */
+        SELECT
+            COUNT(*) AS CNT
+        FROM TB_COUPON_USER cu
+        <where>
+            1 = 1
+            <include refid="whereCouponUser"/>
+        </where>
+    </select>
+
+    <!-- 발급 단건 조회 -->
+    <select id="selectCouponUserDetail"
+            parameterType="map"
+            resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.cop.couponUser.CouponUser.selectCouponUserDetail
+         Description : 쿠폰 발급 내역 단건
+        */
+        SELECT
+            cu.COUPON_USER_ID
+            ,cu.COUPON_ID
+            ,cu.USER_ID
+            ,DATE_FORMAT(cu.ISSUE_DT, '%Y-%m-%d %H:%i:%s') AS ISSUE_DT
+            ,DATE_FORMAT(cu.USE_DT,   '%Y-%m-%d %H:%i:%s') AS USE_DT
+            ,cu.STATUS_CD
+            ,cu.ORDER_ID
+            ,cu.USE_AT
+            ,DATE_FORMAT(cu.CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+            ,cu.CREATED_BY
+            ,DATE_FORMAT(cu.UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+            ,cu.UPDATED_BY
+            ,c.COUPON_CD
+            ,c.COUPON_NM
+            ,c.COUPON_TYPE_CD
+            ,c.DISCOUNT_RATE
+            ,c.DISCOUNT_AMT
+            ,c.MIN_ORDER_AMT
+            ,DATE_FORMAT(c.START_DT, '%Y-%m-%d %H:%i:%s') AS COUPON_START_DT
+            ,DATE_FORMAT(c.END_DT,   '%Y-%m-%d %H:%i:%s') AS COUPON_END_DT
+        FROM TB_COUPON_USER cu
+        LEFT JOIN TB_COUPON c
+            ON cu.COUPON_ID = c.COUPON_ID
+        WHERE cu.COUPON_USER_ID = #{couponUserId}
+    </select>
+
+    <!-- 쿠폰 발급(등록)  : 처음 발급 시에는 USE_DT 항상 NULL, STATUS_CD=ISSUED, USE_AT=Y 기본 -->
+    <insert id="insertCouponUser" parameterType="hashmap">
+        /*
+         SQL ID: www.api.cop.couponUser.CouponUser.insertCouponUser
+         Description : 쿠폰 발급(등록)
+        */
+        INSERT INTO TB_COUPON_USER
+        (
+            COUPON_ID
+            ,USER_ID
+            ,ISSUE_DT
+            ,USE_DT
+            ,STATUS_CD
+            ,ORDER_ID
+            ,USE_AT
+            ,CREATED_DT
+            ,CREATED_BY
+            ,UPDATED_DT
+            ,UPDATED_BY
+        )
+        VALUES
+        (
+            #{couponId}
+            ,#{userId}
+            ,
+            IFNULL(
+                STR_TO_DATE(
+                    NULLIF(
+                        CONCAT(
+                            REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{issueDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                            CASE
+                                WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{issueDt}, 'T',' '), '.', 1),'Z',''),'T',' ')) = 16
+                                THEN ':00'
+                                ELSE ''
+                            END
+                        ),
+                        ''
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+                NOW()
+            )
+            ,
+            /* ★ 발급 시점에는 항상 미사용 상태로, USE_DT NULL 고정 */
+            NULL
+            ,
+            /* 상태값 없으면 기본 ISSUED */
+            COALESCE(#{statusCd}, 'ISSUED')
+            ,
+            NULLIF(#{orderId}, '')
+            ,
+            /* USE_AT 없으면 기본 Y */
+            COALESCE(#{useAt}, 'Y')
+            ,
+            IFNULL(
+                STR_TO_DATE(
+                    NULLIF(
+                        CONCAT(
+                            REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                            CASE
+                                WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' ')) = 16
+                                THEN ':00'
+                                ELSE ''
+                            END
+                        ),
+                        ''
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+                NOW()
+            )
+            ,
+            #{createdBy}
+            ,
+            IFNULL(
+                STR_TO_DATE(
+                    NULLIF(
+                        CONCAT(
+                            REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                            CASE
+                                WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' ')) = 16
+                                THEN ':00'
+                                ELSE ''
+                            END
+                        ),
+                        ''
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+                NOW()
+            )
+            ,
+            #{updatedBy}
+        )
+    </insert>
+
+    <!-- 발급 정보 수정 -->
+    <update id="updateCouponUser" parameterType="hashmap">
+        /*
+         SQL ID: www.api.cop.couponUser.CouponUser.updateCouponUser
+         Description : 쿠폰 사용자 정보 수정
+        */
+        UPDATE TB_COUPON_USER
+        <set>
+            <if test="couponId != null and couponId != ''">
+                COUPON_ID = #{couponId},
+            </if>
+            <if test="userId != null and userId != ''">
+                USER_ID = #{userId},
+            </if>
+            <if test="issueDt != null and issueDt != ''">
+                ISSUE_DT = STR_TO_DATE(
+                    NULLIF(
+                        CONCAT(
+                            REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{issueDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                            CASE
+                                WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{issueDt}, 'T',' '), '.', 1),'Z',''),'T',' ')) = 16
+                                THEN ':00'
+                                ELSE ''
+                            END
+                        ),
+                        ''
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+            </if>
+            <if test="useDt != null and useDt != ''">
+                USE_DT = STR_TO_DATE(
+                    NULLIF(
+                        CONCAT(
+                            REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{useDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                            CASE
+                                WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{useDt}, 'T',' '), '.', 1),'Z',''),'T',' ')) = 16
+                                THEN ':00'
+                                ELSE ''
+                            END
+                        ),
+                        ''
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+            </if>
+            <if test="statusCd != null and statusCd != ''">
+                STATUS_CD = #{statusCd},
+            </if>
+            <if test="orderId != null">
+                ORDER_ID = NULLIF(#{orderId}, ''),
+            </if>
+            <if test="useAt != null and useAt != ''">
+                USE_AT = #{useAt},
+            </if>
+            <if test="createdDt != null and createdDt != ''">
+                CREATED_DT = STR_TO_DATE(
+                    NULLIF(
+                        CONCAT(
+                            REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                            CASE
+                                WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' ')) = 16
+                                THEN ':00'
+                                ELSE ''
+                            END
+                        ),
+                        ''
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+            </if>
+            <if test="createdBy != null and createdBy != ''">
+                CREATED_BY = #{createdBy},
+            </if>
+            <if test="updatedDt != null and updatedDt != ''">
+                UPDATED_DT = STR_TO_DATE(
+                    NULLIF(
+                        CONCAT(
+                            REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '),
+                            CASE
+                                WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' ')) = 16
+                                THEN ':00'
+                                ELSE ''
+                            END
+                        ),
+                        ''
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+            </if>
+            <if test="updatedBy != null and updatedBy != ''">
+                UPDATED_BY = #{updatedBy},
+            </if>
+        </set>
+        WHERE COUPON_USER_ID = #{couponUserId}
+    </update>
+
+    <!-- 발급 삭제 -->
+    <delete id="deleteCouponUser" parameterType="hashmap">
+        /*
+         SQL ID: www.api.cop.couponUser.CouponUser.deleteCouponUser
+         Description : 쿠폰 사용자 삭제
+        */
+        DELETE FROM TB_COUPON_USER
+        WHERE COUPON_USER_ID = #{couponUserId}
+    </delete>
+
+    <!-- 실제 쿠폰 사용 처리 -->
+    <update id="updateCouponUserUse" parameterType="hashmap">
+        /*
+         SQL ID: www.api.cop.couponUser.CouponUser.updateCouponUserUse
+         Description : 쿠폰 사용 처리 (주문 시점)
+        */
+	    UPDATE TB_COUPON_USER
+	    SET STATUS_CD  = 'USED'
+	        ,USE_AT    = 'N'
+	        ,USE_DT    = NOW()
+	        ,ORDER_ID  = #{orderId}
+	        ,UPDATED_DT = NOW()
+	        ,UPDATED_BY = #{updatedBy}
+	    WHERE COUPON_USER_ID = #{couponUserId}
+	      AND USE_AT = 'Y'
+	      AND USE_DT IS NULL
+    </update>
+
+</mapper>

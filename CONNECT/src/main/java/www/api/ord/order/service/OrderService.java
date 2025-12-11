@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import www.api.cop.couponUser.service.CouponUserService;
 import www.api.crt.cart.service.CartService;
 import www.api.ord.orderItem.service.OrderItemService;
 import www.api.pay.payment.service.PaymentService;
@@ -42,6 +43,10 @@ public class OrderService {
 
     @Autowired
     private OrderItemService orderItemService;
+
+    // 쿠폰 사용 처리
+    @Autowired
+    private CouponUserService couponUserService;
 
     /**
      * 주문 목록 조회
@@ -77,7 +82,7 @@ public class OrderService {
     }
 
     /**
-     * 주문 + 결제 + 포인트 + 장바구니 → 주문상품
+     * 주문 + 결제 + 포인트 + 쿠폰 + 장바구니 → 주문상품
      */
     @Transactional
     public void insertOrderWithPayAndPoint(Map<String, Object> paramMap) {
@@ -128,32 +133,38 @@ public class OrderService {
         BigDecimal payAmt   = toBigDecimal(firstNonNull(paramMap.get("payAmt"),   paramMap.get("PAY_AMT")));
 
         Map<String, Object> payParam = new HashMap<>();
-        payParam.put("orderId", orderId);
-        payParam.put("pgCd", "LOCAL");                   // 내부 테스트 PG
-        payParam.put("pgMid", "LOCAL");                  // 가맹점 ID
-        payParam.put("pgTid", orderNo);                  // 트랜잭션 ID = 주문번호
-        payParam.put("payMethodCd", paramMap.get("payMethodCd"));
-        payParam.put("payTotalAmt", orderAmt);           // 총 결제 대상 금액
-        payParam.put("payApprovedAmt", payAmt);          // 실제 결제 금액
-        payParam.put("payStatusCd", paramMap.get("payStatusCd"));
-        payParam.put("reqDt", null);                     // mapper 에서 NOW()
-        payParam.put("resDt", null);
+        payParam.put("orderId",        orderId);
+        payParam.put("pgCd",           "LOCAL");                   // 내부 테스트 PG
+        payParam.put("pgMid",          "LOCAL");                   // 가맹점 ID
+        payParam.put("pgTid",          orderNo);                   // 트랜잭션 ID = 주문번호
+        payParam.put("payMethodCd",    paramMap.get("payMethodCd"));
+        payParam.put("payTotalAmt",    orderAmt);                  // 총 결제 대상 금액
+        payParam.put("payApprovedAmt", payAmt);                    // 실제 결제 금액
+        payParam.put("payStatusCd",    paramMap.get("payStatusCd"));
+        payParam.put("reqDt",          null);                      // mapper 에서 NOW()
+        payParam.put("resDt",          null);
         payParam.put("rawRequestJson", "{}");
-        payParam.put("rawResponseJson", "{}");
-        payParam.put("useAt", "Y");
-        payParam.put("createdBy", paramMap.get("createdBy"));
-        payParam.put("updatedBy", paramMap.get("updatedBy"));
+        payParam.put("rawResponseJson","{}");
+        payParam.put("useAt",          "Y");
+        payParam.put("createdBy",      paramMap.get("createdBy"));
+        payParam.put("updatedBy",      paramMap.get("updatedBy"));
 
         paymentService.insertPayment(payParam);
 
         // ==========================
-        // 3) 포인트 사용/적립
+        // 3) 포인트 / 쿠폰 처리
         // ==========================
         Long userId = toLong(firstNonNull(paramMap.get("userId"), paramMap.get("USER_ID")));
         String actor = asString(firstNonNull(paramMap.get("createdBy"), paramMap.get("CREATED_BY")));
 
         BigDecimal pointUseAmt  = toBigDecimal(firstNonNull(paramMap.get("pointUseAmt"),  paramMap.get("POINT_USE_AMT")));
         BigDecimal pointSaveAmt = toBigDecimal(firstNonNull(paramMap.get("pointSaveAmt"), paramMap.get("POINT_SAVE_AMT")));
+        BigDecimal couponUseAmt = toBigDecimal(firstNonNull(paramMap.get("couponUseAmt"), paramMap.get("COUPON_USE_AMT")));
+        if (couponUseAmt.compareTo(BigDecimal.ZERO) < 0) {
+            couponUseAmt = BigDecimal.ZERO;
+        }
+
+        Long couponUserId = toLong(firstNonNull(paramMap.get("couponUserId"), paramMap.get("COUPON_USER_ID")));
 
         if (userId != null) {
 
@@ -170,7 +181,6 @@ public class OrderService {
 
             // 포인트 적립(충전)
             if (pointSaveAmt.compareTo(BigDecimal.ZERO) > 0) {
-                // 기존 구현처럼 ORDER_ID 없이 적립
                 pointLedgerService.chargePoint(
                         userId,
                         actor,
@@ -180,16 +190,15 @@ public class OrderService {
             }
         }
 
+        // ★ 쿠폰 사용 처리 (TB_COUPON_USER 업데이트)
+        if (couponUserId != null && couponUseAmt.compareTo(BigDecimal.ZERO) > 0) {
+            couponUserService.updateCouponAsUsed(couponUserId, orderId, actor);
+        }
+
         // ==========================
         // 4) 장바구니 → 주문상품(TB_ORDER_ITEM)
         // ==========================
 
-        // 주문 화면에서 넘어온 선택 장바구니 ID 목록
-        // 지원 키:
-        //  - cartItemIds (List, "1,2,3", 단일 값)
-        //  - cartIds
-        //  - cartIdList
-        //  - cartItemId / cartId (단일 값)
         List<Long> cartItemIds = extractCartItemIds(paramMap);
 
         if (log.isDebugEnabled()) {
@@ -206,7 +215,7 @@ public class OrderService {
         if (userId != null) {
 
             Map<String, Object> cartParam = new HashMap<>();
-            cartParam.put("userId", userId);
+            cartParam.put("userId",      userId);
             cartParam.put("cartItemIds", cartItemIds); // 무조건 선택 항목만
 
             @SuppressWarnings("unchecked")
@@ -280,18 +289,18 @@ public class OrderService {
 
                     // 주문상품 파라미터
                     Map<String, Object> itemParam = new HashMap<>();
-                    itemParam.put("orderId", orderId);
-                    itemParam.put("productId", productId);
-                    itemParam.put("productNm", productNm);
-                    itemParam.put("qty", qty);
-                    itemParam.put("unitPrice", unitPrice);
-                    itemParam.put("discountAmt", discountAmt);
-                    itemParam.put("lineAmt", lineAmt);
-                    itemParam.put("statusCd", "NORMAL");
+                    itemParam.put("orderId",    orderId);
+                    itemParam.put("productId",  productId);
+                    itemParam.put("productNm",  productNm);
+                    itemParam.put("qty",        qty);
+                    itemParam.put("unitPrice",  unitPrice);
+                    itemParam.put("discountAmt",discountAmt);
+                    itemParam.put("lineAmt",    lineAmt);
+                    itemParam.put("statusCd",   "NORMAL");
                     itemParam.put("optionJson", optionJson);
-                    itemParam.put("useAt", "Y");
-                    itemParam.put("createdBy", paramMap.get("createdBy"));
-                    itemParam.put("updatedBy", paramMap.get("updatedBy"));
+                    itemParam.put("useAt",      "Y");
+                    itemParam.put("createdBy",  paramMap.get("createdBy"));
+                    itemParam.put("updatedBy",  paramMap.get("updatedBy"));
 
                     // TB_ORDER_ITEM INSERT
                     orderItemService.insertOrderItem(itemParam);
@@ -307,13 +316,6 @@ public class OrderService {
                 }
             }
         }
-
-        // 여기까지 Tx 안에서:
-        // - TB_ORDER: 1건
-        // - TB_PAYMENT: 1건
-        // - TB_POINT_LEDGER: USE/CHARGE
-        // - TB_ORDER_ITEM: 선택한 장바구니 수 만큼
-        // - TB_CART_ITEM: 해당 항목 USE_AT='N'
     }
 
     /**
@@ -334,7 +336,6 @@ public class OrderService {
 
     // =======================
     //  주문 취소 (A안)
-    //  - 금지 상태만 막고, 나머지(ORDER_DONE 포함)는 취소 허용
     // =======================
     @Transactional
     public void cancelOrder(Map<String, Object> paramMap) {
@@ -362,12 +363,10 @@ public class OrderService {
         String payStatusCd   = asString(firstNonNull(order.get("payStatusCd"),   order.get("PAY_STATUS_CD")));
         String useAt         = asString(firstNonNull(order.get("useAt"),         order.get("USE_AT")));
 
-        // 사용안함/삭제된 주문은 취소 금지
         if (!"Y".equalsIgnoreCase(useAt)) {
             throw new IllegalStateException("이미 삭제되었거나 사용안함 상태의 주문입니다.");
         }
 
-        // 이미 취소된 주문은 재취소 금지
         if ("ORDER_CANCEL".equals(orderStatusCd)) {
             throw new IllegalStateException("이미 취소된 주문입니다.");
         }
@@ -375,7 +374,6 @@ public class OrderService {
         Long userId = firstNonNullLong(order.get("userId"), order.get("USER_ID"));
         String orderNo = asString(firstNonNull(order.get("orderNo"), order.get("ORDER_NO")));
 
-        // updatedBy/createdBy/param.updatedBy 중 하나를 actor 로 사용
         String actor = asString(firstNonNull(
                 paramMap.get("updatedBy"),
                 paramMap.get("createdBy"),
@@ -399,15 +397,11 @@ public class OrderService {
             );
         }
 
-        // 1) 결제 취소 (TB_PAYMENT 상태 변경)
-        //    - PAY_DONE 인 경우에만 실제 취소 처리
         if ("PAY_DONE".equals(payStatusCd)) {
             paymentService.cancelPaymentByOrderId(orderId, actor);
         }
 
-        // 2) 포인트 롤백
         if (userId != null) {
-            // 사용했던 포인트 환불(+)
             if (pointUseAmt.compareTo(BigDecimal.ZERO) > 0) {
                 pointLedgerService.chargePoint(
                         userId,
@@ -417,7 +411,6 @@ public class OrderService {
                 );
             }
 
-            // 적립했던 포인트 회수(−)
             if (pointSaveAmt.compareTo(BigDecimal.ZERO) > 0) {
                 pointLedgerService.usePointForOrder(
                         userId,
@@ -429,10 +422,9 @@ public class OrderService {
             }
         }
 
-        // 3) 주문 상태 변경 (ORDER_CANCEL 등으로)
         Map<String, Object> upd = new HashMap<>();
-        upd.put("orderId", orderId);
-        upd.put("updatedBy", actor);
+        upd.put("orderId",  orderId);
+        upd.put("updatedBy",actor);
 
         int updated = dao.update(namespace + ".updateOrderCancel", upd);
         if (updated <= 0) {
@@ -481,16 +473,6 @@ public class OrderService {
         }
     }
 
-    /**
-     * 장바구니 ID 추출
-     *
-     * 지원 키:
-     * - cartItemIds : [1,2,3] 또는 "1,2,3" 또는 "1"
-     * - cartIds     : [1,2,3] 또는 "1,2,3"
-     * - cartIdList  : [1,2,3]
-     * - cartItemId  : 단일 값
-     * - cartId      : 단일 값
-     */
     @SuppressWarnings("unchecked")
     private List<Long> extractCartItemIds(Map<String, Object> paramMap) {
         List<Long> ids = new ArrayList<>();
@@ -510,7 +492,6 @@ public class OrderService {
             return ids;
         }
 
-        // List 형태: [1, "2", 3L ...]
         if (raw instanceof List<?>) {
             for (Object o : (List<?>) raw) {
                 Long id = toLong(o);
@@ -521,7 +502,6 @@ public class OrderService {
             return ids;
         }
 
-        // 문자열: "1,2,3" 또는 "1"
         if (raw instanceof String) {
             String s = ((String) raw).trim();
             if (!s.isEmpty()) {
@@ -540,7 +520,6 @@ public class OrderService {
             return ids;
         }
 
-        // 그 외 단일 값 (숫자 등)
         Long single = toLong(raw);
         if (single != null) {
             ids.add(single);

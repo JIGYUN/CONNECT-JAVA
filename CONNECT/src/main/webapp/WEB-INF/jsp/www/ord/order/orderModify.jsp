@@ -295,6 +295,26 @@
 
                 <hr/>
 
+                <!-- ★ 쿠폰 영역 -->
+                <div class="form-group">
+                    <label class="form-label-sm" for="couponSelect">사용할 쿠폰</label>
+                    <select id="couponSelect"
+                            class="form-control form-control-sm2"
+                            onchange="onChangeCouponSelect(this)">
+                        <option value="">쿠폰 선택 안 함</option>
+                    </select>
+                    <div class="final-pay-text" id="couponDescText" style="margin-top:4px;">
+                        사용 가능한 쿠폰이 있을 경우 여기에서 선택할 수 있습니다.
+                    </div>
+                </div>
+                <div class="summary-row minus">
+                    <span class="label">쿠폰 할인</span>
+                    <span class="value" id="sumCouponUse">-0원</span>
+                </div>
+
+                <hr/>
+
+                <!-- 포인트 -->
                 <div class="point-balance">
                     보유 포인트: <span id="pointBalance">0 P</span>
                 </div>
@@ -341,22 +361,29 @@
 </div>
 
 <script>
-    const CART_API_BASE = '/api/crt/cart';
-    const ORDER_API_BASE = '/api/ord/order';
-    const POINT_API_BASE = '/api/plg/pointLedger'; // 보유 포인트 요약용 (없으면 에러 없이 무시)
+    const CART_API_BASE   = '/api/crt/cart';
+    const ORDER_API_BASE  = '/api/ord/order';
+    const POINT_API_BASE  = '/api/plg/pointLedger';   // 보유 포인트 요약용
+    const COUPON_API_BASE = '/api/cop/couponUser';    // ★ 쿠폰 API 베이스
 
     const NO_IMAGE_URL = '/static/img/no-image-150.png';
 
     let gProductTotal = 0;
-    let gShipTotal = 0;
+    let gShipTotal    = 0;
     let gPointBalance = 0;
 
-    // 선택된 장바구니 CART_ITEM_ID 목록 (URL ?cartIds=값 기준)
+    // ★ 쿠폰 관련 전역
+    let gCouponList = [];           // 내 쿠폰 목록
+    let gSelectedCouponUserId = null;
+    let gCouponUseAmt = 0;          // 실제 할인 금액(원)
+
+    // 선택된 장바구니 CART_ITEM_ID 목록 (?cartIds=1,2,3)
     let gSelectedCartIds = [];
 
     $(function () {
         loadCartForOrder();
         loadPointSummary();
+        loadCouponListForOrder();   // ★ 내 쿠폰 목록 조회
     });
 
     function fmtMoney(v) {
@@ -387,12 +414,10 @@
 
     // 1) 장바구니 기반 주문 상품 조회
     function loadCartForOrder() {
-        // 선택 주문이면 [id...], 전체 주문이면 []
         gSelectedCartIds = getSelectedCartIdsFromUrl();
 
         const payload = {};
         if (gSelectedCartIds.length > 0) {
-            // 서버에서 cartItemIds로 받도록 맞춘다.
             payload.cartItemIds = gSelectedCartIds;
         }
 
@@ -430,7 +455,7 @@
         const $wrap = $('#orderItemList');
 
         gProductTotal = 0;
-        gShipTotal = 0;
+        gShipTotal    = 0;
 
         if (!list.length) {
             $wrap.html('<div class="order-items-empty">주문할 상품이 없습니다. 장바구니에서 상품을 담아 주세요.</div>');
@@ -442,7 +467,7 @@
                 const img =
                     r.mainImgUrl || r.mainimgurl || NO_IMAGE_URL;
 
-                const title = r.title || '';
+                const title   = r.title || '';
                 const brandNm = r.brandNm || r.brandnm || '';
 
                 let unitPriceRaw = r.unitPrice;
@@ -469,10 +494,10 @@
                 if (!qty || isNaN(qty) || qty <= 0) qty = 1;
 
                 const lineProductAmt = unitPrice * qty;
-                const lineTotal = lineProductAmt + shipFee;
+                const lineTotal      = lineProductAmt + shipFee;
 
                 gProductTotal += lineProductAmt;
-                gShipTotal += shipFee;
+                gShipTotal    += shipFee;
 
                 html += ''
                     + '<div class="order-item-row">'
@@ -504,12 +529,12 @@
         }
 
         gProductTotal = productTotalRes;
-        gShipTotal = shipTotalRes;
+        gShipTotal    = shipTotalRes;
 
         recalcPaymentSummary();
     }
 
-    // 2) 포인트 잔액 조회 (있으면 쓰고, 없으면 0으로 둔다)
+    // 2) 포인트 잔액 조회
     function loadPointSummary() {
         $.ajax({
             url: POINT_API_BASE + '/selectPointSummary',
@@ -530,64 +555,248 @@
                 recalcPaymentSummary();
             },
             error: function () {
-                // 포인트 API 아직 없으면 조용히 무시
+                // 포인트 API 없으면 무시
             }
         });
     }
 
-    // 3) 포인트 입력 변경 시
+    // 3) ★ 내 쿠폰 목록 조회
+    function loadCouponListForOrder() {
+        $.ajax({
+            url: COUPON_API_BASE + '/selectMyAvailableCouponList',
+            type: 'post',
+            contentType: 'application/json',
+            dataType: 'json',
+            data: JSON.stringify({}),
+            success: function (map) {
+                if (!map) return;
+
+                if (map.msg === 'LOGIN_REQUIRED') {
+                    // 어차피 주문 페이지는 로그인 전제지만, 방어용
+                    return;
+                }
+
+                const list = (map && map.result) ? map.result : [];
+                gCouponList = list || [];
+                renderCouponSelect();
+                recalcPaymentSummary();
+            },
+            error: function () {
+                // 쿠폰 기능 아직 없으면 조용히 무시
+            }
+        });
+    }
+
+    function renderCouponSelect() {
+        const $sel = $('#couponSelect');
+        if (!$sel.length) return;
+
+        let html = '<option value="">쿠폰 선택 안 함</option>';
+        for (let i = 0; i < gCouponList.length; i++) {
+            const c = gCouponList[i];
+            const couponUserId = c.couponUserId || c.couponuserid;
+            const nm   = c.couponNm || c.couponnm || '';
+            const code = c.couponCd || c.couponcd || '';
+            const type = (c.couponTypeCd || c.coupontypecd || '').toUpperCase();
+            const rate = c.discountRate || c.discountrate || 0;
+            const amt  = c.discountAmt  || c.discountamt  || 0;
+
+            let benefit = '';
+            if (type === 'RATE') {
+                benefit = rate + '%';
+            } else {
+                benefit = fmtMoney(amt) + '원';
+            }
+
+            const label = (nm || code || '쿠폰') + ' [' + benefit + ']';
+
+            html += '<option value="' + couponUserId + '">' + label + '</option>';
+        }
+        $sel.html(html);
+
+        updateCouponDescText();
+    }
+
+    function getSelectedCouponObj() {
+        if (!gSelectedCouponUserId) return null;
+        for (let i = 0; i < gCouponList.length; i++) {
+            const c = gCouponList[i];
+            const id = String(c.couponUserId || c.couponuserid || '');
+            if (id && id === String(gSelectedCouponUserId)) {
+                return c;
+            }
+        }
+        return null;
+    }
+
+    function onChangeCouponSelect(sel) {
+        const v = sel.value || '';
+        gSelectedCouponUserId = v ? v : null;
+        updateCouponDescText();
+        recalcPaymentSummary();
+    }
+
+    function updateCouponDescText() {
+        const $txt = $('#couponDescText');
+
+        if (!gCouponList.length) {
+            $txt.text('사용 가능한 쿠폰이 없습니다.');
+            return;
+        }
+
+        if (!gSelectedCouponUserId) {
+            $txt.text('쿠폰을 선택하지 않았습니다.');
+            return;
+        }
+
+        const c = getSelectedCouponObj();
+        if (!c) {
+            $txt.text('쿠폰 정보를 찾을 수 없습니다.');
+            return;
+        }
+
+        const nm   = c.couponNm || c.couponnm || '';
+        const code = c.couponCd || c.couponcd || '';
+        const type = (c.couponTypeCd || c.coupontypecd || '').toUpperCase();
+        const rate = c.discountRate || c.discountrate || 0;
+        const amt  = c.discountAmt  || c.discountamt  || 0;
+        const minRaw = c.minOrderAmt || c.minorderamt || 0;
+        let minAmt = Number(minRaw || 0);
+        if (isNaN(minAmt) || minAmt < 0) minAmt = 0;
+
+        let benefit = '';
+        if (type === 'RATE') {
+            benefit = rate + '%';
+        } else {
+            benefit = fmtMoney(amt) + '원';
+        }
+
+        const nameText = nm || code || '쿠폰';
+
+        if (minAmt > 0) {
+            $txt.text('[' + benefit + '] ' + nameText + ' — ' +
+                fmtMoney(minAmt) + '원 이상 주문 시 적용됩니다.');
+        } else {
+            $txt.text('[' + benefit + '] ' + nameText + ' 쿠폰이 선택되었습니다.');
+        }
+    }
+
+    // baseOrderAmt(상품+배송)에 대해 실제 할인 금액 계산
+    function computeCouponDiscount(baseOrderAmt) {
+        if (!gSelectedCouponUserId) return 0;
+
+        const c = getSelectedCouponObj();
+        if (!c) return 0;
+
+        if (!baseOrderAmt || isNaN(baseOrderAmt) || baseOrderAmt <= 0) {
+            return 0;
+        }
+
+        const type = (c.couponTypeCd || c.coupontypecd || '').toUpperCase();
+        const rateRaw = c.discountRate || c.discountrate || 0;
+        const amtRaw  = c.discountAmt  || c.discountamt  || 0;
+        const minRaw  = c.minOrderAmt  || c.minorderamt  || 0;
+
+        let minAmt = Number(minRaw || 0);
+        if (isNaN(minAmt) || minAmt < 0) minAmt = 0;
+
+        // 최소 주문금액 조건
+        if (minAmt > 0 && baseOrderAmt < minAmt) {
+            return 0;
+        }
+
+        let discount = 0;
+
+        if (type === 'RATE') {
+            let rate = Number(rateRaw || 0);
+            if (isNaN(rate) || rate <= 0) rate = 0;
+            discount = Math.floor(baseOrderAmt * rate / 100.0);
+        } else {
+            let amt = Number(amtRaw || 0);
+            if (isNaN(amt) || amt <= 0) amt = 0;
+            discount = amt;
+        }
+
+        if (discount < 0) discount = 0;
+        if (discount > baseOrderAmt) discount = baseOrderAmt;
+
+        return discount;
+    }
+
+    // 포인트 입력 변경 시
     function onChangePointInput(el) {
         const raw = (el.value || '').replace(/,/g, '').replace(/\s+/g, '');
         let n = Number(raw || 0);
         if (!n || isNaN(n) || n < 0) n = 0;
 
-        const orderAmt = gProductTotal + gShipTotal;
+        const baseOrderAmt = gProductTotal + gShipTotal;
+        const couponDiscount = computeCouponDiscount(baseOrderAmt);
+        const orderAmt = baseOrderAmt - couponDiscount;
+
         if (n > gPointBalance) n = gPointBalance;
-        if (n > orderAmt) n = orderAmt;
+        if (n > orderAmt)      n = orderAmt;
 
         el.value = n ? n.toLocaleString() : '';
         recalcPaymentSummary();
     }
 
     function useMaxPoint() {
-        const orderAmt = gProductTotal + gShipTotal;
+        const baseOrderAmt   = gProductTotal + gShipTotal;
+        const couponDiscount = computeCouponDiscount(baseOrderAmt);
+        const orderAmt       = baseOrderAmt - couponDiscount;
+
         let use = gPointBalance;
         if (use > orderAmt) use = orderAmt;
+
         $('#pointUseAmt').val(use ? use.toLocaleString() : '');
         recalcPaymentSummary();
     }
 
-    function getPointUseValue() {
+    // orderAmtOptional: 쿠폰까지 반영된 주문금액
+    function getPointUseValue(orderAmtOptional) {
+        const baseOrderAmt   = gProductTotal + gShipTotal;
+        const couponDiscount = computeCouponDiscount(baseOrderAmt);
+        const orderAmtBase   = baseOrderAmt - couponDiscount;
+
+        const orderAmt = (typeof orderAmtOptional === 'number')
+            ? orderAmtOptional
+            : orderAmtBase;
+
         const v = ($('#pointUseAmt').val() || '').replace(/,/g, '').trim();
         let n = Number(v || 0);
         if (!n || isNaN(n) || n < 0) n = 0;
-        const orderAmt = gProductTotal + gShipTotal;
+
         if (n > gPointBalance) n = gPointBalance;
-        if (n > orderAmt) n = orderAmt;
+        if (n > orderAmt)      n = orderAmt;
         return n;
     }
 
     function recalcPaymentSummary() {
-        const orderAmt = gProductTotal + gShipTotal;
-        const pointUse = getPointUseValue();
-        const payAmt = orderAmt - pointUse;
+        const baseOrderAmt   = gProductTotal + gShipTotal;
+        const couponDiscount = computeCouponDiscount(baseOrderAmt);
+        gCouponUseAmt = couponDiscount;
+
+        const orderAmt = baseOrderAmt - couponDiscount;
+        const pointUse = getPointUseValue(orderAmt);
+        const payAmt   = orderAmt - pointUse;
 
         $('#sumProduct').text(fmtMoney(gProductTotal) + '원');
         $('#sumShip').text(fmtMoney(gShipTotal) + '원');
-        $('#sumOrder').text(fmtMoney(orderAmt) + '원');
+        $('#sumOrder').text(fmtMoney(baseOrderAmt) + '원'); // 쿠폰 이전 합계
+        $('#sumCouponUse').text('-' + fmtMoney(couponDiscount) + '원');
         $('#sumPointUse').text('-' + fmtMoney(pointUse) + '원');
         $('#sumPay').text(fmtMoney(payAmt) + '원');
 
-        // 안내 문구 동적 변경
         const $msg = $('#finalPayText');
-        if (orderAmt <= 0) {
+
+        if (baseOrderAmt <= 0) {
             $msg.text('주문할 상품을 담은 후 결제를 진행해 주세요.');
             return;
         }
 
         if (gPointBalance < orderAmt) {
             $msg.text(
-                '보유 포인트(' + fmtMoney(gPointBalance) + ' P)가 주문 금액(' +
+                '보유 포인트(' + fmtMoney(gPointBalance) + ' P)가 쿠폰 적용 후 주문 금액(' +
                 fmtMoney(orderAmt) + '원)보다 적어 결제를 진행할 수 없습니다.'
             );
         } else if (payAmt > 0) {
@@ -603,7 +812,6 @@
 
     // 4) 주문 저장 + 결제완료 화면으로 이동
     function submitOrder() {
-        // 선택된 장바구니 항목 없이 직접 접근한 경우 방어
         if (!gSelectedCartIds || gSelectedCartIds.length === 0) {
             alert('잘못된 접근입니다.\n장바구니에서 주문할 상품을 선택한 뒤 주문/결제를 진행해 주세요.');
             goBackToCart();
@@ -615,9 +823,9 @@
             return;
         }
 
-        const receiverNm = $('#receiverNm').val().trim();
+        const receiverNm    = $('#receiverNm').val().trim();
         const receiverPhone = $('#receiverPhone').val().trim();
-        const addr1 = $('#addr1').val().trim();
+        const addr1         = $('#addr1').val().trim();
 
         if (!receiverNm) {
             alert('받는 사람 이름을 입력하세요.');
@@ -635,26 +843,30 @@
             return;
         }
 
-        const orderAmt = gProductTotal + gShipTotal;
-        const pointUse = getPointUseValue();
-        const payAmt = orderAmt - pointUse;
-        const pointSave = Math.floor(gProductTotal * 0.01); // 예시: 상품금액의 1%
+        const baseOrderAmt   = gProductTotal + gShipTotal;
+        const couponDiscount = computeCouponDiscount(baseOrderAmt);
+        gCouponUseAmt        = couponDiscount;
 
-        // ▼ 핵심: 포인트가 부족하면 결제 자체 불가
+        const orderAmt = baseOrderAmt - couponDiscount;
+        const pointUse = getPointUseValue(orderAmt);
+        const payAmt   = orderAmt - pointUse;
+        const pointSave = Math.floor(gProductTotal * 0.01); // 예: 상품금액의 1%
+
         if (gPointBalance < orderAmt) {
             alert(
                 '보유 포인트가 부족하여 결제를 진행할 수 없습니다.\n\n' +
-                '주문 금액: ' + fmtMoney(orderAmt) + '원\n' +
+                '쿠폰 적용 전 주문 금액: ' + fmtMoney(baseOrderAmt) + '원\n' +
+                '쿠폰 할인: ' + fmtMoney(couponDiscount) + '원\n' +
+                '쿠폰 적용 후 주문 금액: ' + fmtMoney(orderAmt) + '원\n' +
                 '보유 포인트: ' + fmtMoney(gPointBalance) + ' P'
             );
             return;
         }
 
-        // ▼ 포인트 전액 사용이 아니면 결제 불가 (카드 결제 미지원)
         if (payAmt !== 0) {
             alert(
                 '현재는 포인트 전액 결제만 가능합니다.\n\n' +
-                '주문 금액 전체를 포인트로 결제해 주세요.'
+                '쿠폰 적용 후 주문 금액 전체를 포인트로 결제해 주세요.'
             );
             $('#pointUseAmt').focus();
             return;
@@ -664,34 +876,51 @@
 
         const payload = {
             orderNo: orderNo,
-            // 서버에서 userId는 세션 기반으로 처리(컬럼이 NOT NULL이면 컨트롤러에서 보완)
+
             orderStatusCd: 'ORDER_DONE',
-            payStatusCd: 'PAY_DONE',
-            payMethodCd: 'POINT',   // 전액 포인트 결제만 허용
+            payStatusCd:   'PAY_DONE',
+            payMethodCd:   'POINT',
 
-            totalProductAmt: gProductTotal,
+            totalProductAmt:  gProductTotal,
             totalDiscountAmt: 0,
-            deliveryAmt: gShipTotal,
-            orderAmt: orderAmt,
-            pointUseAmt: pointUse,
-            pointSaveAmt: pointSave,
-            couponUseAmt: 0,
-            payAmt: payAmt,        // 0 이어야 함
+            deliveryAmt:      gShipTotal,
+            orderAmt:         orderAmt,        // 쿠폰/포인트 적용 후
+            pointUseAmt:      pointUse,
+            pointSaveAmt:     pointSave,
+            couponUseAmt:     gCouponUseAmt,   // ★ 쿠폰 할인 금액
+            payAmt:           payAmt,         // 0
 
-            receiverNm: receiverNm,
+            receiverNm:    receiverNm,
             receiverPhone: receiverPhone,
-            zipCode: $('#zipCode').val().trim(),
-            addr1: addr1,
-            addr2: $('#addr2').val().trim(),
-            deliveryMemo: $('#deliveryMemo').val().trim(),
+            zipCode:       $('#zipCode').val().trim(),
+            addr1:         addr1,
+            addr2:         $('#addr2').val().trim(),
+            deliveryMemo:  $('#deliveryMemo').val().trim(),
 
             useAt: 'Y',
 
-            // 선택한 장바구니 항목들
             cartItemIds: gSelectedCartIds
         };
 
-        if (!confirm('주문을 진행하시겠습니까?\n\n결제 방식: 포인트 전액 결제\n결제 금액: ' + fmtMoney(orderAmt) + '원')) {
+        if (gSelectedCouponUserId) {
+            payload.couponUserId = Number(gSelectedCouponUserId);
+        }
+
+        let confirmMsg =
+            '주문을 진행하시겠습니까?\n\n' +
+            '결제 방식: 포인트 전액 결제\n' +
+            '쿠폰 적용 전 주문 금액: ' + fmtMoney(baseOrderAmt) + '원\n';
+
+        if (gCouponUseAmt > 0) {
+            confirmMsg += '쿠폰 할인: -' + fmtMoney(gCouponUseAmt) + '원\n';
+        }
+
+        confirmMsg +=
+            '쿠폰 적용 후 주문 금액: ' + fmtMoney(orderAmt) + '원\n' +
+            '포인트 사용: -' + fmtMoney(pointUse) + ' P\n' +
+            '최종 결제 금액: ' + fmtMoney(payAmt) + '원';
+
+        if (!confirm(confirmMsg)) {
             return;
         }
 
@@ -717,10 +946,11 @@
                 }
 
                 const q =
-                    '?orderNo=' + encodeURIComponent(orderNo) +
-                    '&totalAmt=' + encodeURIComponent(orderAmt) +
-                    '&payAmt=' + encodeURIComponent(payAmt) +
-                    '&pointUseAmt=' + encodeURIComponent(pointUse);
+                    '?orderNo='   + encodeURIComponent(orderNo) +
+                    '&totalAmt='  + encodeURIComponent(baseOrderAmt) +
+                    '&payAmt='    + encodeURIComponent(payAmt) +
+                    '&pointUseAmt=' + encodeURIComponent(pointUse) +
+                    '&couponUseAmt=' + encodeURIComponent(gCouponUseAmt);
 
                 location.href = '/pay/payment/paymentModify' + q;
             },
@@ -733,12 +963,12 @@
     function makeOrderNo() {
         const d = new Date();
         const pad = function (n) { return n < 10 ? '0' + n : '' + n; };
-        const y = d.getFullYear();
-        const m = pad(d.getMonth() + 1);
+        const y   = d.getFullYear();
+        const m   = pad(d.getMonth() + 1);
         const day = pad(d.getDate());
-        const h = pad(d.getHours());
-        const mi = pad(d.getMinutes());
-        const s = pad(d.getSeconds());
+        const h   = pad(d.getHours());
+        const mi  = pad(d.getMinutes());
+        const s   = pad(d.getSeconds());
         const rand = Math.floor(Math.random() * 900) + 100; // 3자리 랜덤
         return 'O' + y + m + day + h + mi + s + rand;
     }

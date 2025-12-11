@@ -132,6 +132,10 @@
                 <div class="info-value" id="totalAmt">-</div>
             </div>
             <div class="info-row">
+                <div class="info-label">쿠폰 할인</div>
+                <div class="info-value" id="couponUseAmt">0원</div>
+            </div>
+            <div class="info-row">
                 <div class="info-label">포인트 사용</div>
                 <div class="info-value" id="pointUseAmt">0원</div>
             </div>
@@ -154,7 +158,7 @@
         </div>
 
         <div class="notice-text">
-            * 실제 포인트 차감 및 적립, PG 연동 내역은 추후 관리자 화면 및 정식 결제 모듈과 연동할 수 있습니다.<br/>
+            * 실제 포인트 차감 및 적립, 쿠폰 처리, PG 연동 내역은 추후 관리자 화면 및 정식 결제 모듈과 연동할 수 있습니다.<br/>
             * 주문 상세 정보는 "주문 내역 보기"에서 확인 가능합니다.
         </div>
     </div>
@@ -162,24 +166,34 @@
 
 <script>
     $(function () {
-        // 주문서에서 넘겨준 QueryString(orderNo, totalAmt, payAmt, pointUseAmt)을 읽는다.
+        // 주문서에서 넘겨준 QueryString(orderNo, totalAmt, payAmt, pointUseAmt, couponUseAmt)을 읽는다.
         const params = new URLSearchParams(window.location.search);
 
-        const orderNo = params.get('orderNo') || '-';
-        const totalAmt = params.get('totalAmt');
-        const payAmt = params.get('payAmt');
-        const pointUseAmt = params.get('pointUseAmt');
+        const orderNo      = params.get('orderNo') || '-';
+        const totalAmt     = params.get('totalAmt');
+        const payAmt       = params.get('payAmt');
+        const pointUseAmt  = params.get('pointUseAmt');
+        const couponUseAmt = params.get('couponUseAmt');
 
         $('#orderNo').text(orderNo);
         $('#totalAmt').text(totalAmt ? fmtMoney(totalAmt) + '원' : '-');
         $('#payAmt').text(payAmt ? fmtMoney(payAmt) + '원' : '-');
 
+        // 포인트 사용
         let p = 0;
         if (pointUseAmt !== null && pointUseAmt !== undefined && pointUseAmt !== '') {
             const n = Number(pointUseAmt);
             if (!isNaN(n) && n > 0) p = n;
         }
         $('#pointUseAmt').text(p ? '-' + fmtMoney(p) + '원' : '0원');
+
+        // 쿠폰 할인
+        let c = 0;
+        if (couponUseAmt !== null && couponUseAmt !== undefined && couponUseAmt !== '') {
+            const n2 = Number(couponUseAmt);
+            if (!isNaN(n2) && n2 > 0) c = n2;
+        }
+        $('#couponUseAmt').text(c ? '-' + fmtMoney(c) + '원' : '0원');
     });
 
     function fmtMoney(v) {

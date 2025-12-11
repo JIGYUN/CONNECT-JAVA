@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.cop.coupon.Coupon">
+
+    <sql id="whereCoupon">
+        <!--
+        동적 검색 조건이 필요하면 여기에 추가
+
+        예시)
+
+        <if test="couponCd != null and couponCd != ''">
+            AND COUPON_CD = #{couponCd}
+        </if>
+
+        <if test="couponNm != null and couponNm != ''">
+            AND COUPON_NM LIKE CONCAT('%', #{couponNm}, '%')
+        </if>
+        -->
+    </sql>
+
+    <select id="selectCouponList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.cop.coupon.Coupon.selectCouponList
+         Description : 쿠폰 목록 조회
+        */
+        SELECT
+            COUPON_ID
+            ,COUPON_CD
+            ,COUPON_NM
+            ,COUPON_TYPE_CD
+            ,DISCOUNT_RATE
+            ,DISCOUNT_AMT
+            ,MAX_DISCOUNT_AMT
+            ,MIN_ORDER_AMT
+            ,MAX_ISSUE_CNT
+            ,PER_USER_MAX_CNT
+            ,DATE_FORMAT(START_DT, '%Y-%m-%d %H:%i:%s') AS START_DT
+            ,DATE_FORMAT(END_DT, '%Y-%m-%d %H:%i:%s')   AS END_DT
+            ,USE_AT
+            ,MEMO
+            ,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+            ,CREATED_BY
+            ,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+            ,UPDATED_BY
+        FROM TB_COUPON
+        <where>
+            <include refid="whereCoupon" />
+        </where>
+        ORDER BY COUPON_ID DESC
+        <if test="limit != null and offset != null">
+            /* 페이징 */
+            LIMIT #{limit} OFFSET #{offset}
+        </if>
+    </select>
+
+    <select id="selectCouponListCount" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.cop.coupon.Coupon.selectCouponListCount
+         Description : 쿠폰 목록 레코드 수 조회
+        */
+        SELECT
+            COUNT(*) AS CNT
+        FROM TB_COUPON
+        <where>
+            <include refid="whereCoupon" />
+        </where>
+    </select>
+
+    <select id="selectCouponDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.cop.coupon.Coupon.selectCouponDetail
+         Description : 쿠폰 상세 조회
+        */
+        SELECT
+            COUPON_ID
+            ,COUPON_CD
+            ,COUPON_NM
+            ,COUPON_TYPE_CD
+            ,DISCOUNT_RATE
+            ,DISCOUNT_AMT
+            ,MAX_DISCOUNT_AMT
+            ,MIN_ORDER_AMT
+            ,MAX_ISSUE_CNT
+            ,PER_USER_MAX_CNT
+            ,DATE_FORMAT(START_DT, '%Y-%m-%d %H:%i:%s') AS START_DT
+            ,DATE_FORMAT(END_DT, '%Y-%m-%d %H:%i:%s')   AS END_DT
+            ,USE_AT
+            ,MEMO
+            ,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+            ,CREATED_BY
+            ,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+            ,UPDATED_BY
+        FROM TB_COUPON
+        WHERE COUPON_ID = #{couponId}
+    </select>
+
+    <insert id="insertCoupon" parameterType="hashmap">
+        /*
+         SQL ID: www.api.cop.coupon.Coupon.insertCoupon
+         Description : 쿠폰 등록
+        */
+        INSERT INTO TB_COUPON
+        (
+            COUPON_CD
+            ,COUPON_NM
+            ,COUPON_TYPE_CD
+            ,DISCOUNT_RATE
+            ,DISCOUNT_AMT
+            ,MAX_DISCOUNT_AMT
+            ,MIN_ORDER_AMT
+            ,MAX_ISSUE_CNT
+            ,PER_USER_MAX_CNT
+            ,START_DT
+            ,END_DT
+            ,USE_AT
+            ,MEMO
+            ,CREATED_DT
+            ,CREATED_BY
+            ,UPDATED_DT
+            ,UPDATED_BY
+        )
+        VALUES
+        (
+            #{couponCd}
+            ,#{couponNm}
+            ,#{couponTypeCd}
+            ,NULLIF(#{discountRate}, '')
+            ,NULLIF(#{discountAmt}, '')
+            ,NULLIF(#{maxDiscountAmt}, '')
+            ,NULLIF(#{minOrderAmt}, '')
+            ,NULLIF(#{maxIssueCnt}, '')
+            ,NULLIF(#{perUserMaxCnt}, '')
+            ,IFNULL(
+                STR_TO_DATE(
+                    NULLIF(
+                        CONCAT(
+                            REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{startDt}, 'T', ' '), '.', 1),'Z',''),'T',' '),
+                            CASE
+                                WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{startDt}, 'T', ' '), '.', 1),'Z',''),'T',' ')) = 16
+                                THEN ':00'
+                                ELSE ''
+                            END
+                        ),
+                        ''
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+                NOW()
+            )
+            ,IFNULL(
+                STR_TO_DATE(
+                    NULLIF(
+                        CONCAT(
+                            REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{endDt}, 'T', ' '), '.', 1),'Z',''),'T',' '),
+                            CASE
+                                WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{endDt}, 'T', ' '), '.', 1),'Z',''),'T',' ')) = 16
+                                THEN ':00'
+                                ELSE ''
+                            END
+                        ),
+                        ''
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+                NOW()
+            )
+            ,#{useAt}
+            ,#{memo}
+            ,IFNULL(
+                STR_TO_DATE(
+                    NULLIF(
+                        CONCAT(
+                            REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T', ' '), '.', 1),'Z',''),'T',' '),
+                            CASE
+                                WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T', ' '), '.', 1),'Z',''),'T',' ')) = 16
+                                THEN ':00'
+                                ELSE ''
+                            END
+                        ),
+                        ''
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+                NOW()
+            )
+            ,#{createdBy}
+            ,IFNULL(
+                STR_TO_DATE(
+                    NULLIF(
+                        CONCAT(
+                            REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T', ' '), '.', 1),'Z',''),'T',' '),
+                            CASE
+                                WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T', ' '), '.', 1),'Z',''),'T',' ')) = 16
+                                THEN ':00'
+                                ELSE ''
+                            END
+                        ),
+                        ''
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+                NOW()
+            )
+            ,#{updatedBy}
+        )
+    </insert>
+
+    <update id="updateCoupon" parameterType="hashmap">
+        /*
+         SQL ID: www.api.cop.coupon.Coupon.updateCoupon
+         Description : 쿠폰 수정
+        */
+        UPDATE TB_COUPON
+        <set>
+            <if test="couponCd != null and couponCd != ''">
+                COUPON_CD = #{couponCd},
+            </if>
+            <if test="couponNm != null and couponNm != ''">
+                COUPON_NM = #{couponNm},
+            </if>
+            <if test="couponTypeCd != null and couponTypeCd != ''">
+                COUPON_TYPE_CD = #{couponTypeCd},
+            </if>
+            <if test="discountRate != null and discountRate != ''">
+                DISCOUNT_RATE = NULLIF(#{discountRate}, ''),
+            </if>
+            <if test="discountAmt != null and discountAmt != ''">
+                DISCOUNT_AMT = NULLIF(#{discountAmt}, ''),
+            </if>
+            <if test="maxDiscountAmt != null and maxDiscountAmt != ''">
+                MAX_DISCOUNT_AMT = NULLIF(#{maxDiscountAmt}, ''),
+            </if>
+            <if test="minOrderAmt != null and minOrderAmt != ''">
+                MIN_ORDER_AMT = NULLIF(#{minOrderAmt}, ''),
+            </if>
+            <if test="maxIssueCnt != null and maxIssueCnt != ''">
+                MAX_ISSUE_CNT = NULLIF(#{maxIssueCnt}, ''),
+            </if>
+            <if test="perUserMaxCnt != null and perUserMaxCnt != ''">
+                PER_USER_MAX_CNT = NULLIF(#{perUserMaxCnt}, ''),
+            </if>
+            <if test="startDt != null and startDt != ''">
+                START_DT = STR_TO_DATE(
+                    NULLIF(
+                        CONCAT(
+                            REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{startDt}, 'T', ' '), '.', 1),'Z',''),'T',' '),
+                            CASE
+                                WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{startDt}, 'T', ' '), '.', 1),'Z',''),'T',' ')) = 16
+                                THEN ':00'
+                                ELSE ''
+                            END
+                        ),
+                        ''
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+            </if>
+            <if test="endDt != null and endDt != ''">
+                END_DT = STR_TO_DATE(
+                    NULLIF(
+                        CONCAT(
+                            REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{endDt}, 'T', ' '), '.', 1),'Z',''),'T',' '),
+                            CASE
+                                WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{endDt}, 'T', ' '), '.', 1),'Z',''),'T',' ')) = 16
+                                THEN ':00'
+                                ELSE ''
+                            END
+                        ),
+                        ''
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+            </if>
+            <if test="useAt != null and useAt != ''">
+                USE_AT = #{useAt},
+            </if>
+            <if test="memo != null and memo != ''">
+                MEMO = #{memo},
+            </if>
+            <if test="createdDt != null and createdDt != ''">
+                CREATED_DT = STR_TO_DATE(
+                    NULLIF(
+                        CONCAT(
+                            REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T', ' '), '.', 1),'Z',''),'T',' '),
+                            CASE
+                                WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T', ' '), '.', 1),'Z',''),'T',' ')) = 16
+                                THEN ':00'
+                                ELSE ''
+                            END
+                        ),
+                        ''
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+            </if>
+            <if test="createdBy != null and createdBy != ''">
+                CREATED_BY = #{createdBy},
+            </if>
+            <if test="updatedDt != null and updatedDt != ''">
+                UPDATED_DT = STR_TO_DATE(
+                    NULLIF(
+                        CONCAT(
+                            REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T', ' '), '.', 1),'Z',''),'T',' '),
+                            CASE
+                                WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T', ' '), '.', 1),'Z',''),'T',' ')) = 16
+                                THEN ':00'
+                                ELSE ''
+                            END
+                        ),
+                        ''
+                    ),
+                    '%Y-%m-%d %H:%i:%s'
+                ),
+            </if>
+            <if test="updatedBy != null and updatedBy != ''">
+                UPDATED_BY = #{updatedBy},
+            </if>
+        </set>
+        WHERE COUPON_ID = #{couponId}
+    </update>
+
+    <delete id="deleteCoupon" parameterType="hashmap">
+        /*
+         SQL ID: www.api.cop.coupon.Coupon.deleteCoupon
+         Description : 쿠폰 삭제
+        */
+        DELETE FROM TB_COUPON
+        WHERE COUPON_ID = #{couponId}
+    </delete>
+
+</mapper>

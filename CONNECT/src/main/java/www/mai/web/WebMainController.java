@@ -67,5 +67,12 @@ public class WebMainController {
     public String privacy(ModelMap model) throws Exception {
         return "mai/main/privacy";
     }
+    
+    @RequestMapping(value="/main/portfolio")
+    public String portfolio(ModelMap model) throws Exception {
+        return "mai/main/portfolio";
+    }
+    
+    
 
 }
