@@ -416,7 +416,7 @@
                 }
                 if (map.msg === 'LOGIN_REQUIRED') {
                     alert('로그인이 필요한 서비스입니다.');
-                    location.href = '/usr/login';
+                    location.href = '/mba/auth/login';
                     return;
                 }
                 const detail   = map.result || {};
@@ -448,7 +448,7 @@
                 }
                 if (map.msg === 'LOGIN_REQUIRED') {
                     alert('로그인이 필요한 서비스입니다.');
-                    location.href = '/usr/login';
+                    location.href = '/mba/auth/login';
                     return;
                 }
                 const order = map.result || map;

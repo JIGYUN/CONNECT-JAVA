@@ -36,7 +36,21 @@ public class OrderController {
     @ResponseBody
     public Map<String, Object> selectOrderList(@RequestBody HashMap<String, Object> map) throws Exception {
         Map<String, Object> resultMap = new HashMap<>();
+        
+        
+        if (!UserSessionManager.isUserLogined()) {
+            resultMap.put("ok", false);
+            resultMap.put("msg", "LOGIN_REQUIRED");
+            return resultMap;
+        }
+
+        // 로그인 사용자 정보
+        String userId = UserSessionManager.getLoginUserVO().getUserId();
+
+        map.put("userId", userId);
+        
         List<Map<String, Object>> result = orderService.selectOrderList(map);
+        
         resultMap.put("ok", true);
         resultMap.put("msg", "성공");
         resultMap.put("result", result);
