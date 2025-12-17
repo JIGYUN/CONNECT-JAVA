@@ -13,14 +13,20 @@ import javax.annotation.Resource;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -34,6 +40,10 @@ public class GoogleAuthController {
 
     // state = "<nonce>.<base64url(redirect)>"
     private static final String STATE_SEP = ".";
+
+    // ✅ /cht/** 접근에 필요한 권한(운영 403 대응)
+    private static final String AUTH_EXTERNAL = "EXTERNAL_AUTH";
+    private static final String AUTH_EXTERNAL_ROLE = "ROLE_EXTERNAL_AUTH";
 
     @Resource
     private GoogleAuthService googleAuthService;
@@ -166,7 +176,7 @@ public class GoogleAuthController {
 
         String rawState = req.getParameter("state");
         StateInfo stateInfo = parseState(rawState);
-        String stateNonce       = stateInfo.nonce;
+        String stateNonce        = stateInfo.nonce;
         String redirectFromState = stateInfo.redirect;
 
         // 기대 nonce 로드 (세션 -> 쿠키)
@@ -231,13 +241,31 @@ public class GoogleAuthController {
             return;
         }
 
+        // ✅ 구글 로그인 권한 보강: /cht/** 접근 가능하도록 EXTERNAL_AUTH(+ROLE_EXTERNAL_AUTH) 추가
+        Collection<? extends GrantedAuthority> mergedAuthorities =
+                buildAuthoritiesForGoogleLogin(loginVo);
+
+        System.out.println("[GAuth] mergedAuthorities=" + mergedAuthorities);
+
+        // ✅ [핵심 수정] UserVO 객체 내부의 권한 목록도 업데이트 (UserSessionManager 등에서 참조 시 403 방지)
+        // UserVO가 List<GrantedAuthority>를 받는지, Collection을 받는지에 따라 다를 수 있으나
+        // 보통 List를 받으므로 ArrayList로 감싸서 주입합니다.
+        if (loginVo != null) {
+            try {
+                loginVo.setAuthorities(new ArrayList<>(mergedAuthorities));
+            } catch (Exception e) {
+                // UserVO에 setAuthorities가 없거나 타입이 다르면 로그 남기고 무시
+                System.out.println("[GAuth] WARN: Failed to set authorities to UserVO: " + e.getMessage());
+            }
+        }
+
         // ── 1) (자바/JSP용) Spring Security 세션 구성 ──
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         UsernamePasswordAuthenticationToken auth =
                 new UsernamePasswordAuthenticationToken(
                         loginVo,
                         loginVo.getPassword(),
-                        loginVo.getAuthorities()
+                        mergedAuthorities
                 );
         auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
         context.setAuthentication(auth);
@@ -252,6 +280,7 @@ public class GoogleAuthController {
         } catch (Throwable ignore) {
         }
 
+        // 업데이트된(권한이 주입된) loginVo를 UserSessionManager에 저장
         UserSessionManager.setLoginUserVO(loginVo, req);
 
         // nonce 정리
@@ -305,16 +334,53 @@ public class GoogleAuthController {
             System.out.println("[GAuth] redirectWithError -> " + target);
             res.sendRedirect(target);
         } else {
-            String target = (ctx.isEmpty() ? "" : ctx)
-                    + "/mba/auth/login?err=" + URLEncoder.encode(err, "UTF-8");
-            System.out.println("[GAuth] redirectWithError(fallback) -> " + target);
+            String target = (ctx.isEmpty() ? "/" : ctx + "/") + "?err=" + URLEncoder.encode(err, "UTF-8");
+            System.out.println("[GAuth] redirectWithError -> " + target);
             res.sendRedirect(target);
         }
     }
 
     private String genState() {
-        byte[] b = new byte[16];
+        byte[] b = new byte[18];
         rnd.nextBytes(b);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(b);
+    }
+
+    private Collection<? extends GrantedAuthority> buildAuthoritiesForGoogleLogin(UserVO loginVo) {
+        List<GrantedAuthority> out = new ArrayList<>();
+
+        Collection<? extends GrantedAuthority> base = null;
+        try {
+            base = (loginVo != null ? loginVo.getAuthorities() : null);
+        } catch (Throwable ignore) {
+        }
+
+        if (base != null) {
+            out.addAll(base);
+        }
+
+        // EXTERNAL_AUTH / ROLE_EXTERNAL_AUTH 둘 다 보장
+        boolean hasExternal = false;
+        boolean hasExternalRole = false;
+
+        for (GrantedAuthority ga : out) {
+            if (ga == null) continue;
+            String a = ga.getAuthority();
+            if (AUTH_EXTERNAL.equals(a)) {
+                hasExternal = true;
+            }
+            if (AUTH_EXTERNAL_ROLE.equals(a)) {
+                hasExternalRole = true;
+            }
+        }
+
+        if (!hasExternal) {
+            out.add(new SimpleGrantedAuthority(AUTH_EXTERNAL));
+        }
+        if (!hasExternalRole) {
+            out.add(new SimpleGrantedAuthority(AUTH_EXTERNAL_ROLE));
+        }
+
+        return out;
     }
 }

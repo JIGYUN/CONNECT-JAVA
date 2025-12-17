@@ -93,8 +93,8 @@
         <intercept-url pattern="/tsk/**" access="hasAuthority('USER')"/>
 
         <!-- 기존 룰 유지 (예시) -->
-        <intercept-url pattern="/mpg/**/*" access="hasRole('EXTERNAL_AUTH')"/>
-        <intercept-url pattern="/cht/**/*" access="hasRole('EXTERNAL_AUTH')"/>
+		<intercept-url pattern="/mpg/**/*" access="hasAnyAuthority('EXTERNAL_AUTH','ROLE_EXTERNAL_AUTH')"/>
+		<intercept-url pattern="/cht/**/*" access="hasAnyAuthority('EXTERNAL_AUTH','ROLE_EXTERNAL_AUTH')"/>
     </filter-security-metadata-source>
 
     <beans:bean id="filterSecurityInterceptor" class="org.springframework.security.web.access.intercept.FilterSecurityInterceptor">
