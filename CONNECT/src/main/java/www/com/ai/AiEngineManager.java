@@ -1,67 +1,90 @@
 // filepath: src/main/java/www/com/ai/AiEngineManager.java
 package www.com.ai;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+import java.nio.charset.StandardCharsets;
+
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
+import javax.annotation.PostConstruct;
 
-/**
- * 공통 AI 엔진 매니저.
- *
- * - translate(...)      : 자동 번역 (LibreTranslate / Qwen 번역)
- * - chatWithQwen(...)   : Qwen 일반 챗봇
- *
- * 실제 HTTP 엔드포인트(호스트/포트/모델명)는 아래 상수만 변경해 쓰면 된다.
- */
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 @Component
 public class AiEngineManager {
 
-    // === 환경 상수 (필요하면 properties로 빼도 됨) ===
+    // =============================
+    // 기존 번역용 엔진 (QWEN/Libre)
+    // =============================
 
-    /** LibreTranslate 기본 URL (Docker 컨테이너 등) */
-    private static final String LIBRE_BASE_URL = "http://localhost:5000";
+    private final LibreTranslateClient libreTranslateClient;
+    private final QwenTranslateClient qwenTranslateClient;
 
-    /** Qwen 서버 기본 URL (예: Ollama / LM Studio / 직접 띄운 서버) */
-    private static final String QWEN_BASE_URL = "https://obtained-radio-socks-sounds.trycloudflare.com";
+    // =============================
+    // 신규: OpenAI FastAPI 챗봇
+    // =============================
+
+    private OpenAiFastApiClient openAiFastApiClient;
 
     /**
-     * Qwen 모델명 (Ollama 사용 예: "qwen2.5:7b-instruct")
-     * 실제 사용하는 모델명에 맞게 수정.
+     * ✅ 환경별 주입 값
+     * - 우선순위: OS 환경변수(LAWBOT_FASTAPI_BASE_URL) -> ConfigProperties(lawbot.fastapi.baseUrl) -> 기본값
+     *
+     * 운영(Render): https://lawbot-1mpd.onrender.com
+     * 로컬: http://localhost:8000
      */
-    private static final String QWEN_MODEL_NAME = "qwen2.5:7b-instruct";
+    @Value("#{T(java.lang.System).getenv('LAWBOT_FASTAPI_BASE_URL') ?: ConfigProperties['lawbot.fastapi.baseUrl'] ?: 'http://localhost:8000'}")
+    private String openAiFastApiBaseUrl;
 
-    // === 내부 클라이언트 ===
+    @Value("#{T(java.lang.System).getenv('LAWBOT_FASTAPI_DEFAULT_TOP_K') ?: ConfigProperties['lawbot.fastapi.defaultTopK'] ?: '5'}")
+    private String defaultTopKStr;
 
-    private final LibreTranslateClient libreClient;
-    private final QwenClient qwenClient;
+    private int defaultTopK = 5;
 
     public AiEngineManager() {
-        this.libreClient = new LibreTranslateClient(LIBRE_BASE_URL);
-        this.qwenClient = new QwenClient(QWEN_BASE_URL, QWEN_MODEL_NAME);
+        // 기존 클래스 그대로 사용(너가 준 파일)
+        this.libreTranslateClient = new LibreTranslateClient("http://localhost:5000");
+        this.qwenTranslateClient = new QwenTranslateClient("http://localhost:11434", "qwen2.5:7b-instruct");
     }
 
-    /**
-     * 자동 번역 엔진 (LibreTranslate / Qwen 번역 모드)에 연결하는 메서드.
-     *
-     * payload 예시:
-     * {
-     *   "text"       : "안녕",
-     *   "sourceLang" : "auto",
-     *   "targetLang" : "en",
-     *   "engine"     : "LT" or "QWEN"
-     * }
-     *
-     * text가 없으면 content 필드도 fallback으로 사용.
-     */
+    @PostConstruct
+    public void init() {
+        this.openAiFastApiBaseUrl = trimTrailingSlash(this.openAiFastApiBaseUrl);
+
+        try {
+            this.defaultTopK = Integer.parseInt((this.defaultTopKStr != null) ? this.defaultTopKStr.trim() : "5");
+        } catch (Exception ignore) {
+            this.defaultTopK = 5;
+        }
+
+        this.openAiFastApiClient = new OpenAiFastApiClient(this.openAiFastApiBaseUrl);
+
+        System.out.println("[AI] FastAPI baseUrl=" + this.openAiFastApiBaseUrl + " defaultTopK=" + this.defaultTopK);
+    }
+
+    private void ensureFastApiClient() {
+        if (this.openAiFastApiClient == null) {
+            String base = trimTrailingSlash((this.openAiFastApiBaseUrl != null) ? this.openAiFastApiBaseUrl : "http://localhost:8000");
+            this.openAiFastApiClient = new OpenAiFastApiClient(base);
+        }
+    }
+
+    // =========================================================
+    // 1) 번역: 기존 그대로 (QWEN은 번역만)
+    // =========================================================
+
     public String translate(Map<String, Object> payload) throws Exception {
 
         if (payload == null) {
@@ -69,426 +92,432 @@ public class AiEngineManager {
         }
 
         String engine = getString(payload, "engine", "LT");
-        if (engine == null) {
-            engine = "LT";
-        }
+        String sourceLang = getString(payload, "sourceLang", "auto");
+        String targetLang = getString(payload, "targetLang", "ko");
 
-        // text → content 순으로 텍스트 추출
-        String text = null;
-        Object textRaw = payload.get("text");
-        if (textRaw != null) {
-            text = textRaw.toString();
-        } else {
-            Object contentRaw = payload.get("content");
-            if (contentRaw != null) {
-                text = contentRaw.toString();
-            }
+        // text -> content fallback
+        String text = getString(payload, "text", null);
+        if (text == null) {
+            text = getString(payload, "content", "");
         }
         if (text == null) {
             text = "";
         }
-
-        String sourceLang = getString(payload, "sourceLang", "auto");
-        String targetLang = getString(payload, "targetLang", "ko");
-
         if (text.trim().isEmpty()) {
             return "";
         }
 
         if ("QWEN".equalsIgnoreCase(engine)) {
-            // Qwen 번역 모드 (시스템 프롬프트로 "번역기" 역할 주입)
-            return qwenClient.translate(text, sourceLang, targetLang);
-        } else {
-            // 기본은 LibreTranslate
-            return libreClient.translate(text, sourceLang, targetLang);
+            return qwenTranslateClient.translate(text, sourceLang, targetLang);
+        }
+        return libreTranslateClient.translate(text, sourceLang, targetLang);
+    }
+
+    // =========================================================
+    // 2) 챗봇 4버전( FastAPI(OpenAI) )
+    // =========================================================
+
+    public static enum BotVariant {
+        CHAT,
+        CHAT_STREAM,
+        CHAT_GRAPH,
+        CHAT_GRAPH_STREAM;
+
+        public static BotVariant from(String s) {
+            if (s == null) return CHAT_GRAPH_STREAM;
+            String u = s.trim().toUpperCase();
+            if ("CHAT".equals(u)) return CHAT;
+            if ("CHAT_STREAM".equals(u)) return CHAT_STREAM;
+            if ("CHAT_GRAPH".equals(u)) return CHAT_GRAPH;
+            if ("CHAT_GRAPH_STREAM".equals(u)) return CHAT_GRAPH_STREAM;
+            return CHAT_GRAPH_STREAM;
+        }
+
+        public boolean isStream() {
+            return this == CHAT_STREAM || this == CHAT_GRAPH_STREAM;
+        }
+
+        public String path() {
+            if (this == CHAT) return "/api/law/chat";
+            if (this == CHAT_STREAM) return "/api/law/chat_stream";
+            if (this == CHAT_GRAPH) return "/api/law/chat_graph";
+            if (this == CHAT_GRAPH_STREAM) return "/api/law/chat_graph_stream";
+            return "/api/law/chat_graph_stream";
         }
     }
 
-    /**
-     * Qwen 기반 일반 챗봇.
-     *
-     * @param userText 사용자가 입력한 문장
-     * @return Qwen 챗봇의 응답
-     */
-    public String chatWithQwen(String userText) throws Exception {
-        if (userText == null) {
-            userText = "";
-        }
-        return qwenClient.chat(userText);
+    public static interface StreamCallback {
+        void onToken(String delta);
+        void onDone(String fullAnswer, Object sources);
+        void onError(String errorMsg);
     }
 
-    // ========================================================================
-    // 내부 유틸
-    // ========================================================================
+    public Map<String, Object> chatWithOpenAiFastApi(Map<String, Object> payload) throws Exception {
+        if (payload == null) payload = new HashMap<String, Object>();
+
+        ensureFastApiClient();
+
+        BotVariant variant = BotVariant.from(getString(payload, "botVariant", "CHAT_GRAPH"));
+        if (variant.isStream()) {
+            throw new Exception("non-stream 호출인데 stream variant가 들어왔습니다: " + variant.name());
+        }
+
+        String question = extractQuestion(payload);
+        int topK = extractTopK(payload, this.defaultTopK);
+
+        return openAiFastApiClient.chat(variant, question, topK);
+    }
+
+    public void chatWithOpenAiFastApiStream(Map<String, Object> payload, StreamCallback callback) throws Exception {
+        if (payload == null) payload = new HashMap<String, Object>();
+        if (callback == null) throw new Exception("callback is null");
+
+        ensureFastApiClient();
+
+        BotVariant variant = BotVariant.from(getString(payload, "botVariant", "CHAT_GRAPH_STREAM"));
+        if (!variant.isStream()) {
+            throw new Exception("stream 호출인데 non-stream variant가 들어왔습니다: " + variant.name());
+        }
+
+        String question = extractQuestion(payload);
+        int topK = extractTopK(payload, this.defaultTopK);
+
+        openAiFastApiClient.chatStream(variant, question, topK, callback);
+    }
+
+    private String extractQuestion(Map<String, Object> payload) {
+        String q = getString(payload, "question", null);
+        if (q != null && !q.trim().isEmpty()) return q;
+
+        q = getString(payload, "content", null);
+        if (q != null && !q.trim().isEmpty()) return q;
+
+        q = getString(payload, "text", "");
+        return q;
+    }
+
+    private int extractTopK(Map<String, Object> payload, int defaultValue) {
+        Object v1 = payload.get("topK");
+        if (v1 instanceof Number) return ((Number) v1).intValue();
+        if (v1 != null) {
+            try { return Integer.parseInt(v1.toString()); } catch (Exception ignore) {}
+        }
+
+        Object v2 = payload.get("top_k");
+        if (v2 instanceof Number) return ((Number) v2).intValue();
+        if (v2 != null) {
+            try { return Integer.parseInt(v2.toString()); } catch (Exception ignore) {}
+        }
+
+        return defaultValue;
+    }
 
     private String getString(Map<String, Object> map, String key, String defaultValue) {
-        if (map == null) {
-            return defaultValue;
-        }
+        if (map == null) return defaultValue;
         Object v = map.get(key);
-        if (v == null) {
-            return defaultValue;
-        }
+        if (v == null) return defaultValue;
         String s = v.toString();
-        if (s.trim().isEmpty()) {
-            return defaultValue;
-        }
+        if (s.trim().isEmpty()) return defaultValue;
         return s;
     }
 
-    // 언어 코드 → 사람이 읽을 수 있는 라벨 (프롬프트용)
-    private static String langLabel(String code, String fallback) {
-        if (code == null) {
-            return fallback;
-        }
-        String c = code.trim().toLowerCase();
-        if (c.isEmpty() || "auto".equals(c)) return fallback;
-        if ("ko".equals(c) || "kr".equals(c) || "kor".equals(c)) return "Korean";
-        if ("en".equals(c) || "eng".equals(c)) return "English";
-        if ("ja".equals(c) || "jp".equals(c)) return "Japanese";
-        if ("zh".equals(c) || "zh-cn".equals(c) || "zh-hans".equals(c)) return "Chinese";
-        return c;
-    }
+    // =========================================================
+    // 내부: FastAPI(OpenAI) HTTP Client
+    // =========================================================
 
-    // ========================================================================
-    // LibreTranslate 클라이언트
-    // ========================================================================
-
-    /**
-     * LibreTranslate HTTP 클라이언트.
-     *
-     * 기본 API 스펙(공식 Docker 이미지 기준):
-     *   POST /translate
-     *   Content-Type: application/json
-     *   {
-     *     "q": "Hello",
-     *     "source": "auto",
-     *     "target": "ko",
-     *     "format": "text"
-     *   }
-     *
-     *   응답:
-     *   {
-     *     "translatedText": "안녕하세요"
-     *   }
-     */
-    private static class LibreTranslateClient {
+    private static class OpenAiFastApiClient {
 
         private final String baseUrl;
-        private final RestTemplate restTemplate;
+        private final ObjectMapper om = new ObjectMapper();
 
-        LibreTranslateClient(String baseUrl) {
+        OpenAiFastApiClient(String baseUrl) {
             this.baseUrl = trimTrailingSlash(baseUrl);
-            this.restTemplate = createRestTemplate();
         }
 
-        String translate(String text, String sourceLang, String targetLang) throws Exception {
-            String url = baseUrl + "/translate";
+        Map<String, Object> chat(BotVariant variant, String question, int topK) throws Exception {
+            String url = baseUrl + variant.path();
 
-            Map<String, Object> body = new HashMap<String, Object>();
-            body.put("q", text);
-            body.put("source", sourceLang != null ? sourceLang : "auto");
-            body.put("target", targetLang != null ? targetLang : "ko");
-            body.put("format", "text");
+            Map<String, Object> req = new HashMap<String, Object>();
+            req.put("question", (question != null) ? question : "");
+            req.put("top_k", topK);
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
+            String reqJson = om.writeValueAsString(req);
 
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<Map<String, Object>>(body, headers);
-
+            HttpURLConnection conn = null;
             try {
-                ResponseEntity<Map> resp = restTemplate.exchange(
-                    url,
-                    HttpMethod.POST,
-                    entity,
-                    Map.class
-                );
+                conn = (HttpURLConnection) new URL(url).openConnection();
+                conn.setRequestMethod("POST");
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(180000);
+                conn.setDoOutput(true);
+                conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                conn.setRequestProperty("Accept", "application/json");
 
-                if (!resp.getStatusCode().is2xxSuccessful()) {
-                    throw new Exception("LibreTranslate HTTP " + resp.getStatusCodeValue());
+                try (OutputStream os = conn.getOutputStream()) {
+                    os.write(reqJson.getBytes(StandardCharsets.UTF_8));
+                    os.flush();
                 }
 
-                Map respBody = resp.getBody();
-                if (respBody == null) {
-                    throw new Exception("LibreTranslate 응답 body가 null 입니다.");
+                int status = conn.getResponseCode();
+                InputStream is = (status >= 200 && status < 300) ? conn.getInputStream() : conn.getErrorStream();
+                String resp = readAll(is);
+
+                if (status < 200 || status >= 300) {
+                    throw new Exception("FastAPI HTTP " + status + " : " + resp);
                 }
 
-                Object translated = respBody.get("translatedText");
-                if (translated == null) {
-                    throw new Exception("LibreTranslate 응답에 translatedText 필드가 없습니다.");
+                Map<String, Object> out = new HashMap<String, Object>();
+                out.put("botVariant", variant.name());
+
+                String answer = extractAnswerFromJson(resp);
+                Object sources = extractSourcesFromJson(resp);
+
+                out.put("answer", (answer != null) ? answer : "");
+                out.put("sources", sources);
+
+                return out;
+
+            } finally {
+                if (conn != null) {
+                    try { conn.disconnect(); } catch (Exception ignore) {}
                 }
-
-                return translated.toString();
-
-            } catch (RestClientException e) {
-                throw new Exception("LibreTranslate 호출 실패: " + e.getMessage(), e);
             }
         }
 
-        private static RestTemplate createRestTemplate() {
-            SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-            factory.setConnectTimeout(5000);
-            factory.setReadTimeout(30000);
-            return new RestTemplate(factory);
+        void chatStream(BotVariant variant, String question, int topK, StreamCallback callback) throws Exception {
+            String url = baseUrl + variant.path();
+
+            Map<String, Object> req = new HashMap<String, Object>();
+            req.put("question", (question != null) ? question : "");
+            req.put("top_k", topK);
+
+            String reqJson = om.writeValueAsString(req);
+
+            HttpURLConnection conn = null;
+            try {
+                conn = (HttpURLConnection) new URL(url).openConnection();
+                conn.setRequestMethod("POST");
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(180000);
+                conn.setDoOutput(true);
+                conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                conn.setRequestProperty("Accept", "*/*");
+
+                try (OutputStream os = conn.getOutputStream()) {
+                    os.write(reqJson.getBytes(StandardCharsets.UTF_8));
+                    os.flush();
+                }
+
+                int status = conn.getResponseCode();
+                InputStream is = (status >= 200 && status < 300) ? conn.getInputStream() : conn.getErrorStream();
+                if (is == null) throw new Exception("FastAPI stream InputStream null, status=" + status);
+
+                if (status < 200 || status >= 300) {
+                    throw new Exception("FastAPI stream HTTP " + status + " : " + readAll(is));
+                }
+
+                String ctype = conn.getHeaderField("Content-Type");
+                String ctypeLower = (ctype != null) ? ctype.toLowerCase() : "";
+                boolean isSse = ctypeLower.contains("text/event-stream");
+
+                StringBuilder full = new StringBuilder();
+                Object sources = null;
+
+                if (!isSse) {
+                    InputStreamReader rd = new InputStreamReader(is, StandardCharsets.UTF_8);
+                    char[] buf = new char[1024];
+                    int n;
+                    while ((n = rd.read(buf)) != -1) {
+                        if (n <= 0) continue;
+                        String chunk = new String(buf, 0, n);
+                        if (chunk.isEmpty()) continue;
+
+                        full.append(chunk);
+                        callback.onToken(chunk);
+                    }
+
+                    String merged = full.toString().trim();
+                    String ans = tryExtractAnswerFromJson(merged);
+                    if (ans != null) {
+                        callback.onDone(ans, sources);
+                    } else {
+                        callback.onDone(merged, sources);
+                    }
+                    return;
+                }
+
+                BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+                String line;
+                while ((line = br.readLine()) != null) {
+                    String t = line.trim();
+                    if (t.isEmpty()) continue;
+
+                    if (t.startsWith("event:") || t.startsWith("id:") || t.startsWith("retry:")) {
+                        continue;
+                    }
+
+                    String data = t;
+                    if (t.startsWith("data:")) {
+                        data = t.substring("data:".length()).trim();
+                    }
+
+                    if (data.isEmpty()) continue;
+                    if ("[DONE]".equals(data)) break;
+
+                    if (data.startsWith("{") && data.endsWith("}")) {
+                        try {
+                            JsonNode root = om.readTree(data);
+
+                            JsonNode choices = root.get("choices");
+                            if (choices != null && choices.isArray() && choices.size() > 0) {
+                                JsonNode deltaNode = choices.get(0).get("delta");
+                                if (deltaNode != null) {
+                                    JsonNode contentNode = deltaNode.get("content");
+                                    if (contentNode != null && !contentNode.isNull()) {
+                                        String d = contentNode.asText("");
+                                        if (!d.isEmpty()) {
+                                            full.append(d);
+                                            callback.onToken(d);
+                                        }
+                                        continue;
+                                    }
+                                }
+                            }
+
+                            String d2 = extractDelta(root);
+                            if (d2 != null && !d2.isEmpty()) {
+                                full.append(d2);
+                                callback.onToken(d2);
+                                continue;
+                            }
+
+                            String ans = extractAnswer(root);
+                            if (ans != null && !ans.isEmpty()) {
+                                full.setLength(0);
+                                full.append(ans);
+                                continue;
+                            }
+
+                            Object s2 = extractSources(root);
+                            if (s2 != null) {
+                                sources = s2;
+                            }
+
+                        } catch (Exception jsonFail) {
+                            full.append(data);
+                            callback.onToken(data);
+                        }
+                    } else {
+                        full.append(data);
+                        callback.onToken(data);
+                    }
+                }
+
+                callback.onDone(full.toString(), sources);
+
+            } catch (Exception e) {
+                callback.onError(e.getMessage());
+            } finally {
+                if (conn != null) {
+                    try { conn.disconnect(); } catch (Exception ignore) {}
+                }
+            }
         }
 
-        private static String trimTrailingSlash(String s) {
-            if (s == null) return "";
-            if (s.endsWith("/")) return s.substring(0, s.length() - 1);
-            return s;
+        private String extractDelta(JsonNode root) {
+            if (root == null) return null;
+            if (root.has("delta")) return root.get("delta").asText("");
+            if (root.has("token")) return root.get("token").asText("");
+            if (root.has("content")) return root.get("content").asText("");
+            return null;
+        }
+
+        private String extractAnswer(JsonNode root) {
+            if (root == null) return null;
+
+            if (root.has("result")) {
+                JsonNode result = root.get("result");
+                if (result != null && result.isObject()) {
+                    JsonNode a = result.get("answer");
+                    if (a != null && !a.isNull()) return a.asText("");
+                }
+            }
+
+            if (root.has("answer")) {
+                JsonNode a = root.get("answer");
+                if (a != null && !a.isNull()) return a.asText("");
+            }
+
+            return null;
+        }
+
+        private Object extractSources(JsonNode root) {
+            if (root == null) return null;
+
+            if (root.has("result")) {
+                JsonNode result = root.get("result");
+                if (result != null && result.isObject()) {
+                    JsonNode s = result.get("sources");
+                    if (s != null && !s.isNull()) return s;
+                }
+            }
+
+            if (root.has("sources")) {
+                JsonNode s = root.get("sources");
+                if (s != null && !s.isNull()) return s;
+            }
+
+            return null;
+        }
+
+        private String tryExtractAnswerFromJson(String maybeJson) {
+            if (maybeJson == null) return null;
+            String s = maybeJson.trim();
+            if (!(s.startsWith("{") && s.endsWith("}"))) return null;
+
+            try {
+                JsonNode root = om.readTree(s);
+                String ans = extractAnswer(root);
+                return (ans != null && !ans.trim().isEmpty()) ? ans.trim() : null;
+            } catch (Exception e) {
+                return null;
+            }
+        }
+
+        private String extractAnswerFromJson(String respJson) throws Exception {
+            if (respJson == null) return "";
+            JsonNode root = om.readTree(respJson);
+
+            String ans = extractAnswer(root);
+            return (ans != null) ? ans : "";
+        }
+
+        private Object extractSourcesFromJson(String respJson) {
+            if (respJson == null) return null;
+            try {
+                JsonNode root = om.readTree(respJson);
+                return extractSources(root);
+            } catch (Exception e) {
+                return null;
+            }
+        }
+
+        private static String readAll(InputStream is) throws Exception {
+            if (is == null) return "";
+            BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = br.readLine()) != null) {
+                sb.append(line).append('\n');
+            }
+            return sb.toString();
         }
     }
 
-    // ========================================================================
-    // Qwen 클라이언트 (Ollama /api/chat 예제 기준)
-    // ========================================================================
-
-    /**
-     * Qwen 클라이언트.
-     *
-     * 여기서는 Ollama 스타일 /api/chat 인터페이스를 기준으로 작성:
-     *
-     *   POST {baseUrl}/api/chat
-     *   {
-     *     "model": "qwen2.5:7b-instruct",
-     *     "stream": false,
-     *     "messages": [
-     *       {"role": "system", "content": "..."},
-     *       {"role": "user",   "content": "..."}
-     *     ],
-     *     "options": {
-     *       "temperature": 0.1,
-     *       "top_p": 0.8
-     *     }
-     *   }
-     */
-    private static class QwenClient {
-
-        private final String baseUrl;
-        private final String modelName;
-        private final RestTemplate restTemplate;
-
-        QwenClient(String baseUrl, String modelName) {
-            this.baseUrl = trimTrailingSlash(baseUrl);
-            this.modelName = modelName;
-            this.restTemplate = createRestTemplate();
-        }
-
-        /**
-         * 공통 응답 파서.
-         * Ollama 스타일 응답:
-         *   { "message": { "role": "assistant", "content": "..." }, ... }
-         */
-        private static String parseAssistantContent(Map respBody) throws Exception {
-            Object messageObj = respBody.get("message");
-            if (!(messageObj instanceof Map)) {
-                throw new Exception("Qwen 응답의 message 필드가 Map 이 아닙니다.");
-            }
-
-            Map messageMap = (Map) messageObj;
-            Object contentObj = messageMap.get("content");
-            if (contentObj == null) {
-                throw new Exception("Qwen 응답의 content 필드가 없습니다.");
-            }
-
-            String raw = contentObj.toString();
-            return normalizeContent(raw);
-        }
-
-        /**
-         * 모델이 ``` 블럭, 따옴표, "Translation:" 같은 접두어를 둘러싸서 주는 경우를 정리.
-         */
-        private static String normalizeContent(String s) {
-            if (s == null) return "";
-            String out = s.trim();
-
-            // ```xxx``` 형태 제거
-            if (out.startsWith("```")) {
-                // 첫 줄의 ```... 제거
-                int firstNewLine = out.indexOf('\n');
-                if (firstNewLine > 0) {
-                    out = out.substring(firstNewLine + 1);
-                }
-                // 마지막 ``` 제거
-                int lastFence = out.lastIndexOf("```");
-                if (lastFence >= 0) {
-                    out = out.substring(0, lastFence);
-                }
-                out = out.trim();
-            }
-
-            // "Translation:" / "Translated text:" 접두어 제거
-            String lower = out.toLowerCase();
-            if (lower.startsWith("translation:")) {
-                out = out.substring("translation:".length()).trim();
-            } else if (lower.startsWith("translated text:")) {
-                out = out.substring("translated text:".length()).trim();
-            }
-
-            // 앞뒤 큰 따옴표만 감싸져 있으면 제거
-            if (out.length() >= 2 && out.startsWith("\"") && out.endsWith("\"")) {
-                out = out.substring(1, out.length() - 1).trim();
-            }
-
-            return out;
-        }
-
-        /**
-         * 일반 챗봇 모드.
-         * - 한국어로 물어보면 한국어로,
-         * - 영어로 물어보면 영어로 답하도록 system 프롬프트를 설계.
-         */
-        String chat(String userText) throws Exception {
-            String url = baseUrl + "/api/chat";
-
-            Map<String, Object> systemMsg = new HashMap<String, Object>();
-            systemMsg.put("role", "system");
-            systemMsg.put(
-                "content",
-                "You are a helpful general-purpose assistant in a 1:1 chat room.\n"
-                    + "- NEVER just translate the user's message.\n"
-                    + "- Always answer the question or respond naturally.\n"
-                    + "- If the user uses Korean, answer in Korean.\n"
-                    + "- If the user clearly uses another language, answer in that language.\n"
-                    + "- Keep answers concise but helpful.\n"
-            );
-
-            Map<String, Object> userMsg = new HashMap<String, Object>();
-            userMsg.put("role", "user");
-            userMsg.put("content", userText);
-
-            Map<String, Object> options = new HashMap<String, Object>();
-            options.put("temperature", 0.3); // 챗봇은 약간 더 자유롭게
-            options.put("top_p", 0.9);
-
-            Map<String, Object> body = new HashMap<String, Object>();
-            body.put("model", modelName);
-            body.put("stream", Boolean.FALSE);
-            body.put("messages", new Map[]{systemMsg, userMsg});
-            body.put("options", options);
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<Map<String, Object>>(body, headers);
-
-            try {
-                ResponseEntity<Map> resp = restTemplate.exchange(
-                    url,
-                    HttpMethod.POST,
-                    entity,
-                    Map.class
-                );
-
-                if (!resp.getStatusCode().is2xxSuccessful()) {
-                    throw new Exception("Qwen(chat) HTTP " + resp.getStatusCodeValue());
-                }
-
-                Map respBody = resp.getBody();
-                if (respBody == null) {
-                    throw new Exception("Qwen(chat) 응답 body가 null 입니다.");
-                }
-
-                return parseAssistantContent(respBody);
-
-            } catch (RestClientException e) {
-                throw new Exception("Qwen(chat) 호출 실패: " + e.getMessage(), e);
-            }
-        }
-
-        /**
-         * Qwen을 "번역기"로 사용하는 모드.
-         * - system 프롬프트로 번역 역할을 강제.
-         * - 온도 낮게, 설명/라벨/JSON 금지.
-         * - 한국어/일본어/영어/중국어 위주 정교 번역.
-         */
-        String translate(String text, String sourceLang, String targetLang) throws Exception {
-            String url = baseUrl + "/api/chat";
-
-            String src = (sourceLang != null && !sourceLang.trim().isEmpty())
-                ? sourceLang.trim() : "auto";
-            String tgt = (targetLang != null && !targetLang.trim().isEmpty())
-                ? targetLang.trim() : "ko";
-
-            String srcLabel = langLabel(src, "auto-detect");
-            String tgtLabel = langLabel(tgt, "Korean");
-
-            Map<String, Object> systemMsg = new HashMap<String, Object>();
-            systemMsg.put("role", "system");
-            systemMsg.put(
-                "content",
-                "You are a professional human-level translator for Korean, Japanese, English and Chinese.\n"
-                    + "- Your ONLY job is to translate the user's text into the TARGET language.\n"
-                    + "- TARGET language: " + tgtLabel + ".\n"
-                    + "- Detect the source language from the text (" + srcLabel + ").\n"
-                    + "- Preserve the emotional nuance, psychological state, and relationship context.\n"
-                    + "- Preserve line breaks and sentence boundaries as much as possible.\n"
-                    + "- If the input is already in the target language, rewrite it naturally in the same language (do not echo the source exactly).\n"
-                    + "- OUTPUT RULE: Return ONLY the translated text in " + tgtLabel + ".\n"
-                    + "- Do NOT add explanations, comments, labels, language tags, JSON, quotes, or any extra text.\n"
-                    + "- Do NOT mix multiple languages in the output; use ONLY the target language.\n"
-            );
-
-            StringBuilder userBuilder = new StringBuilder();
-            userBuilder.append("Source language (may be auto): ").append(srcLabel).append("\n");
-            userBuilder.append("Target language: ").append(tgtLabel).append("\n\n");
-            userBuilder.append("TEXT TO TRANSLATE:\n");
-            userBuilder.append(text);
-
-            Map<String, Object> userMsg = new HashMap<String, Object>();
-            userMsg.put("role", "user");
-            userMsg.put("content", userBuilder.toString());
-
-            Map<String, Object> options = new HashMap<String, Object>();
-            options.put("temperature", 0.15); // 번역은 거의 고정
-            options.put("top_p", 0.8);
-
-            Map<String, Object> body = new HashMap<String, Object>();
-            body.put("model", modelName);
-            body.put("stream", Boolean.FALSE);
-            body.put("messages", new Map[]{systemMsg, userMsg});
-            body.put("options", options);
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<Map<String, Object>>(body, headers);
-
-            try {
-                ResponseEntity<Map> resp = restTemplate.exchange(
-                    url,
-                    HttpMethod.POST,
-                    entity,
-                    Map.class
-                );
-
-                if (!resp.getStatusCode().is2xxSuccessful()) {
-                    throw new Exception("Qwen(translate) HTTP " + resp.getStatusCodeValue());
-                }
-
-                Map respBody = resp.getBody();
-                if (respBody == null) {
-                    throw new Exception("Qwen(translate) 응답 body가 null 입니다.");
-                }
-
-                return parseAssistantContent(respBody);
-
-            } catch (RestClientException e) {
-                throw new Exception("Qwen(translate) 호출 실패: " + e.getMessage(), e);
-            }
-        }
-
-        private static RestTemplate createRestTemplate() {
-            SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-            factory.setConnectTimeout(5000);
-            factory.setReadTimeout(60000);
-            return new RestTemplate(factory);
-        }
-
-        private static String trimTrailingSlash(String s) {
-            if (s == null) return "";
-            if (s.endsWith("/")) return s.substring(0, s.length() - 1);
-            return s;
-        }
+    private static String trimTrailingSlash(String s) {
+        if (s == null) return "";
+        String t = s.trim();
+        if (t.endsWith("/")) return t.substring(0, t.length() - 1);
+        return t;
     }
 }

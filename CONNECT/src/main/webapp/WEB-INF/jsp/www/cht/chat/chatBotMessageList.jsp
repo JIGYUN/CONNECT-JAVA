@@ -1,3 +1,4 @@
+<%-- filepath: src/main/webapp/WEB-INF/jsp/cht/chatMessage/chatBotMessageList.jsp --%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://www.springframework.org/security/tags" prefix="sec" %>
@@ -6,7 +7,6 @@
 <sec:authentication property="principal.email" var="authEmail" />
 
 <section>
-    <!-- 로그인 사용자 정보 (읽기 전용) -->
     <div id="authInfo"
          data-sender-id="${authUserId}"
          data-sender-nm="${authEmail}">
@@ -14,7 +14,7 @@
 
     <div class="d-flex align-items-center justify-content-between mb-3">
         <div>
-            <h2 class="mb-0">Qwen 챗봇</h2>
+            <h2 class="mb-0">OpenAI 챗봇 (FastAPI)</h2>
             <small class="text-muted d-block">
                 roomId:
                 <span id="roomIdLabel"><c:out value="${param.roomId}" /></span>
@@ -23,79 +23,73 @@
                 로그인: <c:out value="${authEmail}" /> (ID: <c:out value="${authUserId}" />)
             </small>
             <small class="text-muted d-block mt-1">
-                엔진: QWEN-CHATBOT (일반 대화 모드)
+                모드: <span id="variantLabel" class="fw-semibold">CHAT_GRAPH_STREAM</span>
             </small>
         </div>
         <a class="btn btn-outline-secondary btn-sm" href="/cht/chatRoom/chatRoomList">채팅방 목록</a>
     </div>
 
-    <!-- roomId 이동 컨트롤 (원하면 봇과 여러 방 개념으로 쓰기 위해 유지) -->
-    <div class="mb-3" style="max-width: 420px;">
+    <div class="mb-3" style="max-width: 520px;">
         <div class="input-group">
             <span class="input-group-text">roomId</span>
-            <input
-                type="number"
-                id="roomIdInput"
-                class="form-control"
-                value="<c:out value='${param.roomId}'/>"
-                aria-label="roomId"
-            />
+            <input type="number" id="roomIdInput" class="form-control" value="<c:out value='${param.roomId}'/>" />
             <button class="btn btn-outline-primary" type="button" id="btnChangeRoom">이동</button>
         </div>
         <small class="text-muted">
-            방 번호 변경 후 [이동]을 누르면 해당 roomId로 다시 조회합니다. (봇도 방별로 대화 기록 분리)
+            방 번호 변경 후 [이동]을 누르면 해당 roomId로 다시 조회합니다. (대화 기록은 roomId로 분리)
         </small>
     </div>
 
-    <!-- senderId / senderNm 는 로그인 정보로 자동 사용 -->
+    <div class="mb-3" style="max-width: 520px;">
+        <div class="row g-2 align-items-end">
+            <div class="col-12 col-md-8">
+                <label class="form-label mb-0">봇 버전 선택 (FastAPI)</label>
+                <select id="botVariantSelect" class="form-control form-control-sm">
+                    <option value="CHAT">CHAT (sync)</option>
+                    <option value="CHAT_STREAM">CHAT_STREAM (SSE)</option>
+                    <option value="CHAT_GRAPH">CHAT_GRAPH (sync)</option>
+                    <option value="CHAT_GRAPH_STREAM" selected>CHAT_GRAPH_STREAM (SSE)</option>
+                </select>
+                <small class="text-muted d-block mt-1">
+                    메시지 전송 시점의 선택값이 payload.botVariant로 서버에 전달됩니다.
+                </small>
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label mb-0">topK</label>
+                <input id="topKInput" type="number" class="form-control form-control-sm" value="5" min="1" max="30" />
+            </div>
+        </div>
+    </div>
+
     <div class="mb-3" style="max-width: 640px;">
         <div class="row g-2">
             <div class="col-12 col-md-4">
-                <div class="form-group mb-0">
-                    <label class="form-label mb-0">내 ID (senderId)</label>
-                    <div class="form-control-plaintext fw-semibold">
-                        <c:out value="${authUserId}" />
-                    </div>
-                </div>
+                <label class="form-label mb-0">내 ID (senderId)</label>
+                <div class="form-control-plaintext fw-semibold"><c:out value="${authUserId}" /></div>
             </div>
             <div class="col-12 col-md-8">
-                <div class="form-group mb-0">
-                    <label class="form-label mb-0">내 이메일 (senderNm)</label>
-                    <div class="form-control-plaintext fw-semibold">
-                        <c:out value="${authEmail}" />
-                    </div>
-                </div>
+                <label class="form-label mb-0">내 이메일 (senderNm)</label>
+                <div class="form-control-plaintext fw-semibold"><c:out value="${authEmail}" /></div>
             </div>
         </div>
         <small class="text-muted">
-            이 페이지는 "일반 Qwen 챗봇" 전용입니다. 번역 모듈은 사용하지 않습니다.
+            이 페이지는 “OpenAI(FastAPI) 챗봇” 전용입니다. (Qwen은 번역 모듈에서만 사용)
         </small>
     </div>
 
-    <!-- 카카오톡 스타일 레이아웃 -->
     <div class="chat-wrap panel-elev">
-        <!-- 메시지 영역 -->
         <div id="chatScroll" class="chat-body">
             <ul id="chatMessageListBody" class="chat-list"></ul>
         </div>
 
-        <!-- 입력 영역 -->
         <div class="chat-input">
-            <input
-                type="text"
-                id="msgInput"
-                class="form-control"
-                placeholder="질문을 입력 후 Enter"
-                aria-label="메시지 내용 입력"
-            />
+            <input type="text" id="msgInput" class="form-control" placeholder="질문을 입력 후 Enter" />
             <button class="btn btn-primary" type="button" id="btnSendMsg">보내기</button>
         </div>
     </div>
 </section>
 
-<!-- jQuery -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<!-- SockJS + STOMP -->
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 
@@ -122,7 +116,7 @@
         display: flex;
         flex-direction: column;
         height: 540px;
-        max-height: calc(100vh - 220px);
+        max-height: calc(100vh - 260px);
         background: var(--chat-bg);
     }
 
@@ -170,6 +164,20 @@
         background: var(--chat-mine);
     }
 
+    .chat-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-left: 6px;
+        font-size: 10px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--chat-line);
+        background: #fff;
+        color: var(--chat-muted);
+        vertical-align: middle;
+    }
+
     .chat-input {
         display: flex;
         align-items: center;
@@ -192,35 +200,18 @@
 <script>
     const API_BASE = '/api/cht/chatMessage';
     const msgIdKey = 'msgId';
+    const BOT_VARIANT_KEY = 'chatBotVariant';
 
     let stompClient = null;
     let stompConnected = false;
 
     (function () {
-        initAuthInfo();
         initRoomIdFromParam();
-        joinChatRoomUserOnEnter(); // TB_CHAT_ROOM_USER upsert (사람↔사람과 동일 로직)
+        initBotVariantUi();
         bindHandlers();
-        selectChatMessageList();   // 기존 대화 기록 조회
-        connectStomp();            // STOMP 연결
+        selectChatMessageList();
+        connectStomp();
     })();
-
-    function initAuthInfo() {
-        const authEl = document.getElementById('authInfo');
-        if (!authEl) {
-            return;
-        }
-
-        const senderId = authEl.getAttribute('data-sender-id');
-        const senderNm = authEl.getAttribute('data-sender-nm') || '';
-
-        if (senderId) {
-            sessionStorage.setItem('senderId', senderId);
-        }
-        if (senderNm) {
-            sessionStorage.setItem('senderNm', senderNm);
-        }
-    }
 
     function getAuthSenderId() {
         const authEl = document.getElementById('authInfo');
@@ -240,47 +231,31 @@
     function initRoomIdFromParam() {
         const paramVal = '<c:out value="${param.roomId}" />';
         const input = document.getElementById('roomIdInput');
+
         if (paramVal && paramVal !== '' && paramVal !== 'null') {
             input.value = paramVal;
             document.getElementById('roomIdLabel').textContent = paramVal;
-        } else {
-            const sp = new URLSearchParams(location.search);
-            const qRoom = sp.get('roomId');
-            if (qRoom) {
-                input.value = qRoom;
-                document.getElementById('roomIdLabel').textContent = qRoom;
-            } else {
-                // roomId 파라미터가 없으면 기본값 1로 설정
-                input.value = '1';
-                document.getElementById('roomIdLabel').textContent = '1';
-            }
-        }
-    }
-
-    // 채팅방 입장 시 TB_CHAT_ROOM_USER에 upsert (사람↔사람 채팅과 동일 패턴)
-    function joinChatRoomUserOnEnter() {
-        const roomIdVal = currentRoomId();
-        const senderIdNum = getAuthSenderId();
-
-        if (roomIdVal === null || senderIdNum === null) {
             return;
         }
 
-        const payload = {
-            roomId: roomIdVal
-            // userId 는 서버에서 UserSessionManager 로 세팅
-        };
+        input.value = '1';
+        document.getElementById('roomIdLabel').textContent = '1';
+    }
 
-        $.ajax({
-            url: '/api/cht/chatRoomUser/joinRoom',
-            type: 'post',
-            contentType: 'application/json',
-            dataType: 'json',
-            data: JSON.stringify(payload),
-            success: function () {},
-            error: function (xhr) {
-                console.error('채팅방 입장 처리 실패', xhr);
-            }
+    function initBotVariantUi() {
+        const sel = document.getElementById('botVariantSelect');
+        const label = document.getElementById('variantLabel');
+        if (!sel || !label) return;
+
+        const saved = localStorage.getItem(BOT_VARIANT_KEY);
+        if (saved) sel.value = saved;
+
+        label.textContent = sel.value || 'CHAT_GRAPH_STREAM';
+
+        sel.addEventListener('change', function () {
+            const v = sel.value || 'CHAT_GRAPH_STREAM';
+            localStorage.setItem(BOT_VARIANT_KEY, v);
+            label.textContent = v;
         });
     }
 
@@ -292,28 +267,14 @@
 
         btnChangeRoom.addEventListener('click', function () {
             const v = roomInput.value;
-            if (!v) {
-                alert('roomId를 입력해 주세요.');
-                return;
-            }
+            if (!v) return alert('roomId를 입력해 주세요.');
             const n = Number(v);
-            if (Number.isNaN(n)) {
-                alert('roomId는 숫자만 가능합니다.');
-                return;
-            }
+            if (Number.isNaN(n)) return alert('roomId는 숫자만 가능합니다.');
             location.href = '/cht/chatMessage/chatBotMessageList?roomId=' + encodeURIComponent(n);
         });
 
-        roomInput.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') {
-                selectChatMessageList();
-            }
-        });
-
         msgInput.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
+            if (e.key === 'Enter') sendMessage();
         });
 
         btnSend.addEventListener('click', function () {
@@ -321,7 +282,6 @@
         });
     }
 
-    // 현재 roomId
     function currentRoomId() {
         const v = document.getElementById('roomIdInput').value;
         if (v === null || v === '') return null;
@@ -329,21 +289,16 @@
         return Number.isNaN(n) ? null : n;
     }
 
-    /* ---------- STOMP 연결 & 구독 ---------- */
-
     function connectStomp() {
         const roomIdVal = currentRoomId();
-        if (roomIdVal === null) {
-            return;
-        }
+        if (roomIdVal === null) return;
 
         const socket = new SockJS('/ws-stomp');
         stompClient = Stomp.over(socket);
-        // stompClient.debug = null;
 
         stompClient.connect({}, function () {
             stompConnected = true;
-            subscribeRoom(roomIdVal); // Qwen 챗봇 전용 채널
+            subscribeRoom(roomIdVal);
         }, function (error) {
             console.error('STOMP 연결 실패:', error);
             stompConnected = false;
@@ -356,7 +311,7 @@
         stompClient.subscribe('/topic/chat-bot/' + roomIdVal, function (frame) {
             try {
                 const body = JSON.parse(frame.body);
-                appendOneMessage(body);
+                handleIncoming(body);
                 scrollToBottom();
             } catch (e) {
                 console.error('메시지 파싱 오류:', e, frame.body);
@@ -364,15 +319,10 @@
         });
     }
 
-    /* ---------- REST로 기존 메시지 조회 ---------- */
-
     function selectChatMessageList() {
         const roomIdVal = currentRoomId();
         const payload = {};
-
-        if (roomIdVal !== null) {
-            payload.roomId = roomIdVal;
-        }
+        if (roomIdVal !== null) payload.roomId = roomIdVal;
         payload.limit = 50;
 
         $.ajax({
@@ -392,54 +342,145 @@
         });
     }
 
-    /* ---------- 메시지 전송 (STOMP) ---------- */
-
     function sendMessage() {
         const roomIdVal = currentRoomId();
         const msgInput = document.getElementById('msgInput');
         const content = (msgInput.value || '').trim();
 
-        if (roomIdVal === null) {
-            alert('roomId를 먼저 입력해 주세요.');
-            return;
-        }
-        if (!content) {
-            alert('메시지 내용을 입력해 주세요.');
-            return;
-        }
+        if (roomIdVal === null) return alert('roomId를 먼저 입력해 주세요.');
+        if (!content) return alert('메시지 내용을 입력해 주세요.');
 
         const senderIdNum = getAuthSenderId();
         const senderNmVal = getAuthSenderNm().trim();
 
-        if (senderIdNum === null) {
-            alert('로그인 정보(senderId)를 확인할 수 없습니다. 다시 로그인 후 이용해 주세요.');
-            return;
-        }
-        if (!senderNmVal) {
-            alert('로그인 정보(senderNm)를 확인할 수 없습니다. 다시 로그인 후 이용해 주세요.');
-            return;
-        }
+        if (senderIdNum === null) return alert('로그인 정보(senderId)를 확인할 수 없습니다.');
+        if (!senderNmVal) return alert('로그인 정보(senderNm)를 확인할 수 없습니다.');
+
+        const botVariant = (document.getElementById('botVariantSelect').value || 'CHAT_GRAPH_STREAM').trim();
+        const topKVal = Number(document.getElementById('topKInput').value || '5');
+        const topK = (Number.isNaN(topKVal) || topKVal < 1) ? 5 : topKVal;
 
         const payload = {
             roomId: roomIdVal,
             senderId: senderIdNum,
             senderNm: senderNmVal,
             content: content,
-            contentType: 'TEXT'
+            contentType: 'TEXT',
+            botVariant: botVariant,
+            topK: topK
         };
 
-        if (!stompClient || !stompConnected) {
-            alert('WebSocket 연결이 아직 준비되지 않았습니다.');
-            return;
-        }
+        if (!stompClient || !stompConnected) return alert('WebSocket 연결이 아직 준비되지 않았습니다.');
 
-        // ★ Qwen 챗봇 전용 엔드포인트
         stompClient.send('/app/chat-bot/' + roomIdVal, {}, JSON.stringify(payload));
         msgInput.value = '';
         msgInput.focus();
     }
 
-    /* ---------- 렌더링 ---------- */
+    function handleIncoming(r) {
+        const aiEvent = (r && r.aiEvent) ? String(r.aiEvent) : '';
+        if (!aiEvent) {
+            appendOneMessage(r);
+            return;
+        }
+
+        const aiMsgId = (r && r.aiMsgId) ? String(r.aiMsgId) : '';
+        if (!aiMsgId) {
+            appendOneMessage(r);
+            return;
+        }
+
+        if (aiEvent === 'START') {
+            ensureAiMessageShell(r);
+            setAiMeta(aiMsgId, 'START');
+            return;
+        }
+
+        if (aiEvent === 'TOKEN') {
+            ensureAiMessageShell(r);
+            const delta = (r && r.delta) ? String(r.delta) : '';
+            appendAiDelta(aiMsgId, delta);
+            return;
+        }
+
+        if (aiEvent === 'DONE') {
+            ensureAiMessageShell(r);
+
+            const content =
+                (r && r.content) ? String(r.content) :
+                (r && r.answer) ? String(r.answer) :
+                (r && r.result && r.result.answer) ? String(r.result.answer) :
+                '';
+
+            setAiFullContent(aiMsgId, content);
+            setAiMeta(aiMsgId, 'DONE');
+            return;
+        }
+
+        if (aiEvent === 'ERROR') {
+            ensureAiMessageShell(r);
+            const errorMsg = (r && r.errorMsg) ? String(r.errorMsg) : 'AI ERROR';
+            setAiFullContent(aiMsgId, 'ERROR: ' + errorMsg);
+            setAiMeta(aiMsgId, 'ERROR');
+            return;
+        }
+
+        appendOneMessage(r);
+    }
+
+    function ensureAiMessageShell(r) {
+        const aiMsgId = (r && r.aiMsgId) ? String(r.aiMsgId) : '';
+        if (!aiMsgId) return;
+
+        const liId = 'ai-li-' + aiMsgId;
+        if (document.getElementById(liId)) return;
+
+        const ul = document.getElementById('chatMessageListBody');
+        if (!ul) return;
+
+        const botVariant = (r && r.botVariant) ? String(r.botVariant) : '';
+        const badge = botVariant ? ("<span class='chat-badge'>" + escapeHtml(botVariant) + "</span>") : "";
+
+        const li = document.createElement('li');
+        li.id = liId;
+        li.className = 'chat-item';
+
+        const metaId = 'ai-meta-' + aiMsgId;
+        const bubbleId = 'ai-bubble-' + aiMsgId;
+
+        li.innerHTML =
+            "<div class='chat-meta' id='" + metaId + "'>AI" + badge + "</div>" +
+            "<div class='chat-bubble' id='" + bubbleId + "' title='aiMsgId: " + escapeHtml(aiMsgId) + "'></div>";
+
+        ul.appendChild(li);
+    }
+
+    function appendAiDelta(aiMsgId, delta) {
+        if (!delta) return;
+        const bubble = document.getElementById('ai-bubble-' + aiMsgId);
+        if (!bubble) return;
+        bubble.textContent = (bubble.textContent || '') + delta;
+    }
+
+    function setAiFullContent(aiMsgId, content) {
+        const bubble = document.getElementById('ai-bubble-' + aiMsgId);
+        if (!bubble) return;
+        bubble.textContent = content || '';
+    }
+
+    function setAiMeta(aiMsgId, stateText) {
+        const meta = document.getElementById('ai-meta-' + aiMsgId);
+        if (!meta) return;
+
+        // "AI [badge]" 앞부분 유지하고, 상태만 뒤에 붙이는 방식
+        const base = meta.getAttribute('data-base');
+        if (!base) {
+            meta.setAttribute('data-base', meta.innerHTML);
+        }
+
+        const baseHtml = meta.getAttribute('data-base');
+        meta.innerHTML = baseHtml + " · " + escapeHtml(stateText || '');
+    }
 
     function renderMessageRows(list) {
         let html = '';
@@ -459,6 +500,7 @@
     function appendOneMessage(r) {
         const ul = document.getElementById('chatMessageListBody');
         if (!ul) return;
+
         const li = document.createElement('li');
         li.className = getMessageItemClass(r);
         li.innerHTML = buildMessageInnerHtml(r);
@@ -502,24 +544,18 @@
         const msgIdStr = (id !== null && id !== undefined) ? String(id) : '';
 
         let html = '';
-
-        // 상단 메타ㅈㄴㄴㄴ
         html += "<div class='chat-meta'>";
         html += safeSender;
-        if (safeDt) {
-            html += " · " + safeDt;
-        }
+        if (safeDt) html += " · " + safeDt;
         html += "</div>";
 
-        // 본문
-        html += "<div class='chat-bubble' title='ID: " + (msgIdStr || '') + "'>" + safeContent + "</div>";
-
+        html += "<div class='chat-bubble' title='ID: " + escapeHtml(msgIdStr) + "'>" + safeContent + "</div>";
         return html;
     }
 
     function scrollToBottom() {
         const sc = document.getElementById('chatScroll');
-        if (!sc) return;+
+        if (!sc) return;
         sc.scrollTop = sc.scrollHeight;
     }
 

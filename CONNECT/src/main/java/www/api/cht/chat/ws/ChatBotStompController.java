@@ -11,159 +11,214 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 import www.api.cht.chat.service.ChatMessageService;
-import www.api.psh.push.service.PushService;
 import www.com.ai.AiEngineManager;
 
-/**
- * Qwen 기반 일반 챗봇 전용 WebSocket 컨트롤러
- *
- * STOMP 엔드포인트:
- *   - send    : /app/chat-bot/{roomId}
- *   - subscribe: /topic/chat-bot/{roomId}
- *
- * 프론트에서 이 채널만 쓰면 "번역"이 아니라 "일반 챗봇"으로 동작한다.
- */
 @Controller
 public class ChatBotStompController {
 
     private final ChatMessageService chatMessageService;
     private final SimpMessagingTemplate messagingTemplate;
-    private final PushService pushService;
     private final AiEngineManager aiEngineManager;
 
     @Autowired
     public ChatBotStompController(ChatMessageService chatMessageService,
                                   SimpMessagingTemplate messagingTemplate,
-                                  PushService pushService,
                                   AiEngineManager aiEngineManager) {
         this.chatMessageService = chatMessageService;
         this.messagingTemplate = messagingTemplate;
-        this.pushService = pushService;
         this.aiEngineManager = aiEngineManager;
     }
 
-    /**
-     * 클라이언트에서 /app/chat-bot/{roomId} 로 보내는 메시지 처리
-     *
-     * payload 예시(JSON)
-     * {
-     *   "roomId"   : 99,
-     *   "content"  : "한국에서 가볼 만한 관광지 추천해 줘",
-     *   "ownerId"  : 1,
-     *   "senderId" : 1,
-     *   "senderNm" : "wlrbs1111@gmail.com"
-     * }
-     *
-     * 브로드캐스트:
-     *   1) 사용자가 보낸 메시지 (senderId = 로그인 사용자의 ID)
-     *   2) Qwen 챗봇의 응답 메시지 (senderId = 0, senderNm = "QWEN-BOT")
-     */
     @MessageMapping("/chat-bot/{roomId}")
     public void handleChatBot(@DestinationVariable("roomId") Long roomId,
                               Map<String, Object> payload) {
 
-        if (payload == null) {
-            payload = new HashMap<>();
+        final Map<String, Object> payloadFinal = (payload != null)
+                ? new HashMap<String, Object>(payload)
+                : new HashMap<String, Object>();
+
+        payloadFinal.put("roomId", roomId);
+
+        // senderId normalize
+        Object senderIdRaw = payloadFinal.get("senderId");
+        Long senderId = 0L;
+        if (senderIdRaw instanceof Number) {
+            senderId = ((Number) senderIdRaw).longValue();
+        } else if (senderIdRaw != null) {
+            try {
+                senderId = Long.parseLong(senderIdRaw.toString());
+            } catch (Exception ignore) {
+                senderId = 0L;
+            }
+        }
+        payloadFinal.put("senderId", senderId);
+
+        // senderNm normalize
+        Object senderNmRaw = payloadFinal.get("senderNm");
+        String senderNm = (senderNmRaw != null) ? senderNmRaw.toString() : "UNKNOWN";
+        if (senderNm.trim().isEmpty()) senderNm = "UNKNOWN";
+        payloadFinal.put("senderNm", senderNm);
+
+        // defaults
+        if (!payloadFinal.containsKey("contentType") || payloadFinal.get("contentType") == null) payloadFinal.put("contentType", "TEXT");
+        if (!payloadFinal.containsKey("readCnt") || payloadFinal.get("readCnt") == null) payloadFinal.put("readCnt", 0);
+        if (!payloadFinal.containsKey("useAt") || payloadFinal.get("useAt") == null) payloadFinal.put("useAt", "Y");
+        if (!payloadFinal.containsKey("createdBy") || payloadFinal.get("createdBy") == null) payloadFinal.put("createdBy", senderId);
+        if (!payloadFinal.containsKey("updatedBy") || payloadFinal.get("updatedBy") == null) payloadFinal.put("updatedBy", senderId);
+
+        if (!payloadFinal.containsKey("botVariant") || payloadFinal.get("botVariant") == null) {
+            payloadFinal.put("botVariant", "CHAT_GRAPH_STREAM");
         }
 
-        // 1) roomId 강제 세팅
-        payload.put("roomId", roomId);
+        String content = "";
+        Object contentRaw = payloadFinal.get("content");
+        if (contentRaw != null) content = contentRaw.toString();
+        if (content.trim().isEmpty()) return;
 
-        // 2) senderId 정규화 (Number or String → Long)
-        Object senderIdRaw = payload.get("senderId");
-        Long senderId = null;
+        // 1) 유저 메시지 저장 + 브로드캐스트
+        try {
+            chatMessageService.insertChatMessage(payloadFinal);
+        } catch (Exception ignore) {
+        }
+        messagingTemplate.convertAndSend("/topic/chat-bot/" + roomId, payloadFinal);
 
-        if (senderIdRaw != null) {
-            if (senderIdRaw instanceof Number) {
-                senderId = ((Number) senderIdRaw).longValue();
-            } else {
+        final String botVariant = payloadFinal.get("botVariant").toString().trim().toUpperCase();
+        final String aiMsgId = "ai-" + roomId + "-" + System.currentTimeMillis();
+
+        // 2) START
+        Map<String, Object> start = new HashMap<String, Object>();
+        start.put("roomId", roomId);
+        start.put("ai", "Y");
+        start.put("aiEvent", "START");
+        start.put("aiMsgId", aiMsgId);
+        start.put("botVariant", botVariant);
+        messagingTemplate.convertAndSend("/topic/chat-bot/" + roomId, start);
+
+        // 3) 비동기 처리
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
                 try {
-                    senderId = Long.parseLong(senderIdRaw.toString());
-                } catch (NumberFormatException e) {
-                    senderId = 0L;
+                    if (botVariant.contains("STREAM")) {
+                        handleStream(roomId, aiMsgId, botVariant, payloadFinal);
+                    } else {
+                        handleNonStream(roomId, aiMsgId, botVariant, payloadFinal);
+                    }
+                } catch (Exception e) {
+                    Map<String, Object> err = new HashMap<String, Object>();
+                    err.put("roomId", roomId);
+                    err.put("ai", "Y");
+                    err.put("aiEvent", "ERROR");
+                    err.put("aiMsgId", aiMsgId);
+                    err.put("botVariant", botVariant);
+                    err.put("errorMsg", e.getMessage());
+                    messagingTemplate.convertAndSend("/topic/chat-bot/" + roomId, err);
                 }
             }
-        }
-        if (senderId == null) {
-            senderId = 0L;
-        }
-        payload.put("senderId", senderId);
+        }).start();
+    }
 
-        // 3) senderNm 정규화
-        Object senderNmRaw = payload.get("senderNm");
-        String senderNm = (senderNmRaw != null) ? senderNmRaw.toString() : "";
-        if (senderNm.trim().isEmpty()) {
-            senderNm = "UNKNOWN";
-        }
-        payload.put("senderNm", senderNm);
+    private void handleNonStream(Long roomId, String aiMsgId, String botVariant, Map<String, Object> payloadFinal) throws Exception {
+        Map<String, Object> resp = aiEngineManager.chatWithOpenAiFastApi(payloadFinal);
 
-        // 4) contentType, readCnt, useAt 기본값
-        if (!payload.containsKey("contentType") || payload.get("contentType") == null) {
-            payload.put("contentType", "TEXT");
-        }
-        if (!payload.containsKey("readCnt") || payload.get("readCnt") == null) {
-            payload.put("readCnt", 0);
-        }
-        if (!payload.containsKey("useAt") || payload.get("useAt") == null) {
-            payload.put("useAt", "Y");
-        }
+        String answer = "";
+        Object answerObj = resp.get("answer");
+        if (answerObj != null) answer = answerObj.toString();
 
-        // 5) createdBy / updatedBy 기본값
-        if (!payload.containsKey("createdBy") || payload.get("createdBy") == null) {
-            payload.put("createdBy", senderId);
-        }
-        if (!payload.containsKey("updatedBy") || payload.get("updatedBy") == null) {
-            payload.put("updatedBy", senderId);
-        }
+        Object sources = resp.get("sources");
 
-        // 6) 사용자 메시지 DB 저장
-        chatMessageService.insertChatMessage(payload);
+        Map<String, Object> done = buildAiFinalMessage(roomId, aiMsgId, botVariant, answer, sources);
 
-        // 7) 사용자 메시지를 먼저 브로드캐스트 (사용자가 바로 보이도록)
-        messagingTemplate.convertAndSend("/topic/chat-bot/" + roomId, payload);
-
-        // 8) Qwen 챗봇 호출
-        String userText = "";
-        Object contentRaw = payload.get("content");
-        if (contentRaw != null) {
-            userText = contentRaw.toString();
-        }
-
-        String botAnswer;
+        // 최종 1건만 저장(토큰은 저장 안 함)
         try {
-            // ★ 실제 Qwen 호출 로직은 AiEngineManager 내부에서 구현
-            //   (지금은 더미 구현 → 나중에 HTTP 연동으로 교체)
-            botAnswer = aiEngineManager.chatWithQwen(userText);
-            if (botAnswer == null) {
-                botAnswer = "";
+            chatMessageService.insertChatMessage(done);
+        } catch (Exception ignore) {
+        }
+
+        done.put("aiEvent", "DONE");
+        messagingTemplate.convertAndSend("/topic/chat-bot/" + roomId, done);
+    }
+
+    private void handleStream(Long roomId, String aiMsgId, String botVariant, Map<String, Object> payloadFinal) throws Exception {
+        final StringBuilder full = new StringBuilder();
+
+        aiEngineManager.chatWithOpenAiFastApiStream(payloadFinal, new AiEngineManager.StreamCallback() {
+            @Override
+            public void onToken(String delta) {
+                if (delta == null || delta.isEmpty()) return;
+
+                full.append(delta);
+
+                Map<String, Object> token = new HashMap<String, Object>();
+                token.put("roomId", roomId);
+                token.put("ai", "Y");
+                token.put("aiEvent", "TOKEN");
+                token.put("aiMsgId", aiMsgId);
+                token.put("botVariant", botVariant);
+                token.put("delta", delta);
+
+                messagingTemplate.convertAndSend("/topic/chat-bot/" + roomId, token);
             }
-        } catch (Exception e) {
-            botAnswer = "(QWEN-CHATBOT 오류: " + e.getMessage() + ")";
+
+            @Override
+            public void onDone(String fullAnswer, Object sources) {
+                String answer = (fullAnswer != null && !fullAnswer.trim().isEmpty())
+                        ? fullAnswer
+                        : full.toString();
+
+                Map<String, Object> done = buildAiFinalMessage(roomId, aiMsgId, botVariant, answer, sources);
+
+                try {
+                    chatMessageService.insertChatMessage(done);
+                } catch (Exception ignore) {
+                }
+
+                done.put("aiEvent", "DONE");
+                messagingTemplate.convertAndSend("/topic/chat-bot/" + roomId, done);
+            }
+
+            @Override
+            public void onError(String errorMsg) {
+                Map<String, Object> err = new HashMap<String, Object>();
+                err.put("roomId", roomId);
+                err.put("ai", "Y");
+                err.put("aiEvent", "ERROR");
+                err.put("aiMsgId", aiMsgId);
+                err.put("botVariant", botVariant);
+                err.put("errorMsg", errorMsg);
+                messagingTemplate.convertAndSend("/topic/chat-bot/" + roomId, err);
+            }
+        });
+    }
+
+    private Map<String, Object> buildAiFinalMessage(Long roomId, String aiMsgId, String botVariant, String answer, Object sources) {
+        Map<String, Object> m = new HashMap<String, Object>();
+        m.put("roomId", roomId);
+
+        // DB insert 최소 필드
+        m.put("senderId", 0L);
+        m.put("senderNm", "AI");
+        m.put("contentType", "AI");
+
+        String safeAnswer = (answer != null) ? answer : "";
+        m.put("content", safeAnswer);
+
+        m.put("readCnt", 0);
+        m.put("useAt", "Y");
+        m.put("createdBy", 0L);
+        m.put("updatedBy", 0L);
+
+        // 브로드캐스트 메타
+        m.put("ai", "Y");
+        m.put("aiMsgId", aiMsgId);
+        m.put("botVariant", botVariant);
+
+        // 화면 방어용(혹시 content가 비는 구현 섞여도 표시되게)
+        m.put("answer", safeAnswer);
+        if (sources != null) {
+            m.put("sources", sources);
         }
 
-        // 9) 챗봇 응답 payload 생성
-        Map<String, Object> botPayload = new HashMap<>();
-        botPayload.put("roomId", roomId);
-        botPayload.put("content", botAnswer);
-        botPayload.put("contentType", "TEXT");
-        botPayload.put("senderId", 0L);                  // 봇 ID (0 고정)
-        botPayload.put("senderNm", "QWEN-BOT");          // 봇 이름
-        botPayload.put("readCnt", 0);
-        botPayload.put("useAt", "Y");
-        botPayload.put("createdBy", senderId);          // 누가 대화를 유발했는지
-        botPayload.put("updatedBy", senderId);
-
-        // 10) DB 저장 (봇 메시지도 남기고 싶으면)
-        chatMessageService.insertChatMessage(botPayload);
-
-        // 11) 챗봇 응답 브로드캐스트
-        messagingTemplate.convertAndSend("/topic/chat-bot/" + roomId, botPayload);
-
-        // 12) 필요하면 FCM 푸시 (선택)
-        try {
-            pushService.sendChatPushForRoom(botPayload);
-        } catch (Exception e) {
-            // 푸시 실패해도 채팅 기능에는 영향 X
-        }
+        return m;
     }
 }
