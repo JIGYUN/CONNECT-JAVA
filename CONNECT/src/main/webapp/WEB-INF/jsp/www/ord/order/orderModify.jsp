@@ -3,6 +3,7 @@
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css"/>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <style>
     :root{
@@ -208,6 +209,38 @@
         margin-top: 4px;
     }
 
+    /* --- 충전 모달 텍스트 정리 --- */
+    .charge-modal-desc{
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.55;
+        margin-bottom: 10px;
+    }
+    .charge-modal-kv{
+        font-size: 13px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 10px 12px;
+        background: #fff;
+    }
+    .charge-modal-kv .row{
+        margin: 0;
+    }
+    .charge-modal-kv .col{
+        padding: 2px 0;
+    }
+    .charge-modal-kv .k{
+        color: var(--muted);
+    }
+    .charge-modal-kv .v{
+        font-weight: 700;
+        color: var(--text);
+        text-align: right;
+    }
+    .charge-modal-kv .v.danger{
+        color: var(--danger);
+    }
+
     @media (max-width: 767px){
         .order-layout{
             flex-direction: column;
@@ -360,6 +393,45 @@
     </div>
 </div>
 
+<!-- ✅ 포인트 충전 유도 모달 -->
+<div class="modal fade" id="pointChargeModal" tabindex="-1" role="dialog" aria-labelledby="pointChargeModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width:520px;">
+        <div class="modal-content" style="border-radius:16px; border:1px solid var(--line);">
+            <div class="modal-header" style="border-bottom:1px solid var(--line);">
+                <h5 class="modal-title" id="pointChargeModalTitle" style="font-weight:800;">포인트가 부족합니다</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="charge-modal-desc">
+                    현재 결제는 <strong>포인트 전액 결제</strong>만 지원합니다.<br/>
+                    포인트를 충전하시겠습니까?
+                </div>
+
+                <div class="charge-modal-kv">
+                    <div class="row">
+                        <div class="col k">쿠폰 적용 후 주문 금액</div>
+                        <div class="col v" id="chargeOrderAmtText">0원</div>
+                    </div>
+                    <div class="row">
+                        <div class="col k">보유 포인트</div>
+                        <div class="col v" id="chargePointBalText">0 P</div>
+                    </div>
+                    <div class="row">
+                        <div class="col k">부족 포인트</div>
+                        <div class="col v danger" id="chargeNeedText">0 P</div>
+                    </div>
+                </div> 
+            </div>
+            <div class="modal-footer" style="border-top:1px solid var(--line);">
+                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">닫기</button>
+                <button type="button" class="btn btn-primary" onclick="goPointChargePage()">충전하기</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     const CART_API_BASE   = '/api/crt/cart';
     const ORDER_API_BASE  = '/api/ord/order';
@@ -379,6 +451,14 @@
 
     // 선택된 장바구니 CART_ITEM_ID 목록 (?cartIds=1,2,3)
     let gSelectedCartIds = [];
+
+    // ✅ 포인트 충전 이동 URL
+    const POINT_CHARGE_URL = '/plg/pointLedger/pointLedgerList';
+
+    // ✅ 모달 표시용 상태값
+    let gChargeModalOrderAmt = 0;   // 쿠폰 적용 후 주문금액(원)
+    let gChargeModalBalance  = 0;   // 보유 포인트(P)
+    let gChargeModalNeed     = 0;   // 부족 포인트(P)
 
     $(function () {
         loadCartForOrder();
@@ -572,7 +652,7 @@
                 if (!map) return;
 
                 if (map.msg === 'LOGIN_REQUIRED') {
-                    // 어차피 주문 페이지는 로그인 전제지만, 방어용
+                    // 방어용
                     return;
                 }
 
@@ -810,6 +890,37 @@
         location.href = '/crt/cart/cartList';
     }
 
+    // ✅ 포인트 충전 모달 열기
+    function openPointChargeModal(orderAmt, pointBalance) {
+        let o = Number(orderAmt || 0);
+        if (isNaN(o) || o < 0) o = 0;
+
+        let b = Number(pointBalance || 0);
+        if (isNaN(b) || b < 0) b = 0;
+
+        let need = o - b;
+        if (need < 0) need = 0;
+
+        gChargeModalOrderAmt = o;
+        gChargeModalBalance  = b;
+        gChargeModalNeed     = need;
+
+        $('#chargeOrderAmtText').text(fmtMoney(gChargeModalOrderAmt) + '원');
+        $('#chargePointBalText').text(fmtMoney(gChargeModalBalance) + ' P');
+        $('#chargeNeedText').text(fmtMoney(gChargeModalNeed) + ' P');
+
+        $('#pointChargeModal').modal('show');
+    }
+
+    // ✅ 확인(충전하기) 누르면 이동
+    function goPointChargePage() {
+        // 필요하면 returnUrl 붙일 수도 있음:
+        // const returnUrl = encodeURIComponent(location.pathname + location.search);
+        // location.href = POINT_CHARGE_URL + '?returnUrl=' + returnUrl;
+
+        location.href = POINT_CHARGE_URL;
+    }
+
     // 4) 주문 저장 + 결제완료 화면으로 이동
     function submitOrder() {
         if (!gSelectedCartIds || gSelectedCartIds.length === 0) {
@@ -852,14 +963,9 @@
         const payAmt   = orderAmt - pointUse;
         const pointSave = Math.floor(gProductTotal * 0.01); // 예: 상품금액의 1%
 
+        // ✅ 여기: 포인트 부족 시 "충전 유도 모달"로 변경
         if (gPointBalance < orderAmt) {
-            alert(
-                '보유 포인트가 부족하여 결제를 진행할 수 없습니다.\n\n' +
-                '쿠폰 적용 전 주문 금액: ' + fmtMoney(baseOrderAmt) + '원\n' +
-                '쿠폰 할인: ' + fmtMoney(couponDiscount) + '원\n' +
-                '쿠폰 적용 후 주문 금액: ' + fmtMoney(orderAmt) + '원\n' +
-                '보유 포인트: ' + fmtMoney(gPointBalance) + ' P'
-            );
+            openPointChargeModal(orderAmt, gPointBalance);
             return;
         }
 

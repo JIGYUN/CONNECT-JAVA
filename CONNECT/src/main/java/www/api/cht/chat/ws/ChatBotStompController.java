@@ -78,14 +78,16 @@ public class ChatBotStompController {
         // 1) 유저 메시지 저장 + 브로드캐스트
         try {
             chatMessageService.insertChatMessage(payloadFinal);
-        } catch (Exception ignore) {
+        } catch (Exception e) {
+            System.out.println("[CHAT] user msg insert fail: " + e.getMessage());
+            e.printStackTrace();
         }
         messagingTemplate.convertAndSend("/topic/chat-bot/" + roomId, payloadFinal);
 
         final String botVariant = payloadFinal.get("botVariant").toString().trim().toUpperCase();
         final String aiMsgId = "ai-" + roomId + "-" + System.currentTimeMillis();
 
-        // 2) START
+        // 2) START 브로드캐스트
         Map<String, Object> start = new HashMap<String, Object>();
         start.put("roomId", roomId);
         start.put("ai", "Y");
@@ -93,6 +95,18 @@ public class ChatBotStompController {
         start.put("aiMsgId", aiMsgId);
         start.put("botVariant", botVariant);
         messagingTemplate.convertAndSend("/topic/chat-bot/" + roomId, start);
+
+        // 2-1) ✅ START 시점에 AI placeholder를 DB에 먼저 남김 (STREAM 안정화 핵심)
+        Map<String, Object> aiShell = buildAiFinalMessage(roomId, aiMsgId, botVariant, "", null);
+        aiShell.put("content", ""); // 혹은 "..." 같은 placeholder
+        try {
+            // 너의 서비스/매퍼에 맞게 구현:
+            // - (추천) aiMsgId 기준으로 UPDATE할 수 있게, INSERT에 aiMsgId 컬럼을 같이 저장해라
+            chatMessageService.insertChatMessage(aiShell);
+        } catch (Exception e) {
+            System.out.println("[CHAT] AI shell insert fail: " + e.getMessage());
+            e.printStackTrace();
+        }
 
         // 3) 비동기 처리
         new Thread(new Runnable() {
@@ -129,10 +143,13 @@ public class ChatBotStompController {
 
         Map<String, Object> done = buildAiFinalMessage(roomId, aiMsgId, botVariant, answer, sources);
 
-        // 최종 1건만 저장(토큰은 저장 안 함)
+        // ✅ 추천: INSERT가 아니라 UPDATE로 바꾸는 게 더 안전함 (aiMsgId 기준)
+        // 너 서비스에 update 메서드 만들면 여기서 update로 교체해라.
         try {
             chatMessageService.insertChatMessage(done);
-        } catch (Exception ignore) {
+        } catch (Exception e) {
+            System.out.println("[CHAT] AI done insert fail: " + e.getMessage());
+            e.printStackTrace();
         }
 
         done.put("aiEvent", "DONE");
@@ -168,9 +185,13 @@ public class ChatBotStompController {
 
                 Map<String, Object> done = buildAiFinalMessage(roomId, aiMsgId, botVariant, answer, sources);
 
+                // ✅ 여기서 INSERT 말고 UPDATE가 베스트 (aiMsgId 기준)
+                // 지금은 서비스/매퍼를 못 봐서 insert 유지, 대신 실패 로그는 반드시 남김
                 try {
                     chatMessageService.insertChatMessage(done);
-                } catch (Exception ignore) {
+                } catch (Exception e) {
+                    System.out.println("[CHAT] AI done insert fail(stream): " + e.getMessage());
+                    e.printStackTrace();
                 }
 
                 done.put("aiEvent", "DONE");
@@ -198,6 +219,9 @@ public class ChatBotStompController {
         // DB insert 최소 필드
         m.put("senderId", 0L);
         m.put("senderNm", "AI");
+
+        // ⚠️ 여기 중요: 너 DB/코드값 제약이 TEXT만 허용이면 'AI' 때문에 insert 실패할 수 있다.
+        // 그 경우 contentType을 'TEXT'로 저장하고, 화면은 senderNm/content로 AI처럼 보여주면 된다.
         m.put("contentType", "AI");
 
         String safeAnswer = (answer != null) ? answer : "";
@@ -208,12 +232,11 @@ public class ChatBotStompController {
         m.put("createdBy", 0L);
         m.put("updatedBy", 0L);
 
-        // 브로드캐스트 메타
+        // 브로드캐스트/추적 메타
         m.put("ai", "Y");
         m.put("aiMsgId", aiMsgId);
         m.put("botVariant", botVariant);
 
-        // 화면 방어용(혹시 content가 비는 구현 섞여도 표시되게)
         m.put("answer", safeAnswer);
         if (sources != null) {
             m.put("sources", sources);

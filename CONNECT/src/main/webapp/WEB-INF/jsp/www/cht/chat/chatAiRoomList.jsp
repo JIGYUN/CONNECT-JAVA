@@ -67,12 +67,17 @@
     }
 
     function selectChatRoomList() {
+    	
+        const payload = {
+            roomType: "ai",
+        };
+
         $.ajax({
             url: API_BASE + '/selectChatRoomList',
             type: 'post',
             contentType: 'application/json',
             dataType: 'json',
-            data: JSON.stringify({}),   // ownerId는 서버에서 세션 기반 세팅
+            data: JSON.stringify(payload),   // ownerId는 서버에서 세션 기반 세팅
             success: function (map) {
                 const list = map && map.result ? map.result : [];
                 renderChatRoomRows(list);
@@ -86,6 +91,7 @@
     function insertRoom(roomNm) {
         const payload = {
             roomNm: roomNm,
+            roomType: "ai",
             // 필요하면 grpCd 추가: grpCd: 'personal'
         };
 

@@ -14,7 +14,7 @@
 
     <div class="d-flex align-items-center justify-content-between mb-3">
         <div>
-            <h2 class="mb-0">OpenAI 챗봇 (FastAPI)</h2>
+            <h2 class="mb-0">법률 챗봇</h2>
             <small class="text-muted d-block">
                 roomId:
                 <span id="roomIdLabel"><c:out value="${param.roomId}" /></span>
@@ -202,6 +202,9 @@
     const msgIdKey = 'msgId';
     const BOT_VARIANT_KEY = 'chatBotVariant';
 
+    // ✅ 빈 상태 row id 고정
+    const EMPTY_ROW_ID = 'chat-empty-row';
+
     let stompClient = null;
     let stompConnected = false;
 
@@ -372,6 +375,9 @@
 
         if (!stompClient || !stompConnected) return alert('WebSocket 연결이 아직 준비되지 않았습니다.');
 
+        // ✅ 보내기 직전에 빈 상태 제거(UX)
+        clearEmptyStateRow();
+
         stompClient.send('/app/chat-bot/' + roomIdVal, {}, JSON.stringify(payload));
         msgInput.value = '';
         msgInput.focus();
@@ -428,9 +434,18 @@
         appendOneMessage(r);
     }
 
+    // ✅ 핵심: 빈 상태 li 제거
+    function clearEmptyStateRow() {
+        const empty = document.getElementById(EMPTY_ROW_ID);
+        if (empty && empty.parentNode) empty.parentNode.removeChild(empty);
+    }
+
     function ensureAiMessageShell(r) {
         const aiMsgId = (r && r.aiMsgId) ? String(r.aiMsgId) : '';
         if (!aiMsgId) return;
+
+        // ✅ AI 메시지가 생기는 순간 빈 상태 제거
+        clearEmptyStateRow();
 
         const liId = 'ai-li-' + aiMsgId;
         if (document.getElementById(liId)) return;
@@ -472,7 +487,6 @@
         const meta = document.getElementById('ai-meta-' + aiMsgId);
         if (!meta) return;
 
-        // "AI [badge]" 앞부분 유지하고, 상태만 뒤에 붙이는 방식
         const base = meta.getAttribute('data-base');
         if (!base) {
             meta.setAttribute('data-base', meta.innerHTML);
@@ -486,7 +500,8 @@
         let html = '';
 
         if (!list.length) {
-            html += "<li class='text-center text-muted py-4'>등록된 메시지가 없습니다.</li>";
+            // ✅ 빈 상태 row에 ID 부여
+            html += "<li id='" + EMPTY_ROW_ID + "' class='text-center text-muted py-4'>등록된 메시지가 없습니다.</li>";
         } else {
             for (let i = 0; i < list.length; i++) {
                 const r = list[i] || {};
@@ -498,6 +513,9 @@
     }
 
     function appendOneMessage(r) {
+        // ✅ 일반 메시지가 추가되는 순간에도 빈 상태 제거
+        clearEmptyStateRow();
+
         const ul = document.getElementById('chatMessageListBody');
         if (!ul) return;
 

@@ -67,26 +67,30 @@
     }
 
     function selectChatRoomList() {
+ 	 	const payload = {
+             roomType: "normal",
+        };
+
         $.ajax({
-            url: API_BASE + '/selectChatRoomList',
-            type: 'post',
-            contentType: 'application/json',
-            dataType: 'json',
-            data: JSON.stringify({}),   // ownerId는 서버에서 세션 기반 세팅
-            success: function (map) {
-                const list = map && map.result ? map.result : [];
-                renderChatRoomRows(list);
-            },
-            error: function () {
-                alert('채팅방 목록 조회 중 오류가 발생했습니다.');
-            }
-        });
+           url: API_BASE + '/selectChatRoomList',
+           type: 'post',
+           contentType: 'application/json',
+           dataType: 'json',
+           data: JSON.stringify(payload),   // ownerId는 서버에서 세션 기반 세팅
+           success: function (map) {
+               const list = map && map.result ? map.result : [];
+               renderChatRoomRows(list);
+           },
+           error: function () {
+               alert('채팅방 목록 조회 중 오류가 발생했습니다.');
+           }
+       });
     }
 
-    function insertRoom(roomNm) {
+    function insertRoom(roomNm) { 
         const payload = {
             roomNm: roomNm,
-            // 필요하면 grpCd 추가: grpCd: 'personal'
+            roomType: "normal",
         };
 
         $.ajax({

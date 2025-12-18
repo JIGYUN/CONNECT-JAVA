@@ -46,6 +46,8 @@
             ,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
             ,UPDATED_BY
         FROM TB_CHAT_ROOM
+        WHERE USE_AT = 'Y'
+        AND ROOM_TYPE = #{roomType}
         ORDER BY
             CASE WHEN LAST_MSG_SENT_DT IS NULL THEN 1 ELSE 0 END ASC,
             LAST_MSG_SENT_DT DESC,
@@ -207,7 +209,7 @@
         */
         UPDATE TB_CHAT_ROOM
         SET
-            LAST_MSG_CONTENT = #{content},
+            LAST_MSG_CONTENT = #{lastMsgContent},
             LAST_MSG_SENT_DT = COALESCE(
                 STR_TO_DATE(
                     NULLIF(
