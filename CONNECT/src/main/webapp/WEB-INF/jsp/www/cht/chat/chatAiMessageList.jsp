@@ -1,3 +1,4 @@
+<%-- filepath: src/main/webapp/WEB-INF/jsp/cht/chatMessage/chatMessageAiList.jsp --%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://www.springframework.org/security/tags" prefix="sec" %>
@@ -112,6 +113,7 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <!-- SockJS + STOMP -->
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
+<!-- STOMP -->
 <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 
 <style>
@@ -218,12 +220,13 @@
     let stompClient = null;
     let stompConnected = false;
 
+    // ✅ 빈 상태 row 고정 ID (이게 있어야 제거 가능)
+    const EMPTY_ROW_ID = 'chat-empty-row';
+
     // 기본 번역 옵션
-    const DEFAULT_TARGET_LANG = 'ko'; // 대상 언어 기본값
-    // 엔진은 QWEN 고정
+    const DEFAULT_TARGET_LANG = 'ko';
     const FIXED_ENGINE = 'QWEN';
 
-    // 현재 선택된 대상 언어
     let currentTargetLang = DEFAULT_TARGET_LANG;
 
     (function () {
@@ -231,26 +234,20 @@
         initRoomIdFromParam();
         joinChatRoomUserOnEnter();
         bindHandlers();
-        initTargetLangSelect();     // ★ 대상 언어 선택 초기화
-        selectChatMessageList();    // 과거 기록 (번역 필드는 없으면 안 나옴)
+        initTargetLangSelect();
+        selectChatMessageList();
         connectStomp();
     })();
 
     function initAuthInfo() {
         const authEl = document.getElementById('authInfo');
-        if (!authEl) {
-            return;
-        }
+        if (!authEl) return;
 
         const senderId = authEl.getAttribute('data-sender-id');
         const senderNm = authEl.getAttribute('data-sender-nm') || '';
 
-        if (senderId) {
-            sessionStorage.setItem('senderId', senderId);
-        }
-        if (senderNm) {
-            sessionStorage.setItem('senderNm', senderNm);
-        }
+        if (senderId) sessionStorage.setItem('senderId', senderId);
+        if (senderNm) sessionStorage.setItem('senderNm', senderNm);
     }
 
     function getAuthSenderId() {
@@ -284,12 +281,10 @@
         }
     }
 
-    // 대상 언어 선택 초기화
     function initTargetLangSelect() {
         const el = document.getElementById('targetLangSelect');
         if (!el) return;
 
-        // 초기값 세팅
         el.value = DEFAULT_TARGET_LANG;
         currentTargetLang = el.value || DEFAULT_TARGET_LANG;
 
@@ -303,19 +298,13 @@
         });
     }
 
-    // 채팅방 입장 시 TB_CHAT_ROOM_USER에 upsert
     function joinChatRoomUserOnEnter() {
         const roomIdVal = currentRoomId();
         const senderIdNum = getAuthSenderId();
 
-        if (roomIdVal === null || senderIdNum === null) {
-            return;
-        }
+        if (roomIdVal === null || senderIdNum === null) return;
 
-        const payload = {
-            roomId: roomIdVal
-            // userId 는 서버에서 UserSessionManager 로 세팅
-        };
+        const payload = { roomId: roomIdVal };
 
         $.ajax({
             url: '/api/cht/chatRoomUser/joinRoom',
@@ -338,29 +327,18 @@
 
         btnChangeRoom.addEventListener('click', function () {
             const v = roomInput.value;
-            if (!v) {
-                alert('roomId를 입력해 주세요.');
-                return;
-            }
+            if (!v) return alert('roomId를 입력해 주세요.');
             const n = Number(v);
-            if (Number.isNaN(n)) {
-                alert('roomId는 숫자만 가능합니다.');
-                return;
-            }
-            // 이 JSP에 대응하는 URL로 맞춰서 수정
+            if (Number.isNaN(n)) return alert('roomId는 숫자만 가능합니다.');
             location.href = '/cht/chatMessage/chatMessageAiList?roomId=' + encodeURIComponent(n);
         });
 
         roomInput.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') {
-                selectChatMessageList();
-            }
+            if (e.key === 'Enter') selectChatMessageList();
         });
 
         msgInput.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
+            if (e.key === 'Enter') sendMessage();
         });
 
         btnSend.addEventListener('click', function () {
@@ -375,21 +353,22 @@
         return Number.isNaN(n) ? null : n;
     }
 
-    /* ---------- STOMP 연결 & 구독 ---------- */
+    // ✅ 핵심: 빈 상태 문구 제거
+    function clearEmptyStateRow() {
+        const empty = document.getElementById(EMPTY_ROW_ID);
+        if (empty && empty.parentNode) empty.parentNode.removeChild(empty);
+    }
 
     function connectStomp() {
         const roomIdVal = currentRoomId();
-        if (roomIdVal === null) {
-            return;
-        }
+        if (roomIdVal === null) return;
 
         const socket = new SockJS('/ws-stomp');
         stompClient = Stomp.over(socket);
-        // stompClient.debug = null;
 
         stompClient.connect({}, function () {
             stompConnected = true;
-            subscribeRoom(roomIdVal); // AI 파이프라인 전용
+            subscribeRoom(roomIdVal);
         }, function (error) {
             console.error('STOMP 연결 실패:', error);
             stompConnected = false;
@@ -399,11 +378,10 @@
     function subscribeRoom(roomIdVal) {
         if (!stompClient || !stompConnected) return;
 
-        // ✅ AI 파이프라인 채널
-        stompClient.subscribe('/topic/chat-ai/' + roomIdVal, function (frame) {
+        stompClient.subscribe('/topic/chat-ai/' + roommIdVal, function (frame) {
             try {
                 const body = JSON.parse(frame.body);
-                appendOneMessage(body);
+                appendOneMessage(body); // ✅ append에서 empty 제거됨
                 scrollToBottom();
             } catch (e) {
                 console.error('메시지 파싱 오류:', e, frame.body);
@@ -411,15 +389,10 @@
         });
     }
 
-    /* ---------- REST로 기존 메시지 조회 ---------- */
-
     function selectChatMessageList() {
         const roomIdVal = currentRoomId();
         const payload = {};
-
-        if (roomIdVal !== null) {
-            payload.roomId = roomIdVal;
-        }
+        if (roomIdVal !== null) payload.roomId = roomIdVal;
         payload.limit = 50;
 
         $.ajax({
@@ -439,33 +412,19 @@
         });
     }
 
-    /* ---------- 메시지 전송 (STOMP) ---------- */
-
     function sendMessage() {
         const roomIdVal = currentRoomId();
         const msgInput = document.getElementById('msgInput');
         const content = (msgInput.value || '').trim();
 
-        if (roomIdVal === null) {
-            alert('roomId를 먼저 입력해 주세요.');
-            return;
-        }
-        if (!content) {
-            alert('메시지 내용을 입력해 주세요.');
-            return;
-        }
+        if (roomIdVal === null) return alert('roomId를 먼저 입력해 주세요.');
+        if (!content) return alert('메시지 내용을 입력해 주세요.');
 
         const senderIdNum = getAuthSenderId();
         const senderNmVal = getAuthSenderNm().trim();
 
-        if (senderIdNum === null) {
-            alert('로그인 정보(senderId)를 확인할 수 없습니다. 다시 로그인 후 이용해 주세요.');
-            return;
-        }
-        if (!senderNmVal) {
-            alert('로그인 정보(senderNm)를 확인할 수 없습니다. 다시 로그인 후 이용해 주세요.');
-            return;
-        }
+        if (senderIdNum === null) return alert('로그인 정보(senderId)를 확인할 수 없습니다.');
+        if (!senderNmVal) return alert('로그인 정보(senderNm)를 확인할 수 없습니다.');
 
         const payload = {
             roomId: roomIdVal,
@@ -473,30 +432,27 @@
             senderNm: senderNmVal,
             content: content,
             contentType: 'TEXT',
-            // AI 번역 옵션
             targetLang: currentTargetLang,
             engine: FIXED_ENGINE
         };
 
-        if (!stompClient || !stompConnected) {
-            alert('WebSocket 연결이 아직 준비되지 않았습니다.');
-            return;
-        }
+        if (!stompClient || !stompConnected) return alert('WebSocket 연결이 아직 준비되지 않았습니다.');
 
-        // ✅ AI 파이프라인 엔드포인트
+        // ✅ 보내기 직전에도 empty 제거 (UX)
+        clearEmptyStateRow();
+
         stompClient.send('/app/chat-ai/' + roomIdVal, {}, JSON.stringify(payload));
 
         msgInput.value = '';
         msgInput.focus();
     }
 
-    /* ---------- 렌더링 ---------- */
-
     function renderMessageRows(list) {
         let html = '';
 
         if (!list.length) {
-            html += "<li class='text-center text-muted py-4'>등록된 메시지가 없습니다.</li>";
+            // ✅ id 부여해야 나중에 지울 수 있음
+            html += "<li id='" + EMPTY_ROW_ID + "' class='text-center text-muted py-4'>등록된 메시지가 없습니다.</li>";
         } else {
             for (let i = 0; i < list.length; i++) {
                 const r = list[i] || {};
@@ -508,14 +464,20 @@
     }
 
     function appendOneMessage(r) {
+        // ✅ 메시지가 들어오는 순간 empty 제거
+        clearEmptyStateRow();
+
         const ul = document.getElementById('chatMessageListBody');
         if (!ul) return;
+
         const li = document.createElement('li');
         li.className = getMessageItemClass(r);
+
         const msgId = r && r[msgIdKey];
         if (msgId !== null && msgId !== undefined) {
             li.setAttribute('data-msg-id', String(msgId));
         }
+
         li.innerHTML = buildMessageInnerHtml(r);
         ul.appendChild(li);
     }
@@ -566,25 +528,15 @@
         const msgIdStr = (id !== null && id !== undefined) ? String(id) : '';
 
         let html = '';
-
-        // 상단 메타
         html += "<div class='chat-meta'>";
         html += safeSender;
-        if (safeDt) {
-            html += " · " + safeDt;
-        }
-        if (engineUsed) {
-            html += " · 엔진: " + escapeHtml(engineUsed);
-        }
-        if (targetLangUsed) {
-            html += " · target: " + escapeHtml(targetLangUsed);
-        }
+        if (safeDt) html += " · " + safeDt;
+        if (engineUsed) html += " · 엔진: " + escapeHtml(engineUsed);
+        if (targetLangUsed) html += " · target: " + escapeHtml(targetLangUsed);
         html += "</div>";
 
-        // 본문 (원문)
         html += "<div class='chat-bubble' title='ID: " + (msgIdStr || '') + "'>" + safeContent + "</div>";
 
-        // 번역 결과
         if (translatedText) {
             html += "<div class='chat-translation'>" + escapeHtml(translatedText) + "</div>";
         } else if (translateErrorMsg) {

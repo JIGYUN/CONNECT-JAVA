@@ -1,3 +1,4 @@
+<%-- filepath: src/main/webapp/WEB-INF/jsp/cht/chatMessage/chatMessageList.jsp --%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://www.springframework.org/security/tags" prefix="sec" %>
@@ -189,6 +190,9 @@
     const API_BASE = '/api/cht/chatMessage';
     const msgIdKey = 'msgId';
 
+    // ✅ 빈 상태 row 고정 ID
+    const EMPTY_ROW_ID = 'chat-empty-row';
+
     let stompClient = null;
     let stompConnected = false;
 
@@ -203,20 +207,13 @@
 
     function initAuthInfo() {
         const authEl = document.getElementById('authInfo');
-        if (!authEl) {
-            return;
-        }
+        if (!authEl) return;
 
         const senderId = authEl.getAttribute('data-sender-id');
         const senderNm = authEl.getAttribute('data-sender-nm') || '';
 
-        // 세션 스토리지에도 같이 넣어둠 (React 페이지에서도 동일 키 사용)
-        if (senderId) {
-            sessionStorage.setItem('senderId', senderId);
-        }
-        if (senderNm) {
-            sessionStorage.setItem('senderNm', senderNm);
-        }
+        if (senderId) sessionStorage.setItem('senderId', senderId);
+        if (senderNm) sessionStorage.setItem('senderNm', senderNm);
     }
 
     function getAuthSenderId() {
@@ -250,20 +247,13 @@
         }
     }
 
-    // ✅ 채팅방 입장 시 TB_CHAT_ROOM_USER에 upsert
     function joinChatRoomUserOnEnter() {
         const roomIdVal = currentRoomId();
         const senderIdNum = getAuthSenderId();
 
-        if (roomIdVal === null || senderIdNum === null) {
-            // roomId 또는 로그인 정보 없으면 스킵
-            return;
-        }
+        if (roomIdVal === null || senderIdNum === null) return;
 
-        const payload = {
-            roomId: roomIdVal
-            // userId 는 서버에서 UserSessionManager 로 세팅
-        };
+        const payload = { roomId: roomIdVal };
 
         $.ajax({
             url: '/api/cht/chatRoomUser/joinRoom',
@@ -271,10 +261,7 @@
             contentType: 'application/json',
             dataType: 'json',
             data: JSON.stringify(payload),
-            success: function (res) {
-                // 필요하면 res.result 로 roomUser 정보 활용 가능
-                // console.log('joinRoomUser ok:', res);
-            },
+            success: function () {},
             error: function (xhr) {
                 console.error('채팅방 입장 처리 실패', xhr);
             }
@@ -289,28 +276,18 @@
 
         btnChangeRoom.addEventListener('click', function () {
             const v = roomInput.value;
-            if (!v) {
-                alert('roomId를 입력해 주세요.');
-                return;
-            }
+            if (!v) return alert('roomId를 입력해 주세요.');
             const n = Number(v);
-            if (Number.isNaN(n)) {
-                alert('roomId는 숫자만 가능합니다.');
-                return;
-            }
+            if (Number.isNaN(n)) return alert('roomId는 숫자만 가능합니다.');
             location.href = '/cht/chatMessage/chatMessageList?roomId=' + encodeURIComponent(n);
         });
 
         roomInput.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') {
-                selectChatMessageList();
-            }
+            if (e.key === 'Enter') selectChatMessageList();
         });
 
         msgInput.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
+            if (e.key === 'Enter') sendMessage();
         });
 
         btnSend.addEventListener('click', function () {
@@ -318,7 +295,6 @@
         });
     }
 
-    // 현재 roomId
     function currentRoomId() {
         const v = document.getElementById('roomIdInput').value;
         if (v === null || v === '') return null;
@@ -326,18 +302,20 @@
         return Number.isNaN(n) ? null : n;
     }
 
+    /* ✅ 빈 상태 제거 */
+    function clearEmptyStateRow() {
+        const empty = document.getElementById(EMPTY_ROW_ID);
+        if (empty && empty.parentNode) empty.parentNode.removeChild(empty);
+    }
+
     /* ---------- STOMP 연결 & 구독 ---------- */
 
     function connectStomp() {
         const roomIdVal = currentRoomId();
-        if (roomIdVal === null) {
-            // roomId 없으면 일단 STOMP 연결 보류
-            return;
-        }
+        if (roomIdVal === null) return;
 
         const socket = new SockJS('/ws-stomp');
         stompClient = Stomp.over(socket);
-        // stompClient.debug = null;
 
         stompClient.connect({}, function () {
             stompConnected = true;
@@ -354,7 +332,7 @@
         stompClient.subscribe('/topic/chat/' + roomIdVal, function (frame) {
             try {
                 const body = JSON.parse(frame.body);
-                appendOneMessage(body);
+                appendOneMessage(body);   // ✅ append 전에 empty 제거됨
                 scrollToBottom();
             } catch (e) {
                 console.error('메시지 파싱 오류:', e, frame.body);
@@ -368,9 +346,7 @@
         const roomIdVal = currentRoomId();
         const payload = {};
 
-        if (roomIdVal !== null) {
-            payload.roomId = roomIdVal;
-        }
+        if (roomIdVal !== null) payload.roomId = roomIdVal;
         payload.limit = 50;
 
         $.ajax({
@@ -397,26 +373,14 @@
         const msgInput = document.getElementById('msgInput');
         const content = (msgInput.value || '').trim();
 
-        if (roomIdVal === null) {
-            alert('roomId를 먼저 입력해 주세요.');
-            return;
-        }
-        if (!content) {
-            alert('메시지 내용을 입력해 주세요.');
-            return;
-        }
+        if (roomIdVal === null) return alert('roomId를 먼저 입력해 주세요.');
+        if (!content) return alert('메시지 내용을 입력해 주세요.');
 
         const senderIdNum = getAuthSenderId();
         const senderNmVal = getAuthSenderNm().trim();
 
-        if (senderIdNum === null) {
-            alert('로그인 정보(senderId)를 확인할 수 없습니다. 다시 로그인 후 이용해 주세요.');
-            return;
-        }
-        if (!senderNmVal) {
-            alert('로그인 정보(senderNm)를 확인할 수 없습니다. 다시 로그인 후 이용해 주세요.');
-            return;
-        }
+        if (senderIdNum === null) return alert('로그인 정보(senderId)를 확인할 수 없습니다. 다시 로그인 후 이용해 주세요.');
+        if (!senderNmVal) return alert('로그인 정보(senderNm)를 확인할 수 없습니다. 다시 로그인 후 이용해 주세요.');
 
         const payload = {
             roomId: roomIdVal,
@@ -426,10 +390,10 @@
             contentType: 'TEXT'
         };
 
-        if (!stompClient || !stompConnected) {
-            alert('WebSocket 연결이 아직 준비되지 않았습니다.');
-            return;
-        }
+        if (!stompClient || !stompConnected) return alert('WebSocket 연결이 아직 준비되지 않았습니다.');
+
+        // ✅ 보내기 직전에 empty 제거(UX)
+        clearEmptyStateRow();
 
         stompClient.send('/app/chat/' + roomIdVal, {}, JSON.stringify(payload));
         msgInput.value = '';
@@ -442,7 +406,8 @@
         let html = '';
 
         if (!list.length) {
-            html += "<li class='text-center text-muted py-4'>등록된 메시지가 없습니다.</li>";
+            // ✅ id 부여
+            html += "<li id='" + EMPTY_ROW_ID + "' class='text-center text-muted py-4'>등록된 메시지가 없습니다.</li>";
         } else {
             for (let i = 0; i < list.length; i++) {
                 const r = list[i] || {};
@@ -454,8 +419,12 @@
     }
 
     function appendOneMessage(r) {
+        // ✅ 메시지 한 건이라도 추가되는 순간 empty 제거
+        clearEmptyStateRow();
+
         const ul = document.getElementById('chatMessageListBody');
         if (!ul) return;
+
         const li = document.createElement('li');
         li.innerHTML = buildMessageInnerHtml(r);
         li.className = getMessageItemClass(r);

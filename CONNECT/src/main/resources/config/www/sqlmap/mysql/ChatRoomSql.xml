@@ -198,7 +198,6 @@
             UPDATED_DT = NOW(),
             UPDATED_BY = #{updatedBy}
         WHERE ROOM_ID = #{roomId}
-        <include refid="ownerScope" />
     </update>
 
     <!-- 마지막 메시지 캐시 업데이트 (메시지 insert 후 호출) -->
