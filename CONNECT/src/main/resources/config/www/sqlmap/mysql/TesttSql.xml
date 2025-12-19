@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.tst.testt.Testt">
+
+    <sql id="whereTestt">
+        <!-- 
+        동적 검색 조건 템플릿 (필요 시 활성화)
+
+        <choose>
+            <when test='id != null and id != "" '>
+
+            </when>
+            <otherwise>
+
+            </otherwise>
+        </choose>
+
+        <if test="searchField != null and searchText != null and searchField != '' and searchText != ''">
+            <choose>
+                <when test='searchField == "title"'>
+                    AND TITLE LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "content"'>
+                    AND CONTENT LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "writer"'>
+                    AND WRITER LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        -->
+    </sql> 
+
+    <select id="selectTesttList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.tst.testt.Testt.selectTesttList
+         Description : 목록 Query 
+        */
+        SELECT
+            TESTT_IDX
+			,GRP_CD
+			,BOARD_CD
+			,CATEGORY_CD
+			,STATUS_CD
+			,NOTICE_AT
+			,PIN_AT
+			,SECRET_AT
+			,TITLE
+			,SUB_TITLE
+			,SUMMARY_TXT
+			,CONTENT_HTML
+			,TAGS
+			,THUMB_URL
+			,ATTACH_JSON
+			,DATE_FORMAT(PUBLISH_START_DT, '%Y-%m-%d %H:%i:%s') AS PUBLISH_START_DT
+			,DATE_FORMAT(PUBLISH_END_DT, '%Y-%m-%d %H:%i:%s') AS PUBLISH_END_DT
+			,SORT_ORDR
+			,VIEW_CNT
+			,LIKE_CNT
+			,COMMENT_CNT
+			,PLACE_NM
+			,PLACE_ADDR
+			,LAT
+			,LNG
+			,USE_AT
+			,DEL_AT
+			,DATE_FORMAT(DEL_DT, '%Y-%m-%d %H:%i:%s') AS DEL_DT
+			,DEL_BY
+			,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+			,CREATED_BY
+			,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+			,UPDATED_BY
+
+        FROM TB_TESTT
+        <where>
+            <include refid="whereTestt" />
+        </where>
+        ORDER BY TESTT_IDX DESC
+        <if test="limit != null and offset != null">
+            /*  페이징 하단 시작  */
+            LIMIT #{limit} OFFSET #{offset}
+            /*  페이징 하단 끝  */
+        </if>
+    </select>
+
+    <select id="selectTesttListCount" parameterType="hashmap" resultType="int">
+        /*
+         SQL ID: www.api.tst.testt.Testt.selectTesttListCount
+         Description : 목록에서 레코드수 Query 
+        */
+        SELECT
+            COUNT(*) CNT
+        FROM TB_TESTT
+        <where>
+            <include refid="whereTestt" />
+        </where> 
+    </select>
+
+    <select id="selectTesttDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.tst.testt.Testt.selectTesttDetail
+         Description : 상세조회 Query 
+        */  
+        SELECT
+            TESTT_IDX
+			,GRP_CD
+			,BOARD_CD
+			,CATEGORY_CD
+			,STATUS_CD
+			,NOTICE_AT
+			,PIN_AT
+			,SECRET_AT
+			,TITLE
+			,SUB_TITLE
+			,SUMMARY_TXT
+			,CONTENT_HTML
+			,TAGS
+			,THUMB_URL
+			,ATTACH_JSON
+			,DATE_FORMAT(PUBLISH_START_DT, '%Y-%m-%d %H:%i:%s') AS PUBLISH_START_DT
+			,DATE_FORMAT(PUBLISH_END_DT, '%Y-%m-%d %H:%i:%s') AS PUBLISH_END_DT
+			,SORT_ORDR
+			,VIEW_CNT
+			,LIKE_CNT
+			,COMMENT_CNT
+			,PLACE_NM
+			,PLACE_ADDR
+			,LAT
+			,LNG
+			,USE_AT
+			,DEL_AT
+			,DATE_FORMAT(DEL_DT, '%Y-%m-%d %H:%i:%s') AS DEL_DT
+			,DEL_BY
+			,DATE_FORMAT(CREATED_DT, '%Y-%m-%d %H:%i:%s') AS CREATED_DT
+			,CREATED_BY
+			,DATE_FORMAT(UPDATED_DT, '%Y-%m-%d %H:%i:%s') AS UPDATED_DT
+			,UPDATED_BY
+
+        FROM TB_TESTT
+        WHERE TESTT_IDX = #{testtIdx}
+    </select>
+
+    <insert id="insertTestt" parameterType="hashmap">
+        /*
+         SQL ID: www.api.tst.testt.Testt.insertTestt
+         Description : 등록 Query 
+        */
+        INSERT INTO TB_TESTT
+        (
+            GRP_CD
+			,BOARD_CD
+			,CATEGORY_CD
+			,STATUS_CD
+			,NOTICE_AT
+			,PIN_AT
+			,SECRET_AT
+			,TITLE
+			,SUB_TITLE
+			,SUMMARY_TXT
+			,CONTENT_HTML
+			,TAGS
+			,THUMB_URL
+			,ATTACH_JSON
+			,PUBLISH_START_DT
+			,PUBLISH_END_DT
+			,SORT_ORDR
+			,VIEW_CNT
+			,LIKE_CNT
+			,COMMENT_CNT
+			,PLACE_NM
+			,PLACE_ADDR
+			,LAT
+			,LNG
+			,USE_AT
+			,DEL_AT
+			,DEL_DT
+			,DEL_BY
+			,CREATED_DT
+			,CREATED_BY
+			,UPDATED_DT
+			,UPDATED_BY
+
+        )
+        VALUES
+        (
+            #{grpCd}
+			,#{boardCd}
+			,#{categoryCd}
+			,#{statusCd}
+			,#{noticeAt}
+			,#{pinAt}
+			,#{secretAt}
+			,#{title}
+			,#{subTitle}
+			,#{summaryTxt}
+			,#{contentHtml}
+			,#{tags}
+			,#{thumbUrl}
+			,#{attachJson}
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{publishStartDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{publishStartDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{publishEndDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{publishEndDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+			,#{sortOrdr}
+			,#{viewCnt}
+			,#{likeCnt}
+			,#{commentCnt}
+			,#{placeNm}
+			,#{placeAddr}
+			,#{lat}
+			,#{lng}
+			,#{useAt}
+			,#{delAt}
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{delDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{delDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+			,#{delBy}
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+			,#{createdBy}
+			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
+			,#{updatedBy}
+
+        )
+    </insert>
+
+    <update id="updateTestt" parameterType="hashmap">
+        /*
+         SQL ID: www.api.tst.testt.Testt.updateTestt
+         Description : 수정 Query 
+        */
+        UPDATE TB_TESTT
+        <set>
+            			<if test='grpCd != null and grpCd != ""'>
+				GRP_CD = #{grpCd},
+			</if>
+			<if test='boardCd != null and boardCd != ""'>
+				BOARD_CD = #{boardCd},
+			</if>
+			<if test='categoryCd != null and categoryCd != ""'>
+				CATEGORY_CD = #{categoryCd},
+			</if>
+			<if test='statusCd != null and statusCd != ""'>
+				STATUS_CD = #{statusCd},
+			</if>
+			<if test='noticeAt != null and noticeAt != ""'>
+				NOTICE_AT = #{noticeAt},
+			</if>
+			<if test='pinAt != null and pinAt != ""'>
+				PIN_AT = #{pinAt},
+			</if>
+			<if test='secretAt != null and secretAt != ""'>
+				SECRET_AT = #{secretAt},
+			</if>
+			<if test='title != null and title != ""'>
+				TITLE = #{title},
+			</if>
+			<if test='subTitle != null and subTitle != ""'>
+				SUB_TITLE = #{subTitle},
+			</if>
+			<if test='summaryTxt != null and summaryTxt != ""'>
+				SUMMARY_TXT = #{summaryTxt},
+			</if>
+			<if test='contentHtml != null and contentHtml != ""'>
+				CONTENT_HTML = #{contentHtml},
+			</if>
+			<if test='tags != null and tags != ""'>
+				TAGS = #{tags},
+			</if>
+			<if test='thumbUrl != null and thumbUrl != ""'>
+				THUMB_URL = #{thumbUrl},
+			</if>
+			<if test='attachJson != null and attachJson != ""'>
+				ATTACH_JSON = #{attachJson},
+			</if>
+			<if test='publishStartDt != null and publishStartDt != ""'>
+				PUBLISH_START_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{publishStartDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{publishStartDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='publishEndDt != null and publishEndDt != ""'>
+				PUBLISH_END_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{publishEndDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{publishEndDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='sortOrdr != null and sortOrdr != ""'>
+				SORT_ORDR = #{sortOrdr},
+			</if>
+			<if test='viewCnt != null and viewCnt != ""'>
+				VIEW_CNT = #{viewCnt},
+			</if>
+			<if test='likeCnt != null and likeCnt != ""'>
+				LIKE_CNT = #{likeCnt},
+			</if>
+			<if test='commentCnt != null and commentCnt != ""'>
+				COMMENT_CNT = #{commentCnt},
+			</if>
+			<if test='placeNm != null and placeNm != ""'>
+				PLACE_NM = #{placeNm},
+			</if>
+			<if test='placeAddr != null and placeAddr != ""'>
+				PLACE_ADDR = #{placeAddr},
+			</if>
+			<if test='lat != null and lat != ""'>
+				LAT = #{lat},
+			</if>
+			<if test='lng != null and lng != ""'>
+				LNG = #{lng},
+			</if>
+			<if test='useAt != null and useAt != ""'>
+				USE_AT = #{useAt},
+			</if>
+			<if test='delAt != null and delAt != ""'>
+				DEL_AT = #{delAt},
+			</if>
+			<if test='delDt != null and delDt != ""'>
+				DEL_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{delDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{delDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='delBy != null and delBy != ""'>
+				DEL_BY = #{delBy},
+			</if>
+			<if test='createdDt != null and createdDt != ""'>
+				CREATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{createdDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='createdBy != null and createdBy != ""'>
+				CREATED_BY = #{createdBy},
+			</if>
+			<if test='updatedDt != null and updatedDt != ""'>
+				UPDATED_DT = STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='updatedBy != null and updatedBy != ""'>
+				UPDATED_BY = #{updatedBy},
+			</if>
+
+        </set>
+        WHERE TESTT_IDX = #{testtIdx}
+    </update>
+
+    <delete id="deleteTestt" parameterType="hashmap">
+        /*
+         SQL ID: www.api.tst.testt.Testt.deleteTestt
+         Description : 삭제 Query 
+        */
+        DELETE FROM TB_TESTT
+        WHERE TESTT_IDX = #{testtIdx}
+    </delete>
+
+</mapper>

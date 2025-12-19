@@ -7,8 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
 import java.util.Properties;
 
 /**
@@ -38,7 +36,7 @@ import java.util.Properties;
  *    - 백엔드 테이블/서비스 선언 → JSP Admin + Spring API + React Hook + React Page 골격까지 즉시 한 번에 찍는다.
  *    - 찍힌 React 파일은 Next.js 레포(src/...)로 복사 후 커스터마이징/브랜딩만 하면 된다.
  */
-public class JavaReactGen {
+public class JavaReactGen6 {
 
     /* ─────────────────────────────────────────────────────────────
      * 속성 로딩
@@ -636,7 +634,6 @@ public class JavaReactGen {
                     s = s.replace("template",  svcLower);
                     s = s.replace("PK_PARAM",  pkParam);
                     s = s.replace("screenTitle", title);
-                    s = applyJspListUiTokens(s);
                     fn.writeText(outList, s);
                     System.out.println("생성: " + outList);
                 }
@@ -655,7 +652,6 @@ public class JavaReactGen {
                     s = s.replace("template",  svcLower);
                     s = s.replace("PK_PARAM",  pkParam);
                     s = s.replace("screenTitle", title);
-                    s = applyJspModifyUiTokens(s);
                     fn.writeText(outMod, s);
                     System.out.println("생성: " + outMod);
                 }
@@ -717,9 +713,7 @@ public class JavaReactGen {
                 if (!JSP_OVERWRITE && fn.fileExists(out)) {
                     System.out.println(out + " 존재. 생략");
                 } else {
-                    String s = fx.apply(fn.readText(tplList));
-                    s = applyJspListUiTokens(s);
-                    fn.writeText(out, s);
+                    fn.writeText(out, fx.apply(fn.readText(tplList)));
                     System.out.println("생성: " + out);
                 }
             } else {
@@ -731,9 +725,7 @@ public class JavaReactGen {
                 if (!JSP_OVERWRITE && fn.fileExists(out)) {
                     System.out.println(out + " 존재. 생략");
                 } else {
-                    String s = fx.apply(fn.readText(tplMod));
-                    s = applyJspModifyUiTokens(s);
-                    fn.writeText(out, s);
+                    fn.writeText(out, fx.apply(fn.readText(tplMod)));
                     System.out.println("생성: " + out);
                 }
             } else {
@@ -745,10 +737,7 @@ public class JavaReactGen {
                 if (!JSP_OVERWRITE && fn.fileExists(out)) {
                     System.out.println(out + " 존재. 생략");
                 } else {
-                    String s = fx.apply(fn.readText(tplUnified));
-                    s = applyJspListUiTokens(s);
-                    s = applyJspModifyUiTokens(s);
-                    fn.writeText(out, s);
+                    fn.writeText(out, fx.apply(fn.readText(tplUnified)));
                     System.out.println("생성: " + out);
                 }
             } else {
@@ -1682,77 +1671,145 @@ public class JavaReactGen {
      * DB 메타 조회
      * ───────────────────────────────────────────────────────────── */
     private static HashMap<String, String> getTableMap() {
-        if (db_list != null) return db_map;
+    if (db_list != null) return db_map;
 
-        Connection conn = null;
-        ResultSet rs = null;
+    Connection conn = null;
+    ResultSet rs = null;
 
-        List<String> arrList = new ArrayList<>();
-        HashMap<String, String> columnMap = new HashMap<>();
+    List<String> arrList = new ArrayList<>();
+    HashMap<String, String> columnMap = new HashMap<>();
 
-        try {
-            Properties info = new Properties();
-            info.put("remarksReporting","true");
-            info.put("user", user);
-            info.put("password", password);
+    try {
+        Properties info = new Properties();
+        info.put("remarksReporting", "true");
 
-            Class.forName(driver);
-            conn = DriverManager.getConnection(server_ip, info);
-            DatabaseMetaData meta = conn.getMetaData();
-
-            // MySQL: catalog = DB명; schemaPattern = null
-            String catalog = null;
-            try {
-                String url = server_ip;
-                int s = url.lastIndexOf('/');
-                if (s >= 0) {
-                    catalog = url.substring(s + 1);
-                    int q = catalog.indexOf('?');
-                    if (q >= 0) catalog = catalog.substring(0, q);
-                }
-            } catch (Exception ignore) {}
-
-            rs = meta.getColumns(catalog, null, db_table, "%");
-
-            while (rs.next()) {
-                String col = rs.getString("COLUMN_NAME");
-                String typeName = rs.getString("TYPE_NAME");
-                String remark   = rs.getString("REMARKS");
-
-                String sTypeStr;
-                if ("CLOB".equalsIgnoreCase(typeName) || "BLOB".equalsIgnoreCase(typeName)) {
-                    sTypeStr = "clob";
-                } else if (typeName != null && typeName.toUpperCase().matches(".*(INT|NUMBER|LONG).*")) {
-                    sTypeStr = "int";
-                } else {
-                    sTypeStr = "string";
-                }
-
-                columnMap.put(col, sTypeStr + "#" + (remark != null ? remark : ""));
-                arrList.add(col);
-            }
-
-            if (arrList.isEmpty()) {
-                System.out.println("[JavaGen][WARN] DB 메타 결과가 비었습니다. fallback으로 PK만 사용합니다.");
-                arrList.add(db_key);
-                columnMap.put(db_key, "string#");
-            }
-
-            db_list = arrList;
-            db_map  = columnMap;
-
-        } catch (Exception e) {
-            System.out.println("[JavaGen][WARN] DB 메타 조회 실패: " + e.getMessage());
-            db_list = new ArrayList<>();
-            db_list.add(db_key);
-            db_map  = new HashMap<>();
-            db_map.put(db_key, "string#");
-        } finally {
-            try { if (rs != null) rs.close(); } catch (Exception ignore) {}
-            try { if (conn != null) conn.close(); } catch (Exception ignore) {}
+        // MySQL/MariaDB 계열은 JDBC 메타에서 REMARKS(컬럼 COMMENT)가 비는 경우가 많아서,
+        // 1) useInformationSchema 활성화
+        // 2) 그래도 비면 information_schema.columns로 fallback
+        if (isMySQLFamily()) {
+            info.put("useInformationSchema", "true");
         }
-        return db_map;
+
+        info.put("user", user);
+        info.put("password", password);
+
+        Class.forName(driver);
+        conn = DriverManager.getConnection(server_ip, info);
+
+        DatabaseMetaData meta = conn.getMetaData();
+
+        String catalog = null;
+        try {
+            String url = server_ip;
+            int s = url.lastIndexOf('/');
+            if (s >= 0) {
+                catalog = url.substring(s + 1);
+                int q = catalog.indexOf('?');
+                if (q >= 0) catalog = catalog.substring(0, q);
+            }
+        } catch (Exception ignore) {}
+
+        // MySQL/MariaDB fallback: information_schema.columns에서 컬럼 코멘트 직접 조회
+        Map<String, String> mysqlCommentMap = null;
+        if (isMySQLFamily()) {
+            mysqlCommentMap = loadMySqlColumnComments(conn, catalog, db_table);
+        }
+
+        rs = meta.getColumns(catalog, null, db_table, "%");
+
+        while (rs.next()) {
+            String col = rs.getString("COLUMN_NAME");
+            String typeName = rs.getString("TYPE_NAME");
+            String remark = rs.getString("REMARKS");
+
+            if ((remark == null || remark.trim().isEmpty()) && mysqlCommentMap != null && col != null) {
+                String cm = mysqlCommentMap.get(col);
+                if (cm != null) remark = cm;
+            }
+
+            String sTypeStr = detectTypeFromTypeName(typeName);
+
+            columnMap.put(col, sTypeStr + "#" + (remark != null ? remark : ""));
+            arrList.add(col);
+        }
+
+        if (arrList.isEmpty()) {
+            System.out.println("[JavaGen][WARN] DB 메타 결과가 비었습니다. fallback으로 PK만 사용합니다.");
+            arrList.add(db_key);
+            columnMap.put(db_key, "string#");
+        }
+
+        db_list = arrList;
+        db_map = columnMap;
+
+    } catch (Exception e) {
+        System.out.println("[JavaGen][WARN] DB 메타 조회 실패: " + e.getMessage());
+        db_list = new ArrayList<>();
+        db_list.add(db_key);
+        db_map = new HashMap<>();
+        db_map.put(db_key, "string#");
+    } finally {
+        try { if (rs != null) rs.close(); } catch (Exception ignore) {}
+        try { if (conn != null) conn.close(); } catch (Exception ignore) {}
     }
+    return db_map;
+}
+
+private static String detectTypeFromTypeName(String typeName) {
+    if (typeName == null) return "string";
+    String t = typeName.toUpperCase();
+
+    // 긴 텍스트/JSON은 textarea/editor로 쓰는 케이스가 많아서 clob 취급
+    if (t.contains("TEXT") || t.contains("CLOB") || t.contains("BLOB") || t.contains("JSON")) {
+        return "clob";
+    }
+
+    // 숫자 전반을 number(input type="number")로 처리하기 위해 int 그룹으로 묶음
+    if (t.matches(".*(TINYINT|SMALLINT|MEDIUMINT|INT|INTEGER|BIGINT|NUMBER|DECIMAL|NUMERIC|FLOAT|DOUBLE|REAL).*")) {
+        return "int";
+    }
+
+    return "string";
+}
+
+private static Map<String, String> loadMySqlColumnComments(Connection conn, String catalog, String tableName) {
+    Map<String, String> map = new HashMap<>();
+    if (conn == null || tableName == null || tableName.trim().isEmpty()) return map;
+
+    String schema = (catalog != null && !catalog.trim().isEmpty()) ? catalog : null;
+    try {
+        if (schema == null || schema.trim().isEmpty()) {
+            schema = conn.getCatalog();
+        }
+    } catch (Exception ignore) {}
+
+    if (schema == null || schema.trim().isEmpty()) return map;
+
+    String sql =
+        "SELECT COLUMN_NAME, COLUMN_COMMENT " +
+        "  FROM information_schema.COLUMNS " +
+        " WHERE TABLE_SCHEMA = ? " +
+        "   AND TABLE_NAME = ?";
+
+    try (PreparedStatement ps = conn.prepareStatement(sql)) {
+        ps.setString(1, schema);
+        ps.setString(2, tableName);
+
+        try (ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                String col = rs.getString(1);
+                String cmt = rs.getString(2);
+                if (col != null && cmt != null && !cmt.trim().isEmpty()) {
+                    map.put(col, cmt);
+                }
+            }
+        }
+    } catch (Exception e) {
+        System.out.println("[JavaGen][WARN] MySQL column_comment 조회 실패: " + e.getMessage());
+    }
+
+    return map;
+}
 
     /* ─────────────────────────────────────────────────────────────
      * 유틸
@@ -1825,513 +1882,4 @@ public class JavaReactGen {
     private static String mysqlDateInsertExpr(String camelParamName) {
         return "IFNULL(" + mysqlDateParseExpr(camelParamName) + ", NOW())";
     }
-    
-    
-	 // =====================================================
-	 // JSP UI Token Engine (List/Modify)
-	 // - 토큰: __GEN_LIST_TH__ / __GEN_LIST_TD__ / __GEN_LIST_COLSPAN__ / __GEN_PK_CAMEL__
-	 // - 토큰: __GEN_EDITOR_IMPORTS__ / __GEN_FORM_FIELDS__ / __GEN_EDITOR_INIT__
-	//          __GEN_READ_BIND__ / __GEN_SAVE_VALIDATE__ / __GEN_SAVE_SYNC__
-	 // - COMMENT 메타 예:
-	 //   "공지|gen:list,form,search|type=checkbox"
-	 //   "내용|gen:form|type=editor|mw=840|h=400"
-	 //   "요약|gen:form|type=textarea|mw=840|h=120"
-	 // =====================================================
-	
-	 private static class UiColMeta {
-	     String colName;         // DB 컬럼명(원본)
-	     String upperName;       // 대문자 컬럼명
-	     String camelName;       // lowerCamel
-	     String label;           // 화면 라벨
-	
-	     boolean genList;
-	     boolean genForm;
-	     boolean genSearch;
-	
-	     java.util.Map<String, String> props = new java.util.LinkedHashMap<>();
-	 }
-	
-	 /**
-	  * tableMap/remark 구조는 getTableMap() 구현에 맞춘다.
-	  * - 보통 tableMap.get(COL) 값에 COMMENT/REMARK 문자열이 들어가 있음
-	  * - 또는 "TYPE|COMMENT" 형태일 수도 있어 방어적으로 처리
-	  */
-	 private static UiColMeta parseUiCol(String col) {
-	     UiColMeta m = new UiColMeta();
-	     m.colName = col;
-	     m.upperName = (col == null) ? "" : col.toUpperCase();
-	     m.camelName = convert2CamelCase(col);
-	
-	     String raw = null;
-	     try {
-	    	 HashMap tableMap = getTableMap(); // db_list / tableMap 세팅되어 있어야 함
-	         if (tableMap != null && col != null) {
-	             Object v = tableMap.get(col);
-	             if (v != null) raw = String.valueOf(v);
-	         }
-	     } catch (Exception ignore) {
-	         // tableMap 접근 불가 시에도 최소 렌더는 되게
-	     }
-	
-	     // raw가 "xxx|yyy|..." 또는 "TYPE#COMMENT" 등일 수 있어서,
-	     // label/props 파싱은 '|' 중심으로 한다.
-	     // label은 첫 세그먼트(평문)
-	     String remark = raw;
-	
-	     // 혹시 "TYPE#COMMENT" 구조면 COMMENT만 뽑아준다.
-	     if (remark != null) {
-	         int sharp = remark.indexOf('#');
-	         if (sharp >= 0 && sharp + 1 < remark.length()) {
-	             remark = remark.substring(sharp + 1);
-	         }
-	     }
-	
-	     if (remark == null) {
-	         // 기본 label
-	         m.label = m.camelName;
-	         // 기본 gen (메타 없으면 기본 노출 정책)
-	         m.genList = true;
-	         m.genForm = true;
-	         m.genSearch = true;
-	         return m;
-	     }
-	
-	     // 세그먼트 파싱: label|gen:list,form|type=...
-	     String[] segs = remark.split("\\|");
-	     boolean labelSet = false;
-	
-	     for (String segRaw : segs) {
-	         if (segRaw == null) continue;
-	         String seg = segRaw.trim();
-	         if (seg.isEmpty()) continue;
-	
-	         String lower = seg.toLowerCase();
-	
-	         // gen 키워드
-	         if (lower.startsWith("gen=") || lower.startsWith("gen:")) {
-	             String vv = seg.substring(4).trim();
-	             String[] gs = vv.split(",");
-	             for (String g : gs) {
-	                 String gg = (g == null) ? "" : g.trim().toLowerCase();
-	                 if ("list".equals(gg)) m.genList = true;
-	                 if ("form".equals(gg) || "modify".equals(gg) || "edit".equals(gg)) m.genForm = true;
-	                 if ("search".equals(gg)) m.genSearch = true;
-	             }
-	             continue;
-	         }
-	
-	         // shorthand type:
-	         if (lower.startsWith("type:")) {
-	             m.props.put("type", seg.substring(5).trim());
-	             continue;
-	         }
-	
-	         // key=value
-	         int eq = seg.indexOf('=');
-	         if (eq > 0) {
-	             String k = seg.substring(0, eq).trim();
-	             String v = seg.substring(eq + 1).trim();
-	             if (!k.isEmpty()) m.props.put(k, v);
-	             continue;
-	         }
-	
-	         // label: 첫 번째 '평문' 세그먼트
-	         if (!labelSet) {
-	             // label처럼 보이지 않으면 스킵(방어)
-	             if (lower.startsWith("type") || lower.startsWith("w=") || lower.startsWith("width=") || lower.startsWith("align=")) {
-	                 continue;
-	             }
-	             m.label = seg;
-	             labelSet = true;
-	         }
-	     }
-	
-	     // gen 메타가 아예 없으면 기본으로 모두 true (단, 기본 제외컬럼은 후단에서 걸러짐)
-	     if (!m.genList && !m.genForm && !m.genSearch) {
-	         m.genList = true;
-	         m.genForm = true;
-	         m.genSearch = true;
-	     }
-	
-	     // label 미지정이면 camel
-	     if (isBlank(m.label)) m.label = m.camelName;
-	
-	     // ✅ Y/N 자동 checkbox: type 지정이 없고, 컬럼명이 *_AT / *_YN / USE_AT / DEL_YN 류면 checkbox로 본다
-	     if (isBlank(getProp(m, "type", ""))) {
-	         String u = m.upperName;
-	         if (u.endsWith("_AT") || u.endsWith("_YN") || "USE_AT".equals(u) || "DEL_YN".equals(u) || "DELETE_YN".equals(u)) {
-	             m.props.put("type", "checkbox");
-	         }
-	     }
-	
-	     return m;
-	 }
-	
-	 private static List<UiColMeta> uiListColumns() {
-	     getTableMap();
-	     List<UiColMeta> all = new ArrayList<>();
-	     for (String col : db_list) {
-	         all.add(parseUiCol(col));
-	     }
-	
-	     boolean anyList = false;
-	     for (UiColMeta c : all) {
-	         if (c.genList) { anyList = true; break; }
-	     }
-	
-	     List<UiColMeta> picked = new ArrayList<>();
-	     String pk = db_key;
-	
-	     // PK는 무조건 목록에 포함(번호)
-	     if (pk != null && !pk.isEmpty()) {
-	         UiColMeta pkMeta = parseUiCol(pk);
-	         if (pkMeta.label == null || pkMeta.label.equals(pkMeta.camelName)) pkMeta.label = "번호";
-	         picked.add(pkMeta);
-	     }
-	
-	     for (UiColMeta c : all) {
-	         if (c.colName == null) continue;
-	         if (pk != null && pk.equalsIgnoreCase(c.colName)) continue;
-	
-	         if (anyList) {
-	             if (c.genList) picked.add(c);
-	         } else {
-	             if (isUiDefaultExcluded(c.upperName)) continue;
-	             picked.add(c);
-	         }
-	     }
-	     return picked;
-	 }
-	
-	 private static List<UiColMeta> uiFormColumns() {
-	     getTableMap();
-	     List<UiColMeta> all = new ArrayList<>();
-	     for (String col : db_list) {
-	         all.add(parseUiCol(col));
-	     }
-	
-	     boolean anyForm = false;
-	     for (UiColMeta c : all) {
-	         if (c.genForm) { anyForm = true; break; }
-	     }
-	
-	     List<UiColMeta> picked = new ArrayList<>();
-	     String pk = db_key;
-	
-	     for (UiColMeta c : all) {
-	         if (c.colName == null) continue;
-	         if (pk != null && pk.equalsIgnoreCase(c.colName)) continue; // PK는 hidden 처리
-	
-	         if (anyForm) {
-	             if (c.genForm) picked.add(c);
-	         } else {
-	             if (isUiDefaultExcluded(c.upperName)) continue;
-	             picked.add(c);
-	         }
-	     }
-	     return picked;
-	 }
-	
-	 private static boolean isUiDefaultExcluded(String upperName) {
-	     if (upperName == null) return false;
-	     return upperName.equals("CREATED_DT")
-	         || upperName.equals("CREATED_BY")
-	         || upperName.equals("UPDATED_DT")
-	         || upperName.equals("UPDATED_BY")
-	         || upperName.equals("DEL_YN")
-	         || upperName.equals("DELETE_YN")
-	         || upperName.equals("DELETE_AT");
-	 }
-	
-	 private static String applyJspListUiTokens(String s) {
-	     if (s == null) return null;
-	
-	     boolean has = (s.indexOf("__GEN_LIST_TH__") >= 0)
-	             || (s.indexOf("__GEN_LIST_TD__") >= 0)
-	             || (s.indexOf("__GEN_LIST_COLSPAN__") >= 0)
-	             || (s.indexOf("__GEN_PK_CAMEL__") >= 0);
-	     if (!has) return s;
-	
-	     List<UiColMeta> cols = uiListColumns();
-	     int colspan = (cols == null) ? 0 : cols.size();
-	
-	     String th = buildJspListTh(cols, "                    ");
-	     String td = buildJspListTd(cols, "                        ");
-	
-	     String pkCamel = convert2CamelCase(db_key);
-	     s = s.replace("__GEN_LIST_TH__", th);
-	     s = s.replace("__GEN_LIST_TD__", td);
-	     s = s.replace("__GEN_LIST_COLSPAN__", String.valueOf(colspan));
-	     s = s.replace("__GEN_PK_CAMEL__", pkCamel);
-	     return s;
-	 }
-	
-	 private static String applyJspModifyUiTokens(String s) {
-	     if (s == null) return null;
-	
-	     boolean has = (s.indexOf("__GEN_FORM_FIELDS__") >= 0)
-	             || (s.indexOf("__GEN_EDITOR_IMPORTS__") >= 0)
-	             || (s.indexOf("__GEN_EDITOR_INIT__") >= 0)
-	             || (s.indexOf("__GEN_READ_BIND__") >= 0)
-	             || (s.indexOf("__GEN_SAVE_VALIDATE__") >= 0)
-	             || (s.indexOf("__GEN_SAVE_SYNC__") >= 0);
-	     if (!has) return s;
-	
-	     List<UiColMeta> cols = uiFormColumns();
-	     boolean anyEditor = false;
-	     for (UiColMeta c : cols) {
-	         if (isEditor(c)) { anyEditor = true; break; }
-	     }
-	
-	     String editorImports = anyEditor ? buildToastUiImports() : "";
-	     String formFields = buildJspFormFields(cols, "        ");
-	     String editorInit = anyEditor ? buildJspEditorInit(cols, "        ") : "";
-	     String readBind = buildJspReadBind(cols, "                ");
-	     String saveValidate = buildJspSaveValidate(cols, "        ");
-	     String saveSync = anyEditor ? buildJspSaveSync(cols, "        ") : "";
-	
-	     s = s.replace("__GEN_EDITOR_IMPORTS__", editorImports);
-	     s = s.replace("__GEN_FORM_FIELDS__", formFields);
-	     s = s.replace("__GEN_EDITOR_INIT__", editorInit);
-	     s = s.replace("__GEN_READ_BIND__", readBind);
-	     s = s.replace("__GEN_SAVE_VALIDATE__", saveValidate);
-	     s = s.replace("__GEN_SAVE_SYNC__", saveSync);
-	     return s;
-	 }
-	
-	 private static String buildToastUiImports() {
-	     return "<!-- Toast UI Editor CSS/JS -->\n"
-	         + "<link rel=\"stylesheet\" href=\"https://uicdn.toast.com/editor/latest/toastui-editor.min.css\" />\n"
-	         + "<script src=\"https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js\"></script>\n";
-	 }
-	
-	 private static boolean isEditor(UiColMeta c) {
-	     String uiType = getProp(c, "type", "");
-	     return "editor".equalsIgnoreCase(uiType) || "toastui".equalsIgnoreCase(uiType) || "toast".equalsIgnoreCase(uiType);
-	 }
-	
-	 private static boolean isCheckbox(UiColMeta c) {
-	     String uiType = getProp(c, "type", "");
-	     return "checkbox".equalsIgnoreCase(uiType) || "yn".equalsIgnoreCase(uiType);
-	 }
-	
-	 private static String buildJspListTh(List<UiColMeta> cols, String indent) {
-	     if (cols == null) return "";
-	     StringBuilder sb = new StringBuilder();
-	     for (UiColMeta c : cols) {
-	         String label = (c.label != null) ? c.label : c.camelName;
-	         sb.append(indent).append("<th>").append(escapeHtml(label)).append("</th>\n");
-	     }
-	     return sb.toString();
-	 }
-	
-	 private static String buildJspListTd(List<UiColMeta> cols, String indent) {
-	     if (cols == null) return "";
-	     StringBuilder sb = new StringBuilder();
-	     for (UiColMeta c : cols) {
-	         // checkbox는 목록에서 Y/N 표기
-	         if (isCheckbox(c)) {
-	             sb.append(indent)
-	               .append("<td><c:out value=\"${row.").append(c.camelName).append("}\"/></td>\n");
-	         } else {
-	             sb.append(indent)
-	               .append("<td><c:out value=\"${row.").append(c.camelName).append("}\"/></td>\n");
-	         }
-	     }
-	     return sb.toString();
-	 }
-	
-	 private static String buildJspFormFields(List<UiColMeta> cols, String indent) {
-	     if (cols == null) return "";
-	     StringBuilder sb = new StringBuilder();
-	
-	     for (UiColMeta c : cols) {
-	         String label = (c.label != null) ? c.label : c.camelName;
-	         String name = c.camelName;
-	
-	         String mw = firstNonBlank(getProp(c, "mw", ""), getProp(c, "maxWidth", ""));
-	         String maxWidth = "";
-	         if (!isBlank(mw)) {
-	             String wNum = mw.replaceAll("[^0-9]", "");
-	             if (!wNum.isEmpty()) maxWidth = wNum;
-	         }
-	
-	         if (isEditor(c)) {
-	             String h = firstNonBlank(getProp(c, "h", ""), getProp(c, "height", ""));
-	             String height = "400";
-	             if (!isBlank(h)) {
-	                 String hNum = h.replaceAll("[^0-9]", "");
-	                 if (!hNum.isEmpty()) height = hNum;
-	             }
-	
-	             sb.append(indent).append("<div class=\"form-group\" style=\"max-width: ")
-	               .append(maxWidth.isEmpty() ? "840" : maxWidth).append("px;\">\n");
-	             sb.append(indent).append("    <label for=\"").append(name).append("\">").append(escapeHtml(label)).append("</label>\n");
-	             sb.append(indent).append("    <div id=\"editor_").append(name).append("\" style=\"height: ").append(height).append("px;\"></div>\n");
-	             sb.append(indent).append("    <input type=\"hidden\" name=\"").append(name).append("\" id=\"").append(name).append("\"/>\n");
-	             sb.append(indent).append("</div>\n\n");
-	             continue;
-	         }
-	
-	         if (isCheckbox(c)) {
-	             // hidden(N) + checkbox(Y) 패턴 (serializeObject에서 체크시 Y로 덮어씀)
-	             sb.append(indent).append("<div class=\"form-group\" style=\"max-width: ")
-	               .append(maxWidth.isEmpty() ? "640" : maxWidth).append("px;\">\n");
-	             sb.append(indent).append("    <label>").append(escapeHtml(label)).append("</label>\n");
-	             sb.append(indent).append("    <div class=\"custom-control custom-checkbox\">\n");
-	             sb.append(indent).append("        <input type=\"hidden\" name=\"").append(name).append("\" value=\"N\"/>\n");
-	             sb.append(indent).append("        <input type=\"checkbox\" class=\"custom-control-input\" id=\"").append(name)
-	               .append("_chk\" name=\"").append(name).append("\" value=\"Y\"/>\n");
-	             sb.append(indent).append("        <label class=\"custom-control-label\" for=\"").append(name).append("_chk\">사용</label>\n");
-	             sb.append(indent).append("    </div>\n");
-	             sb.append(indent).append("</div>\n\n");
-	             continue;
-	         }
-	
-	         String uiType = getProp(c, "type", "");
-	         boolean isTextarea = "textarea".equalsIgnoreCase(uiType);
-	         if (isTextarea) {
-	             String h = firstNonBlank(getProp(c, "h", ""), getProp(c, "height", ""));
-	             String height = "120";
-	             if (!isBlank(h)) {
-	                 String hNum = h.replaceAll("[^0-9]", "");
-	                 if (!hNum.isEmpty()) height = hNum;
-	             }
-	
-	             sb.append(indent).append("<div class=\"form-group\" style=\"max-width: ")
-	               .append(maxWidth.isEmpty() ? "840" : maxWidth).append("px;\">\n");
-	             sb.append(indent).append("    <label for=\"").append(name).append("\">").append(escapeHtml(label)).append("</label>\n");
-	             sb.append(indent).append("    <textarea class=\"form-control\" name=\"").append(name).append("\" id=\"").append(name)
-	               .append("\" rows=\"").append(Math.max(2, Integer.parseInt(height) / 40)).append("\"></textarea>\n");
-	             sb.append(indent).append("</div>\n\n");
-	             continue;
-	         }
-	
-	         // 기본: text
-	         sb.append(indent).append("<div class=\"form-group\" style=\"max-width: ")
-	           .append(maxWidth.isEmpty() ? "640" : maxWidth).append("px;\">\n");
-	         sb.append(indent).append("    <label for=\"").append(name).append("\">").append(escapeHtml(label)).append("</label>\n");
-	         sb.append(indent).append("    <input type=\"text\" class=\"form-control\" name=\"").append(name).append("\" id=\"").append(name).append("\"/>\n");
-	         sb.append(indent).append("</div>\n\n");
-	     }
-	
-	     return sb.toString();
-	 }
-	
-	 private static String buildJspEditorInit(List<UiColMeta> cols, String indent) {
-	     StringBuilder sb = new StringBuilder();
-	     for (UiColMeta c : cols) {
-	         if (!isEditor(c)) continue;
-	         String name = c.camelName;
-	
-	         String h = firstNonBlank(getProp(c, "h", ""), getProp(c, "height", ""));
-	         String height = "400";
-	         if (!isBlank(h)) {
-	             String hNum = h.replaceAll("[^0-9]", "");
-	             if (!hNum.isEmpty()) height = hNum;
-	         }
-	
-	         sb.append(indent).append("editor_").append(name).append(" = new toastui.Editor({\n");
-	         sb.append(indent).append("    el: document.querySelector('#editor_").append(name).append("'),\n");
-	         sb.append(indent).append("    height: '").append(height).append("px',\n");
-	         sb.append(indent).append("    initialEditType: 'markdown',\n");
-	         sb.append(indent).append("    previewStyle: 'vertical',\n");
-	         sb.append(indent).append("    placeholder: '내용을 입력해주세요...'\n");
-	         sb.append(indent).append("});\n\n");
-	     }
-	     return sb.toString();
-	 }
-	
-	 private static String buildJspReadBind(List<UiColMeta> cols, String indent) {
-	     StringBuilder sb = new StringBuilder();
-	     for (UiColMeta c : cols) {
-	         String name = c.camelName;
-	
-	         if (isEditor(c)) {
-	             sb.append(indent).append("editor_").append(name).append(".setHTML(result.").append(name).append(" || \"\");\n");
-	             continue;
-	         }
-	         if (isCheckbox(c)) {
-	             // Y면 체크
-	             sb.append(indent).append("if ((result.").append(name).append(" || \"\").toUpperCase() === \"Y\") {\n");
-	             sb.append(indent).append("    $(\"#").append(name).append("_chk\").prop(\"checked\", true);\n");
-	             sb.append(indent).append("}\n");
-	             continue;
-	         }
-	         sb.append(indent).append("$(\"#").append(name).append("\").val(result.").append(name).append(" || \"\");\n");
-	     }
-	     return sb.toString();
-	 }
-	
-	 private static String buildJspSaveValidate(List<UiColMeta> cols, String indent) {
-	     // required 메타가 있으면 여기서 검사 가능(일단 최소 형태)
-	     // ex: "제목|gen:form|required"
-	     StringBuilder sb = new StringBuilder();
-	     for (UiColMeta c : cols) {
-	         String req = getProp(c, "required", "");
-	         if (!"Y".equalsIgnoreCase(req) && !"true".equalsIgnoreCase(req)) continue;
-	
-	         String name = c.camelName;
-	         String label = (c.label != null) ? c.label : name;
-	
-	         if (isEditor(c)) {
-	             sb.append(indent).append("if (editor_").append(name).append(".getHTML().trim() === \"\") {\n");
-	             sb.append(indent).append("    alert(\"").append(escapeJs(label)).append("을(를) 입력해주세요.\");\n");
-	             sb.append(indent).append("    return;\n");
-	             sb.append(indent).append("}\n");
-	         } else {
-	             sb.append(indent).append("if ($(\"#").append(name).append("\").val() === \"\") {\n");
-	             sb.append(indent).append("    alert(\"").append(escapeJs(label)).append("을(를) 입력해주세요.\");\n");
-	             sb.append(indent).append("    return;\n");
-	             sb.append(indent).append("}\n");
-	         }
-	     }
-	     return sb.toString();
-	 }
-	
-	 private static String buildJspSaveSync(List<UiColMeta> cols, String indent) {
-	     // Editor -> hidden sync
-	     StringBuilder sb = new StringBuilder();
-	     for (UiColMeta c : cols) {
-	         if (!isEditor(c)) continue;
-	         String name = c.camelName;
-	         sb.append(indent).append("$(\"#").append(name).append("\").val(editor_").append(name).append(".getHTML());\n");
-	     }
-	     return sb.toString();
-	 }
-	
-	 private static String getProp(UiColMeta c, String key, String def) {
-	     if (c == null || c.props == null || key == null) return def;
-	     String v = c.props.get(key);
-	     return (v == null) ? def : v;
-	 }
-	
-	 private static String firstNonBlank(String a, String b) {
-	     if (!isBlank(a)) return a;
-	     if (!isBlank(b)) return b;
-	     return "";
-	 }
-	
-	
-	
-	 private static String escapeHtml(String s) {
-	     if (s == null) return "";
-	     return s.replace("&", "&amp;")
-	             .replace("<", "&lt;")
-	             .replace(">", "&gt;")
-	             .replace("\"", "&quot;");
-	 }
-	
-	 private static String escapeJs(String s) {
-	     if (s == null) return "";
-	     return s.replace("\\", "\\\\").replace("\"", "\\\"");
-	 }
-	
-	 // =====================================================
-	 // ✅ Editor 인스턴스 변수명 규칙
-	 // - JSP 템플릿에서 다음처럼 선언해줘야 함:
-	 //   let editor_title; 같은 방식이 아니라,
-	 //   아래 코드가 쓰는 변수명은 editor_<camel> 임.
-	 //   예: CONTENT -> editor_content
-	 // =====================================================
 }

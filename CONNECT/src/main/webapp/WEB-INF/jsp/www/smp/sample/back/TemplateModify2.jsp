@@ -1,36 +1,54 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 
-__GEN_EDITOR_IMPORTS__
+<!-- Toast UI Editor CSS/JS -->
+<link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
+<script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
 
 <section>
     <h2 class="mb-3">screenTitle <span id="pageTitle">수정</span></h2>
 
     <div class="mb-3">
         <button class="btn btn-primary" type="button" onclick="saveTemplate()">저장</button>
-        <c:if test="${not empty param.PK_PARAM}">
-            <button class="btn btn-outline-danger" type="button" onclick="deleteTemplate()">삭제</button>
-        </c:if>
+		<c:if test="${not empty param.PK_PARAM}">
+	        <button class="btn btn-outline-danger" type="button" onclick="deleteTemplate()">삭제</button>
+	    </c:if>
         <a class="btn btn-outline-secondary" href="/BIZ_SEG/template/templateList">목록</a>
     </div>
-
+ 
     <form id="templateForm">
         <!-- PK 파라미터 (치환 대상) -->
         <input type="hidden" name="PK_PARAM" id="PK_PARAM" value="${param.PK_PARAM}"/>
 
-__GEN_FORM_FIELDS__
+        <div class="form-group" style="max-width: 640px;">
+            <label for="title">제목</label>
+            <input type="text" class="form-control" name="title" id="title"/>
+        </div>
+
+        <div class="form-group" style="max-width: 840px;">
+            <label for="content">내용</label>
+            <!-- Toast UI Editor 영역 -->
+            <div id="editor" style="height: 400px;"></div>
+            <!-- 실제 DB 전송용 hidden input -->
+            <input type="hidden" name="content" id="content"/>
+        </div>
     </form>
 </section>
 
 <script>
     const API_BASE = '/api/BIZ_SEG/template';
     const PK = 'PK_PARAM';
-
-    const editors = {};
+    let editor;
 
     $(document).ready(function () {
-
-__GEN_EDITOR_INIT__
+        // Toast UI Editor 초기화
+        editor = new toastui.Editor({
+            el: document.querySelector('#editor'),
+            height: '400px',
+            initialEditType: 'markdown',   
+            previewStyle: 'vertical',  
+            placeholder: '내용을 입력해주세요...'
+        });
 
         const id = $("#" + PK).val();
         if (id && id !== "") {
@@ -55,7 +73,8 @@ __GEN_EDITOR_INIT__
                 const result = map.result || map.template || map;
                 if (!result) return;
 
-__GEN_READ_BIND__
+                $("#title").val(result.title || "");
+                editor.setHTML(result.content || ""); // Toast UI Editor에 값 넣기
             },
             error: function () {
                 alert("조회 중 오류 발생");
@@ -69,9 +88,17 @@ __GEN_READ_BIND__
             ? (API_BASE + "/updateTemplate")
             : (API_BASE + "/insertTemplate");
 
-__GEN_SAVE_VALIDATE__
+        if ($("#title").val() === "") {
+            alert("제목을 입력해주세요.");
+            return;
+        }
+        if (editor.getHTML().trim() === "") {
+            alert("내용을 입력해주세요.");
+            return;
+        }
 
-__GEN_SAVE_SYNC__
+        // Editor 값 hidden input에 동기화
+        $("#content").val(editor.getHTML());
 
         const formData = $("#templateForm").serializeObject();
 
@@ -126,4 +153,4 @@ __GEN_SAVE_SYNC__
         });
         return obj;
     };
-</script>
+</script> 

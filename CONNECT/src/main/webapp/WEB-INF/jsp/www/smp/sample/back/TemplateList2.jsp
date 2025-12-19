@@ -12,7 +12,10 @@
         <table class="table table-hover align-middle">
             <thead class="thead-light">
                 <tr>
-                    __GEN_LIST_TH__
+                    <th style="width: 90px; text-align:right;">번호</th>
+                    <th>제목</th>
+                    <th style="width: 160px;">작성자</th>
+                    <th style="width: 220px;">작성일</th>
                 </tr>
             </thead>
             <tbody id="templateListBody"></tbody>
@@ -23,20 +26,11 @@
 <script>
     // ▼ JavaGen 치환
     const API_BASE = '/api/BIZ_SEG/template';
-    const PK_PARAM = 'PK_PARAM';
+    const PK_PARAM = 'templateIdx';
 
     $(function () {
         selectTemplateList();
     });
-
-    function fmtCell(v) {
-        if (v === null || v === undefined) return '';
-        if (typeof v === 'object') {
-            if (v.value !== undefined && v.value !== null) return String(v.value);
-            return String(v);
-        }
-        return String(v);
-    }
 
     function selectTemplateList() {
         $.ajax({
@@ -49,13 +43,20 @@
                 let html = '';
 
                 if (!resultList.length) {
-                    html += "<tr><td colspan='__GEN_LIST_COLSPAN__' class='text-center text-muted'>등록된 데이터가 없습니다.</td></tr>";
+                    html += "<tr><td colspan='4' class='text-center text-muted'>등록된 데이터가 없습니다.</td></tr>";
                 } else {
                     for (let i = 0; i < resultList.length; i++) {
                         const r = resultList[i];
+                        let createDate = r.createDate;
+                        if (createDate && typeof createDate === 'object') {
+                            createDate = (createDate.value || String(createDate));
+                        }
 
-                        html += "<tr onclick=\"goToTemplateModify('" + (r.__GEN_PK_CAMEL__) + "')\">";
-__GEN_LIST_TD__
+                        html += "<tr onclick=\"goToTemplateModify('" + (r.templateIdx) + "')\">";
+                        html += "  <td class='text-right'>" + (r.templateIdx) + "</td>";
+                        html += "  <td>" + (r.title) + "</td>";
+                        html += "  <td>" + (r.createUser) + "</td>";
+                        html += "  <td>" + (createDate) + "</td>";
                         html += "</tr>";
                     }
                 }
