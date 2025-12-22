@@ -129,7 +129,7 @@
     <table class="table table-bordered">
         <tbody>
         <tr><td class="w-25">책임자</td><td><b>정지균</b></td></tr>
-        <tr><td>연락처</td><td>이메일: <a href="mailto:wlrbs1492@gmail.com">wlrbs1492@gmail.com</a> / 전화: 010-7112-0423</td></tr>
+        <tr><td>연락처</td><td>이메일: <a href="mailto:connnect3000@gmail.com">connnect3000@gmail.com</a> / 전화: 010-0000-0000</td></tr>
 <!--         <tr><td>주소</td><td>(선택) 주소 기재</td></tr> -->
         </tbody>
     </table>
@@ -138,9 +138,9 @@
     <p>법령·정책 또는 보안 기술의 변경에 따라 본 방침을 개정하는 경우, 웹사이트 공지사항/앱 공지 등을 통해 고지하고 시행일을 명시합니다.</p>
 
     <hr>
-    <p class="small muted">
+    <p class="small muted">  
         최종 업데이트: 2025-10-13<br>
-        문의: <a href="mailto:privacy@your-domain">privacy@your-domain</a>
+        문의: <a href="mailto:connnect3000@gmail.com">connnect3000@gmail.com</a>
     </p>
 </div>
 </body>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.log.VisitMain">
+
+    <insert id="insertVisitMainIgnore" parameterType="map">
+        INSERT IGNORE INTO TB_VISIT_MAIN (
+            VISIT_DT,
+            SITE_CD,
+            IP_HASH,
+            IP_MASK,
+            USER_AGENT,
+            CREATED_DT,
+            CREATED_BY,
+            UPDATED_DT,
+            UPDATED_BY
+        ) VALUES (
+            CURDATE(),
+            #{siteCd},
+            #{ipHash},
+            #{ipMask},
+            #{userAgent},
+            NOW(),
+            'SYSTEM',
+            NOW(),
+            'SYSTEM'
+        )
+    </insert>
+
+    <select id="selectVisitMainTodayStat" parameterType="map" resultType="map">
+        SELECT
+            SUM(IF(SITE_CD='PC_MAIN', 1, 0))        AS pcMainUv,
+            SUM(IF(SITE_CD='REACT_MAIN', 1, 0))     AS reactMainUv,
+            COUNT(*)                                 AS totalUv
+        FROM TB_VISIT_MAIN
+        WHERE VISIT_DT = CURDATE()
+    </select>
+
+    <select id="selectVisitMainDayStatList" parameterType="map" resultType="map">
+        SELECT
+            DATE_FORMAT(VISIT_DT, '%Y-%m-%d')                    AS visitDt,
+            SUM(IF(SITE_CD='PC_MAIN', 1, 0))                     AS pcMainUv,
+            SUM(IF(SITE_CD='REACT_MAIN', 1, 0))                  AS reactMainUv,
+            COUNT(*)                                             AS totalUv
+        FROM TB_VISIT_MAIN
+        WHERE VISIT_DT BETWEEN #{fromDt} AND #{toDt}
+        GROUP BY VISIT_DT
+        ORDER BY VISIT_DT DESC
+    </select>
+
+</mapper>

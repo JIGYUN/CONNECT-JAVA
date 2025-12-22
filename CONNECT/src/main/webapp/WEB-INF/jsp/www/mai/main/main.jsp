@@ -114,6 +114,14 @@
     </div>
 </section>
 
+<img
+    src="<%=request.getContextPath()%>/px/main.gif?site=PC_MAIN&t=<%=System.currentTimeMillis()%>"
+    width="1"
+    height="1"
+    style="display:none;"
+    alt=""
+/>
+
 <!-- 페이지 전용 스타일 -->
 <style>
     /* ====== 공통 카드 호버 ====== */

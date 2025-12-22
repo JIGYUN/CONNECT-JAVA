@@ -17,7 +17,7 @@ public class CommonDao {
 		this.template = template;
 	}
 	
-	public Object insert(String queryId, Object parameterObject)
+	public int insert(String queryId, Object parameterObject)
 	{
 		return template.insert(queryId, parameterObject);
 	}

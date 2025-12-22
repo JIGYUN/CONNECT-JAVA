@@ -3,12 +3,12 @@
 <section>
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
-            <h2 class="mb-0">Board</h2>
+            <h2 class="mb-0">Issue</h2>
             <small class="text-muted">프로젝트별 Jira-style 이슈 보드</small>
         </div>
         <div class="d-flex align-items-center">
-            <!-- 신규 프로젝트 생성 버튼 -->
-            <button type="button"
+            <!-- 신규 프로젝트 생성 버튼 -->  
+            <button type="button" 
                     class="btn btn-outline-secondary btn-sm mr-2"
                     id="createProjectBtn"
                     data-toggle="modal"

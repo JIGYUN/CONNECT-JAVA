@@ -84,20 +84,7 @@
                             <div class="help-error mb-2">입력하신 회원정보를 찾을 수 없습니다.</div>
                         </c:if>
 
-                        <button type="button" class="btn btn-primary w-100 mb-2" id="loginBtn">Login</button>
-
-                        <div class="divider">
-                            <span class="line"></span><span>또는</span><span class="line"></span>
-                        </div>
-
-                        <!-- Google Sign-In -->
-                        <div id="googleWrap" class="mb-3">
-                            <a id="googleBtn" href="#" rel="nofollow">
-                                <span id="googleIcon" aria-hidden="true"></span>
-                                <span>Sign in with Google</span>
-                            </a>
-                        </div>
-
+                        <button type="button" class="btn btn-primary w-100 mb-2" id="loginBtn">Login</button>  
                         <button type="button" class="btn btn-ghost w-100" id="joinBtn">회원가입</button>
                     </form>
                 </div>
