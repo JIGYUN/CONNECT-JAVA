@@ -17,7 +17,10 @@
         <if test="useAt != null and useAt != ''">
             AND USE_AT = #{useAt}
         </if>
-    </sql>
+        <if test="userId != null and userId != ''">
+            AND USER_ID = #{userId}
+        </if>
+    </sql> 
 
     <select id="selectIssueList" parameterType="map" resultType="CamelHashMap">
         /*
@@ -133,6 +136,7 @@
             ,UPDATED_DT
             ,UPDATED_BY
             ,USE_AT
+            ,USER_ID
         )
         VALUES
         (
@@ -158,6 +162,7 @@
             ,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
             ,#{updatedBy}
             ,#{useAt}
+            ,#{userId}
         )
     </insert>
 

@@ -23,6 +23,10 @@ public class IssueController {
     @RequestMapping("/api/isu/issue/selectIssueList")
     @ResponseBody
     public Map<String, Object> selectIssueList(@RequestBody HashMap<String, Object> map) throws Exception {
+        if (UserSessionManager.isUserLogined()) {
+            map.put("createdBy", UserSessionManager.getLoginUserVO().getEmail());
+            map.put("userId", UserSessionManager.getLoginUserVO().getUserId());
+        }
         Map<String, Object> resultMap = new HashMap<>();
         List<Map<String, Object>> result = issueService.selectIssueList(map);
         resultMap.put("msg", "성공");
@@ -51,7 +55,9 @@ public class IssueController {
     public Map<String, Object> insertIssue(@RequestBody HashMap<String, Object> map) throws Exception {
         if (UserSessionManager.isUserLogined()) {
             map.put("createdBy", UserSessionManager.getLoginUserVO().getEmail());
+            map.put("userId", UserSessionManager.getLoginUserVO().getUserId());
         }
+        
         Map<String, Object> resultMap = new HashMap<>();
         issueService.insertIssue(map);
         resultMap.put("msg", "등록 성공");
@@ -105,6 +111,10 @@ public class IssueController {
     @RequestMapping("/api/isu/issue/selectIssueBoardList")
     @ResponseBody
     public Map<String, Object> selectIssueBoardList(@RequestBody HashMap<String, Object> map) throws Exception {
+        if (UserSessionManager.isUserLogined()) {
+            map.put("createdBy", UserSessionManager.getLoginUserVO().getEmail());
+            map.put("userId", UserSessionManager.getLoginUserVO().getUserId());
+        }
         Map<String, Object> resultMap = new HashMap<>();
         List<Map<String, Object>> result = issueService.selectIssueBoardList(map);
         resultMap.put("msg", "성공");

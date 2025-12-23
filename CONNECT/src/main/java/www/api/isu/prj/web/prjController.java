@@ -23,6 +23,10 @@ public class prjController {
     @RequestMapping("/api/isu/prj/selectprjList")
     @ResponseBody
     public Map<String, Object> selectprjList(@RequestBody HashMap<String, Object> map) throws Exception {
+        if (UserSessionManager.isUserLogined()) {
+            map.put("createdBy", UserSessionManager.getLoginUserVO().getEmail());
+            map.put("userId", UserSessionManager.getLoginUserVO().getUserId());
+        }
         Map<String, Object> resultMap = new HashMap<>();
         List<Map<String, Object>> result = prjService.selectprjList(map);
         resultMap.put("msg", "성공");
@@ -49,8 +53,9 @@ public class prjController {
     @RequestMapping("/api/isu/prj/insertprj")
     @ResponseBody
     public Map<String, Object> insertprj(@RequestBody HashMap<String, Object> map) throws Exception {
-        if (UserSessionManager.isUserLogined()) {   	
-        	map.put("createUser", UserSessionManager.getLoginUserVO().getEmail());
+        if (UserSessionManager.isUserLogined()) {
+            map.put("createdBy", UserSessionManager.getLoginUserVO().getEmail());
+            map.put("userId", UserSessionManager.getLoginUserVO().getUserId());
         }
         Map<String, Object> resultMap = new HashMap<>();
         prjService.insertprj(map);

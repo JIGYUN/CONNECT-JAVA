@@ -4,6 +4,9 @@
 <mapper namespace="www.api.isu.prj.prj">
 
     <sql id="whereprj">
+        <if test="userId != null and userId != ''">
+            AND USER_ID = #{userId}
+        </if>
         <!-- 
         동적 검색 조건 템플릿 (필요 시 활성화)
 
@@ -119,6 +122,7 @@
 			,UPDATED_DT
 			,UPDATED_BY
 			,USE_AT
+			,USER_ID
 
         )
         VALUES
@@ -134,6 +138,7 @@
 			,IFNULL(STR_TO_DATE(NULLIF(CONCAT(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '), CASE WHEN LENGTH(REPLACE(REPLACE(SUBSTRING_INDEX(REPLACE(#{updatedDt}, 'T',' '), '.', 1),'Z',''),'T',' '))=16 THEN ':00' ELSE '' END),''), '%Y-%m-%d %H:%i:%s'), NOW())
 			,#{updatedBy}
 			,#{useAt}
+			,#{userId}
 
         )
     </insert>

@@ -141,12 +141,18 @@
     /* ===== Settings ===== */
     const API_LIST='/api/mmp/map/selectMapList';
     const grpCdParam=getParam('grpCd')||'';
-    const DEFAULT_CENTER_COORD=[37.5665,126.9780];
-    const DEFAULT_LEVEL=6;
 
+    // ✅ 최초 시작 위치: 서울역(줌 상태로 시작)
+    // 좌표: 37.55467884, 126.9706069
+    const DEFAULT_CENTER_COORD=[37.55467884,126.9706069];
+    const DEFAULT_LEVEL=5;
+   
     /* ===== Map state ===== */
     let map, clusterer=null, markers=[], bounds;
     let labelOverlays=[], labelsOn=true;  // ✅ 기본 라벨 펼침
+
+    // ✅ 최초 1회는 fitAll()로 전체 줌아웃하지 않고, 서울역 줌을 유지
+    let didInitialFocus=false;
 
     $(function(){
         setHeaderOffset();
@@ -345,6 +351,15 @@
         // 라벨 표시 상태 반영(기본 ON)
         applyLabelsVisibility();
 
+        // ✅ 최초 1회는 서울역 줌 유지(자동 전체보기 방지)
+        if(!didInitialFocus){
+            didInitialFocus=true;
+            map.setCenter(new kakao.maps.LatLng(DEFAULT_CENTER_COORD[0], DEFAULT_CENTER_COORD[1]));
+            map.setLevel(DEFAULT_LEVEL);
+            return;
+        }
+
+        // ✅ 이후(검색/그룹변경 등)는 기존처럼 전체 맞춤
         fitAll();
     }
 
