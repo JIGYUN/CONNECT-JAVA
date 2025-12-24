@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.pay.toss.TossPay">
+
+    <!-- 토스 결제(PAY_READY) 생성 -->
+    <insert id="insertTossPaymentPending" parameterType="map">
+        INSERT INTO TB_PAYMENT
+        (
+            ORDER_ID,
+            PG_CD,
+            PG_MID,
+            PG_TID,
+            PAY_METHOD_CD,
+            PAY_TOTAL_AMT,
+            PAY_APPROVED_AMT,
+            PAY_STATUS_CD,
+            REQ_DT,
+            RES_DT,
+            RAW_REQUEST_JSON,
+            RAW_RESPONSE_JSON,
+            USE_AT,
+            CREATED_DT,
+            CREATED_BY,
+            UPDATED_DT,
+            UPDATED_BY
+        )
+        VALUES
+        (
+            #{orderId},
+            #{pgCd},
+            #{pgMid},
+            #{pgTid},
+            #{payMethodCd},
+            #{payTotalAmt},
+            #{payApprovedAmt},
+            #{payStatusCd},
+            NOW(),
+            NULL,
+            IFNULL(#{rawRequestJson}, '{}'),
+            IFNULL(#{rawResponseJson}, '{}'),
+            'Y',
+            NOW(),
+            #{createdBy},
+            NOW(),
+            #{updatedBy}
+        )
+    </insert>
+
+    <!-- 주문ID로 최신 결제 1건 -->
+    <select id="selectLatestPaymentByOrderId" parameterType="map" resultType="hashmap">
+        SELECT
+            PAYMENT_ID,
+            ORDER_ID,
+            PG_CD,
+            PG_MID,
+            PG_TID,
+            PAY_METHOD_CD,
+            PAY_TOTAL_AMT,
+            PAY_APPROVED_AMT,
+            PAY_STATUS_CD,
+            REQ_DT,
+            RES_DT,
+            RAW_REQUEST_JSON,
+            RAW_RESPONSE_JSON,
+            USE_AT,
+            CREATED_DT,
+            CREATED_BY,
+            UPDATED_DT,
+            UPDATED_BY
+        FROM TB_PAYMENT
+        WHERE ORDER_ID = #{orderId}
+          AND USE_AT = 'Y'
+        ORDER BY PAYMENT_ID DESC
+        LIMIT 1
+    </select>
+
+    <!-- 토스 승인 성공 시 결제 업데이트 (최신 1건만) -->
+    <update id="updateTossPaymentApproved" parameterType="map">
+        UPDATE TB_PAYMENT
+           SET PG_CD = 'TOSS',
+               PG_MID = 'TOSS',
+               PG_TID = #{pgTid},
+               PAY_APPROVED_AMT = #{payApprovedAmt},
+               PAY_STATUS_CD = #{payStatusCd},
+               RES_DT = NOW(),
+               RAW_RESPONSE_JSON = #{rawResponseJson},
+               UPDATED_DT = NOW(),
+               UPDATED_BY = #{updatedBy}
+         WHERE PAYMENT_ID = (
+             SELECT x.PAYMENT_ID
+               FROM (
+                   SELECT PAYMENT_ID
+                     FROM TB_PAYMENT
+                    WHERE ORDER_ID = #{orderId}
+                      AND USE_AT = 'Y'
+                    ORDER BY PAYMENT_ID DESC
+                    LIMIT 1
+               ) x
+         )
+    </update>
+
+    <!-- 토스 승인 성공 시 주문 상태 업데이트 -->
+    <update id="updateOrderAfterTossApproved" parameterType="map">
+        UPDATE TB_ORDER
+           SET ORDER_STATUS_CD = #{orderStatusCd},
+               PAY_STATUS_CD = #{payStatusCd},
+               PAY_METHOD_CD = #{payMethodCd},
+               UPDATED_DT = NOW(),
+               UPDATED_BY = #{updatedBy}
+         WHERE ORDER_ID = #{orderId}
+           AND USE_AT = 'Y'
+    </update>
+
+    <!-- 토스 결제 취소 성공 시 결제 업데이트 (최신 1건만) -->
+    <update id="updateTossPaymentCanceled" parameterType="map">
+        UPDATE TB_PAYMENT
+           SET PAY_STATUS_CD = #{payStatusCd},
+               RES_DT = NOW(),
+               RAW_RESPONSE_JSON = #{rawResponseJson},
+               UPDATED_DT = NOW(),
+               UPDATED_BY = #{updatedBy}
+         WHERE PAYMENT_ID = (
+             SELECT x.PAYMENT_ID
+               FROM (
+                   SELECT PAYMENT_ID
+                     FROM TB_PAYMENT
+                    WHERE ORDER_ID = #{orderId}
+                      AND USE_AT = 'Y'
+                    ORDER BY PAYMENT_ID DESC
+                    LIMIT 1
+               ) x
+         )
+    </update>
+
+    <!-- 토스 결제 취소 성공 시 주문 상태 업데이트 -->
+    <update id="updateOrderAfterTossCanceled" parameterType="map">
+        UPDATE TB_ORDER
+           SET ORDER_STATUS_CD = #{orderStatusCd},
+               PAY_STATUS_CD = #{payStatusCd},
+               PAY_METHOD_CD = #{payMethodCd},
+               UPDATED_DT = NOW(),
+               UPDATED_BY = #{updatedBy}
+         WHERE ORDER_ID = #{orderId}
+           AND USE_AT = 'Y'
+    </update>
+
+</mapper>

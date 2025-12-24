@@ -1,4 +1,3 @@
-// filepath: src/main/java/www/api/ord/order/service/OrderService.java
 package www.api.ord.order.service;
 
 import java.math.BigDecimal;
@@ -18,6 +17,7 @@ import www.api.cop.couponUser.service.CouponUserService;
 import www.api.crt.cart.service.CartService;
 import www.api.ord.orderItem.service.OrderItemService;
 import www.api.pay.payment.service.PaymentService;
+import www.api.pay.toss.service.TossPayService;
 import www.api.plg.pointLedger.service.PointLedgerService;
 import www.com.util.CommonDao;
 
@@ -35,29 +35,24 @@ public class OrderService {
     private PaymentService paymentService;
 
     @Autowired
+    private TossPayService tossPayService;
+
+    @Autowired
     private PointLedgerService pointLedgerService;
 
-    // 장바구니 → 주문상품 생성에 사용
     @Autowired
     private CartService cartService;
 
     @Autowired
     private OrderItemService orderItemService;
 
-    // 쿠폰 사용 처리
     @Autowired
     private CouponUserService couponUserService;
 
-    /**
-     * 주문 목록 조회
-     */
     public List<Map<String, Object>> selectOrderList(Map<String, Object> paramMap) {
         return dao.list(namespace + ".selectOrderList", paramMap);
     }
 
-    /**
-     * 주문 목록 수 조회
-     */
     public int selectOrderListCount(Map<String, Object> paramMap) {
         Map<String, Object> resultMap = dao.selectOne(namespace + ".selectOrderListCount", paramMap);
         if (resultMap != null && resultMap.get("cnt") != null) {
@@ -66,24 +61,15 @@ public class OrderService {
         return 0;
     }
 
-    /**
-     * 주문 단건 조회
-     */
     public Map<String, Object> selectOrderDetail(Map<String, Object> paramMap) {
         return dao.selectOne(namespace + ".selectOrderDetail", paramMap);
     }
 
-    /**
-     * 기본 주문 등록 (단독 사용 시)
-     */
     @Transactional
     public void insertOrder(Map<String, Object> paramMap) {
         dao.insert(namespace + ".insertOrder", paramMap);
     }
 
-    /**
-     * 주문 + 결제 + 포인트 + 쿠폰 + 장바구니 → 주문상품
-     */
     @Transactional
     public void insertOrderWithPayAndPoint(Map<String, Object> paramMap) {
 
@@ -95,12 +81,8 @@ public class OrderService {
             log.debug("insertOrderWithPayAndPoint() raw.cartItemId  = {}", paramMap.get("cartItemId"));
         }
 
-        // ==========================
-        // 1) 주문 마스터 저장
-        // ==========================
         dao.insert(namespace + ".insertOrder", paramMap);
 
-        // 프런트에서 넘겨주는 주문번호(orderNo 기준)
         String orderNo = asString(firstNonNull(paramMap.get("orderNo"), paramMap.get("ORDER_NO")));
 
         Map<String, Object> findParam = new HashMap<>();
@@ -111,7 +93,6 @@ public class OrderService {
             throw new IllegalStateException("주문 번호로 주문을 찾을 수 없습니다. orderNo=" + orderNo);
         }
 
-        // 컬럼 키가 alias / 대소문자 섞여 있을 수 있으니 여러 키로 방어
         Long orderId = firstNonNullLong(
                 orderRow.get("orderId"),
                 orderRow.get("ORDER_ID"),
@@ -126,22 +107,19 @@ public class OrderService {
             );
         }
 
-        // ==========================
-        // 2) 결제 저장 (TB_PAYMENT)
-        // ==========================
         BigDecimal orderAmt = toBigDecimal(firstNonNull(paramMap.get("orderAmt"), paramMap.get("ORDER_AMT")));
         BigDecimal payAmt   = toBigDecimal(firstNonNull(paramMap.get("payAmt"),   paramMap.get("PAY_AMT")));
 
         Map<String, Object> payParam = new HashMap<>();
         payParam.put("orderId",        orderId);
-        payParam.put("pgCd",           "LOCAL");                   // 내부 테스트 PG
-        payParam.put("pgMid",          "LOCAL");                   // 가맹점 ID
-        payParam.put("pgTid",          orderNo);                   // 트랜잭션 ID = 주문번호
+        payParam.put("pgCd",           "LOCAL");
+        payParam.put("pgMid",          "LOCAL");
+        payParam.put("pgTid",          orderNo);
         payParam.put("payMethodCd",    paramMap.get("payMethodCd"));
-        payParam.put("payTotalAmt",    orderAmt);                  // 총 결제 대상 금액
-        payParam.put("payApprovedAmt", payAmt);                    // 실제 결제 금액
+        payParam.put("payTotalAmt",    orderAmt);
+        payParam.put("payApprovedAmt", payAmt);
         payParam.put("payStatusCd",    paramMap.get("payStatusCd"));
-        payParam.put("reqDt",          null);                      // mapper 에서 NOW()
+        payParam.put("reqDt",          null);
         payParam.put("resDt",          null);
         payParam.put("rawRequestJson", "{}");
         payParam.put("rawResponseJson","{}");
@@ -151,9 +129,6 @@ public class OrderService {
 
         paymentService.insertPayment(payParam);
 
-        // ==========================
-        // 3) 포인트 / 쿠폰 처리
-        // ==========================
         Long userId = toLong(firstNonNull(paramMap.get("userId"), paramMap.get("USER_ID")));
         String actor = asString(firstNonNull(paramMap.get("createdBy"), paramMap.get("CREATED_BY")));
 
@@ -167,8 +142,6 @@ public class OrderService {
         Long couponUserId = toLong(firstNonNull(paramMap.get("couponUserId"), paramMap.get("COUPON_USER_ID")));
 
         if (userId != null) {
-
-            // 포인트 사용(차감)
             if (pointUseAmt.compareTo(BigDecimal.ZERO) > 0) {
                 pointLedgerService.usePointForOrder(
                         userId,
@@ -179,7 +152,6 @@ public class OrderService {
                 );
             }
 
-            // 포인트 적립(충전)
             if (pointSaveAmt.compareTo(BigDecimal.ZERO) > 0) {
                 pointLedgerService.chargePoint(
                         userId,
@@ -190,14 +162,9 @@ public class OrderService {
             }
         }
 
-        // ★ 쿠폰 사용 처리 (TB_COUPON_USER 업데이트)
         if (couponUserId != null && couponUseAmt.compareTo(BigDecimal.ZERO) > 0) {
             couponUserService.updateCouponAsUsed(couponUserId, orderId, actor);
         }
-
-        // ==========================
-        // 4) 장바구니 → 주문상품(TB_ORDER_ITEM)
-        // ==========================
 
         List<Long> cartItemIds = extractCartItemIds(paramMap);
 
@@ -216,7 +183,7 @@ public class OrderService {
 
             Map<String, Object> cartParam = new HashMap<>();
             cartParam.put("userId",      userId);
-            cartParam.put("cartItemIds", cartItemIds); // 무조건 선택 항목만
+            cartParam.put("cartItemIds", cartItemIds);
 
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> items =
@@ -238,11 +205,9 @@ public class OrderService {
                             row.get("PRODUCT_ID")
                     );
                     if (productId == null) {
-                        // 상품 ID 없으면 스킵
                         continue;
                     }
 
-                    // 상품명: productNm / PRODUCT_NM / title / TITLE 중 첫 번째
                     String productNm = firstNonEmptyString(
                             row.get("productNm"),
                             row.get("PRODUCT_NM"),
@@ -287,7 +252,6 @@ public class OrderService {
                     );
                     String optionJson = optObj != null ? String.valueOf(optObj) : "{}";
 
-                    // 주문상품 파라미터
                     Map<String, Object> itemParam = new HashMap<>();
                     itemParam.put("orderId",    orderId);
                     itemParam.put("productId",  productId);
@@ -302,10 +266,8 @@ public class OrderService {
                     itemParam.put("createdBy",  paramMap.get("createdBy"));
                     itemParam.put("updatedBy",  paramMap.get("updatedBy"));
 
-                    // TB_ORDER_ITEM INSERT
                     orderItemService.insertOrderItem(itemParam);
 
-                    // 장바구니 항목 소프트 삭제
                     Long cartItemId = firstNonNullLong(
                             row.get("cartItemId"),
                             row.get("CART_ITEM_ID")
@@ -318,24 +280,18 @@ public class OrderService {
         }
     }
 
-    /**
-     * 주문 수정
-     */
     @Transactional
     public void updateOrder(Map<String, Object> paramMap) {
         dao.update(namespace + ".updateOrder", paramMap);
     }
 
-    /**
-     * 주문 삭제(soft delete)
-     */
     @Transactional
     public void deleteOrder(Map<String, Object> paramMap) {
         dao.delete(namespace + ".deleteOrder", paramMap);
     }
 
     // =======================
-    //  주문 취소 (A안)
+    //  주문 취소 (TOSS 연동 포함)
     // =======================
     @Transactional
     public void cancelOrder(Map<String, Object> paramMap) {
@@ -361,6 +317,7 @@ public class OrderService {
 
         String orderStatusCd = asString(firstNonNull(order.get("orderStatusCd"), order.get("ORDER_STATUS_CD")));
         String payStatusCd   = asString(firstNonNull(order.get("payStatusCd"),   order.get("PAY_STATUS_CD")));
+        String payMethodCd   = asString(firstNonNull(order.get("payMethodCd"),   order.get("PAY_METHOD_CD")));
         String useAt         = asString(firstNonNull(order.get("useAt"),         order.get("USE_AT")));
 
         if (!"Y".equalsIgnoreCase(useAt)) {
@@ -381,6 +338,11 @@ public class OrderService {
                 order.get("CREATED_BY")
         ));
 
+        String cancelReason = asString(firstNonNull(paramMap.get("cancelReason"), paramMap.get("reason")));
+        if (cancelReason.trim().isEmpty()) {
+            cancelReason = "사용자 요청";
+        }
+
         BigDecimal pointUseAmt  = firstNonZeroBigDecimal(order.get("pointUseAmt"),  order.get("POINT_USE_AMT"));
         BigDecimal pointSaveAmt = firstNonZeroBigDecimal(order.get("pointSaveAmt"), order.get("POINT_SAVE_AMT"));
         BigDecimal payAmt       = firstNonZeroBigDecimal(order.get("payAmt"),       order.get("PAY_AMT"));
@@ -391,16 +353,42 @@ public class OrderService {
                             + ", orderNo=" + orderNo
                             + ", statusCd=" + orderStatusCd
                             + ", payStatusCd=" + payStatusCd
+                            + ", payMethodCd=" + payMethodCd
                             + ", pointUseAmt=" + pointUseAmt
                             + ", pointSaveAmt=" + pointSaveAmt
                             + ", payAmt=" + payAmt
             );
         }
 
+        boolean tossPath = "TOSS".equalsIgnoreCase(payMethodCd);
+
+        // 1) 결제 취소(토스면 PG 취소 호출)
         if ("PAY_DONE".equals(payStatusCd)) {
-            paymentService.cancelPaymentByOrderId(orderId, actor);
+            if (tossPath) {
+                Map<String, Object> tossBody = new HashMap<>();
+                tossBody.put("orderId", orderId);
+                tossBody.put("orderIdx", orderId);
+                tossBody.put("cancelReason", cancelReason);
+
+                Map<String, Object> tossRes;
+                try {
+                    tossRes = tossPayService.cancelTossPayment(tossBody);
+                } catch (Exception e) {
+                    throw new IllegalStateException("TOSS_CANCEL_EXCEPTION: " + e.getMessage(), e);
+                }
+
+                boolean ok = (tossRes != null) && Boolean.TRUE.equals(tossRes.get("ok"));
+                if (!ok) {
+                    String msg = tossRes == null ? "TOSS_CANCEL_FAILED" : String.valueOf(tossRes.get("message"));
+                    throw new IllegalStateException(msg);
+                }
+            } else {
+                // LOCAL/기타 PG는 기존 로직 유지
+                paymentService.cancelPaymentByOrderId(orderId, actor);
+            }
         }
 
+        // 2) 포인트 롤백
         if (userId != null) {
             if (pointUseAmt.compareTo(BigDecimal.ZERO) > 0) {
                 pointLedgerService.chargePoint(
@@ -422,12 +410,13 @@ public class OrderService {
             }
         }
 
+        // 3) 주문 상태 취소(토스 경로는 이미 업데이트 되었을 수도 있어서 updated==0을 실패로 보지 않음)
         Map<String, Object> upd = new HashMap<>();
         upd.put("orderId",  orderId);
         upd.put("updatedBy",actor);
 
         int updated = dao.update(namespace + ".updateOrderCancel", upd);
-        if (updated <= 0) {
+        if (updated <= 0 && !tossPath) {
             throw new IllegalStateException("주문 상태 업데이트에 실패했습니다. 이미 취소되었을 수 있습니다.");
         }
     }

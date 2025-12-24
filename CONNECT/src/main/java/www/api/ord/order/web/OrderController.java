@@ -1,12 +1,9 @@
-// filepath: src/main/java/www/api/ord/order/web/OrderController.java
 package www.api.ord.order.web;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.servlet.http.HttpSession;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -36,8 +33,7 @@ public class OrderController {
     @ResponseBody
     public Map<String, Object> selectOrderList(@RequestBody HashMap<String, Object> map) throws Exception {
         Map<String, Object> resultMap = new HashMap<>();
-        
-        
+
         if (!UserSessionManager.isUserLogined()) {
             resultMap.put("ok", false);
             resultMap.put("msg", "LOGIN_REQUIRED");
@@ -48,9 +44,9 @@ public class OrderController {
         String userId = UserSessionManager.getLoginUserVO().getUserId();
 
         map.put("userId", userId);
-        
+
         List<Map<String, Object>> result = orderService.selectOrderList(map);
-        
+
         resultMap.put("ok", true);
         resultMap.put("msg", "성공");
         resultMap.put("result", result);
@@ -201,11 +197,9 @@ public class OrderController {
      *
      * 기대 입력(JSON):
      * {
-     *   "orderId": 123   // 또는 "orderIdx": 123
+     *   "orderId": 123,              // 또는 "orderIdx": 123
+     *   "cancelReason": "사용자 요청" // (옵션) - TOSS일 때 PG 취소 사유로 전달
      * }
-     *
-     * - 이미 취소된 주문에 대해선 서비스 레벨에서 방어(예외/무시) 처리 가정
-     * - 컨트롤러는 로그인·파라미터 검증 + 공통 응답만 담당
      */
     @RequestMapping("/api/ord/order/cancelOrder")
     @ResponseBody
@@ -247,8 +241,7 @@ public class OrderController {
         map.put("orderId", orderIdStr);
         map.put("orderIdx", orderIdStr);
 
-        // 주문 취소 + 결제 취소 + 포인트 롤백을 하나의 트랜잭션으로 처리
-        // (실제 구현: OrderService.cancelOrderWithPayAndPoint(map) 에서 담당)
+        // 주문 취소(내부에서 TOSS면 tossPayService.cancelTossPayment 호출하도록 수정)
         orderService.cancelOrder(map);
 
         resultMap.put("ok", true);
@@ -260,16 +253,6 @@ public class OrderController {
     // 내부 유틸 – cartIds 정규화
     // ==========================
 
-    /**
-     * Body(map)에서 cartItemIds / cartIds 를 모아서 List<Long>으로 정규화
-     *
-     * 지원 케이스:
-     * - { "cartItemIds": [20,21] }
-     * - { "cartItemIds": "20,21" }
-     * - { "cartIds": [20,21] }
-     * - { "cartIds": "20,21" }
-     * - { "cartIds": "20" }
-     */
     private List<Long> resolveCartItemIdsFromBody(Map<String, Object> map) {
         List<Long> result = new ArrayList<>();
         if (map == null) {
@@ -289,18 +272,11 @@ public class OrderController {
         return result;
     }
 
-    /**
-     * Object(raw) → result(List<Long>)에 숫자 ID 추가
-     * - List<?> 인 경우: 각 요소를 Long 변환
-     * - String 인 경우: "20,21,22" 스플릿 후 Long 변환
-     * - 그 외: 단일 값 Long 변환
-     */
     private void extractIdsIntoList(Object raw, List<Long> result) {
         if (raw == null) {
             return;
         }
 
-        // List 형태일 때: [20, "21", 22L ...]
         if (raw instanceof List<?>) {
             for (Object o : (List<?>) raw) {
                 Long id = parseLongSafe(o);
@@ -311,7 +287,6 @@ public class OrderController {
             return;
         }
 
-        // 문자열: "20,21,22" 또는 "20"
         if (raw instanceof String) {
             String s = ((String) raw).trim();
             if (!s.isEmpty()) {
@@ -330,7 +305,6 @@ public class OrderController {
             return;
         }
 
-        // 그 외 단일 값
         Long single = parseLongSafe(raw);
         if (single != null) {
             result.add(single);
